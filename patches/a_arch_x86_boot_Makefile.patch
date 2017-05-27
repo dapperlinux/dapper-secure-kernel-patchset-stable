@@ -1,0 +1,12 @@
+diff --git a/arch/x86/boot/Makefile b/arch/x86/boot/Makefile
+index 12ea8f8..46969be 100644
+--- a/arch/x86/boot/Makefile
++++ b/arch/x86/boot/Makefile
+@@ -11,6 +11,7 @@
+ 
+ KASAN_SANITIZE			:= n
+ OBJECT_FILES_NON_STANDARD	:= y
++GCC_PLUGINS			:= n
+ 
+ # Kernel does not boot with kcov instrumentation here.
+ # One of the problems observed was insertion of __sanitizer_cov_trace_pc()

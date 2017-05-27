@@ -1,0 +1,13 @@
+diff --git a/mm/fadvise.c b/mm/fadvise.c
+index 6c707bf..c8d0529 100644
+--- a/mm/fadvise.c
++++ b/mm/fadvise.c
+@@ -165,7 +165,7 @@ SYSCALL_DEFINE4(fadvise64_64, int, fd, loff_t, offset, loff_t, len, int, advice)
+ 
+ #ifdef __ARCH_WANT_SYS_FADVISE64
+ 
+-SYSCALL_DEFINE4(fadvise64, int, fd, loff_t, offset, size_t, len, int, advice)
++SYSCALL_DEFINE4(fadvise64, int, fd, loff_t, offset, loff_t, len, int, advice)
+ {
+ 	return sys_fadvise64_64(fd, offset, len, advice);
+ }

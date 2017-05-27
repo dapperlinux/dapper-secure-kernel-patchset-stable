@@ -1,0 +1,12 @@
+diff --git a/arch/arm/include/asm/futex.h b/arch/arm/include/asm/futex.h
+index 6795368..6c4d749 100644
+--- a/arch/arm/include/asm/futex.h
++++ b/arch/arm/include/asm/futex.h
+@@ -107,6 +107,7 @@ futex_atomic_cmpxchg_inatomic(u32 *uval, u32 __user *uaddr,
+ 		return -EFAULT;
+ 
+ 	preempt_disable();
++
+ 	__ua_flags = uaccess_save_and_enable();
+ 	__asm__ __volatile__("@futex_atomic_cmpxchg_inatomic\n"
+ 	"1:	" TUSER(ldr) "	%1, [%4]\n"

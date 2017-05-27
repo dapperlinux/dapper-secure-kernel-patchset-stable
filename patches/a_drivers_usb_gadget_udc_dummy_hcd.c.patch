@@ -1,0 +1,13 @@
+diff --git a/drivers/usb/gadget/udc/dummy_hcd.c b/drivers/usb/gadget/udc/dummy_hcd.c
+index 4fa5de2..4d14e69 100644
+--- a/drivers/usb/gadget/udc/dummy_hcd.c
++++ b/drivers/usb/gadget/udc/dummy_hcd.c
+@@ -2460,7 +2460,7 @@ static int dummy_setup(struct usb_hcd *hcd)
+ 	struct dummy *dum;
+ 
+ 	dum = *((void **)dev_get_platdata(hcd->self.controller));
+-	hcd->self.sg_tablesize = ~0;
++	hcd->self.sg_tablesize = SG_ALL;
+ 	if (usb_hcd_is_primary_hcd(hcd)) {
+ 		dum->hs_hcd = hcd_to_dummy_hcd(hcd);
+ 		dum->hs_hcd->dum = dum;

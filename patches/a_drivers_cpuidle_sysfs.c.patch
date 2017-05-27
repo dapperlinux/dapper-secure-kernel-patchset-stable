@@ -1,0 +1,13 @@
+diff --git a/drivers/cpuidle/sysfs.c b/drivers/cpuidle/sysfs.c
+index 832a2c3..1794080 100644
+--- a/drivers/cpuidle/sysfs.c
++++ b/drivers/cpuidle/sysfs.c
+@@ -135,7 +135,7 @@ static struct attribute *cpuidle_switch_attrs[] = {
+ 	NULL
+ };
+ 
+-static struct attribute_group cpuidle_attr_group = {
++static attribute_group_no_const cpuidle_attr_group = {
+ 	.attrs = cpuidle_default_attrs,
+ 	.name = "cpuidle",
+ };

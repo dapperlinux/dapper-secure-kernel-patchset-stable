@@ -1,0 +1,15 @@
+diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmsmac/phy/phy_cmn.c b/drivers/net/wireless/broadcom/brcm80211/brcmsmac/phy/phy_cmn.c
+index 1c4e9dd..a6388e7 100644
+--- a/drivers/net/wireless/broadcom/brcm80211/brcmsmac/phy/phy_cmn.c
++++ b/drivers/net/wireless/broadcom/brcm80211/brcmsmac/phy/phy_cmn.c
+@@ -394,8 +394,9 @@ struct shared_phy *wlc_phy_shared_attach(struct shared_phy_params *shp)
+ 	return sh;
+ }
+ 
+-static void wlc_phy_timercb_phycal(struct brcms_phy *pi)
++static void wlc_phy_timercb_phycal(void *_pi)
+ {
++	struct brcms_phy *pi = _pi;
+ 	uint delay = 5;
+ 
+ 	if (PHY_PERICAL_MPHASE_PENDING(pi)) {

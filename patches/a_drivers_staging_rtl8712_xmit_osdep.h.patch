@@ -1,0 +1,13 @@
+diff --git a/drivers/staging/rtl8712/xmit_osdep.h b/drivers/staging/rtl8712/xmit_osdep.h
+index 8eba7ca..6c4ce81 100644
+--- a/drivers/staging/rtl8712/xmit_osdep.h
++++ b/drivers/staging/rtl8712/xmit_osdep.h
+@@ -46,7 +46,7 @@ struct sta_xmit_priv;
+ struct xmit_frame;
+ struct xmit_buf;
+ 
+-int r8712_xmit_entry(_pkt *pkt, struct  net_device *pnetdev);
++netdev_tx_t r8712_xmit_entry(_pkt *pkt, struct  net_device *pnetdev);
+ void r8712_SetFilter(struct work_struct *work);
+ int r8712_xmit_resource_alloc(struct _adapter *padapter,
+ 			   struct xmit_buf *pxmitbuf);

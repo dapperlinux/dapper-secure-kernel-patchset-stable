@@ -1,0 +1,13 @@
+diff --git a/net/irda/irlan/irlan_client.c b/net/irda/irlan/irlan_client.c
+index c5837a4..518b358 100644
+--- a/net/irda/irlan/irlan_client.c
++++ b/net/irda/irlan/irlan_client.c
+@@ -68,7 +68,7 @@ static void irlan_check_response_param(struct irlan_cb *self, char *param,
+ 				       char *value, int val_len);
+ static void irlan_client_open_ctrl_tsap(struct irlan_cb *self);
+ 
+-static void irlan_client_kick_timer_expired(void *data)
++static void irlan_client_kick_timer_expired(unsigned long data)
+ {
+ 	struct irlan_cb *self = (struct irlan_cb *) data;
+ 

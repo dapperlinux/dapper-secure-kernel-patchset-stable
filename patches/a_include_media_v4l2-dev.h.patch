@@ -1,0 +1,13 @@
+diff --git a/include/media/v4l2-dev.h b/include/media/v4l2-dev.h
+index e657614..6f02e2a 100644
+--- a/include/media/v4l2-dev.h
++++ b/include/media/v4l2-dev.h
+@@ -161,7 +161,7 @@ struct v4l2_file_operations {
+ 	int (*mmap) (struct file *, struct vm_area_struct *);
+ 	int (*open) (struct file *);
+ 	int (*release) (struct file *);
+-};
++} __do_const;
+ 
+ /*
+  * Newer version of video_device, handled by videodev2.c

@@ -1,0 +1,10 @@
+diff --git a/include/linux/ethtool.h b/include/linux/ethtool.h
+index 9ded8c6..e11a2457 100644
+--- a/include/linux/ethtool.h
++++ b/include/linux/ethtool.h
+@@ -373,4 +373,5 @@ struct ethtool_ops {
+ 	int	(*set_link_ksettings)(struct net_device *,
+ 				      const struct ethtool_link_ksettings *);
+ };
++typedef struct ethtool_ops __no_const ethtool_ops_no_const;
+ #endif /* _LINUX_ETHTOOL_H */

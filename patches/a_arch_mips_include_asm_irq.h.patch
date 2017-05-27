@@ -1,0 +1,12 @@
+diff --git a/arch/mips/include/asm/irq.h b/arch/mips/include/asm/irq.h
+index 956db6e..05a58b1 100644
+--- a/arch/mips/include/asm/irq.h
++++ b/arch/mips/include/asm/irq.h
+@@ -11,7 +11,6 @@
+ 
+ #include <linux/linkage.h>
+ #include <linux/smp.h>
+-#include <linux/irqdomain.h>
+ 
+ #include <asm/mipsmtregs.h>
+ 

@@ -1,0 +1,17 @@
+diff --git a/arch/alpha/include/asm/pgalloc.h b/arch/alpha/include/asm/pgalloc.h
+index c2ebb6f..93a0613 100644
+--- a/arch/alpha/include/asm/pgalloc.h
++++ b/arch/alpha/include/asm/pgalloc.h
+@@ -29,6 +29,12 @@ pgd_populate(struct mm_struct *mm, pgd_t *pgd, pmd_t *pmd)
+ 	pgd_set(pgd, pmd);
+ }
+ 
++static inline void
++pgd_populate_kernel(struct mm_struct *mm, pgd_t *pgd, pmd_t *pmd)
++{
++	pgd_populate(mm, pgd, pmd);
++}
++
+ extern pgd_t *pgd_alloc(struct mm_struct *mm);
+ 
+ static inline void

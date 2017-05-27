@@ -1,0 +1,37 @@
+diff --git a/arch/x86/crypto/salsa20-i586-asm_32.S b/arch/x86/crypto/salsa20-i586-asm_32.S
+index 329452b8..f136500 100644
+--- a/arch/x86/crypto/salsa20-i586-asm_32.S
++++ b/arch/x86/crypto/salsa20-i586-asm_32.S
+@@ -3,6 +3,7 @@
+ # Public domain.
+ 
+ #include <linux/linkage.h>
++#include <asm/alternative-asm.h>
+ 
+ .text
+ 
+@@ -924,7 +925,7 @@ ENTRY(salsa20_encrypt_bytes)
+ 	movl	96(%esp),%ebp
+ 	#     leave
+ 	add	%eax,%esp
+-	ret
++	pax_ret salsa20_encrypt_bytes
+ ._bytesatleast65:
+ 	#   bytes -= 64
+ 	sub	$64,%ebx
+@@ -1059,7 +1060,7 @@ ENTRY(salsa20_keysetup)
+ 	movl	80(%esp),%ebp
+ 	# leave
+ 	add	%eax,%esp
+-	ret
++	pax_ret salsa20_keysetup
+ ENDPROC(salsa20_keysetup)
+ 
+ # enter salsa20_ivsetup
+@@ -1110,5 +1111,5 @@ ENTRY(salsa20_ivsetup)
+ 	movl	80(%esp),%ebp
+ 	# leave
+ 	add	%eax,%esp
+-	ret
++	pax_ret salsa20_ivsetup
+ ENDPROC(salsa20_ivsetup)

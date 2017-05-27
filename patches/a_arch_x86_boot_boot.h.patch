@@ -1,0 +1,13 @@
+diff --git a/arch/x86/boot/boot.h b/arch/x86/boot/boot.h
+index e5612f3..e755d05 100644
+--- a/arch/x86/boot/boot.h
++++ b/arch/x86/boot/boot.h
+@@ -84,7 +84,7 @@ static inline void io_delay(void)
+ static inline u16 ds(void)
+ {
+ 	u16 seg;
+-	asm("movw %%ds,%0" : "=rm" (seg));
++	asm volatile("movw %%ds,%0" : "=rm" (seg));
+ 	return seg;
+ }
+ 

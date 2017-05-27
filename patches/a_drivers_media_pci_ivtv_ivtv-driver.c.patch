@@ -1,0 +1,13 @@
+diff --git a/drivers/media/pci/ivtv/ivtv-driver.c b/drivers/media/pci/ivtv/ivtv-driver.c
+index ee48c3e..58a6269 100644
+--- a/drivers/media/pci/ivtv/ivtv-driver.c
++++ b/drivers/media/pci/ivtv/ivtv-driver.c
+@@ -83,7 +83,7 @@ static struct pci_device_id ivtv_pci_tbl[] = {
+ MODULE_DEVICE_TABLE(pci,ivtv_pci_tbl);
+ 
+ /* ivtv instance counter */
+-static atomic_t ivtv_instance = ATOMIC_INIT(0);
++static atomic_unchecked_t ivtv_instance = ATOMIC_INIT(0);
+ 
+ /* Parameter declarations */
+ static int cardtype[IVTV_MAX_CARDS];

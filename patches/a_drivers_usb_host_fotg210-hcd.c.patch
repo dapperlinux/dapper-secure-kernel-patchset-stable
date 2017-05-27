@@ -1,0 +1,13 @@
+diff --git a/drivers/usb/host/fotg210-hcd.c b/drivers/usb/host/fotg210-hcd.c
+index 66efa9a..50b719d 100644
+--- a/drivers/usb/host/fotg210-hcd.c
++++ b/drivers/usb/host/fotg210-hcd.c
+@@ -5025,7 +5025,7 @@ static int hcd_fotg210_init(struct usb_hcd *hcd)
+ 
+ 	/* Accept arbitrarily long scatter-gather lists */
+ 	if (!(hcd->driver->flags & HCD_LOCAL_MEM))
+-		hcd->self.sg_tablesize = ~0;
++		hcd->self.sg_tablesize = SG_ALL;
+ 	return 0;
+ }
+ 

@@ -1,0 +1,12 @@
+diff --git a/arch/powerpc/include/asm/exec.h b/arch/powerpc/include/asm/exec.h
+index 8196e9c..d83a9f3 100644
+--- a/arch/powerpc/include/asm/exec.h
++++ b/arch/powerpc/include/asm/exec.h
+@@ -4,6 +4,6 @@
+ #ifndef _ASM_POWERPC_EXEC_H
+ #define _ASM_POWERPC_EXEC_H
+ 
+-extern unsigned long arch_align_stack(unsigned long sp);
++#define arch_align_stack(x) ((x) & ~0xfUL)
+ 
+ #endif /* _ASM_POWERPC_EXEC_H */

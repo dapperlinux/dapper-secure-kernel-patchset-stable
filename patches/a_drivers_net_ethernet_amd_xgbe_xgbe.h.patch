@@ -1,0 +1,28 @@
+diff --git a/drivers/net/ethernet/amd/xgbe/xgbe.h b/drivers/net/ethernet/amd/xgbe/xgbe.h
+index 5dd17dc..962ff6a 100644
+--- a/drivers/net/ethernet/amd/xgbe/xgbe.h
++++ b/drivers/net/ethernet/amd/xgbe/xgbe.h
+@@ -786,9 +786,9 @@ struct xgbe_prv_data {
+ 	int dev_irq;
+ 	unsigned int per_channel_irq;
+ 
+-	struct xgbe_hw_if hw_if;
+-	struct xgbe_phy_if phy_if;
+-	struct xgbe_desc_if desc_if;
++	const struct xgbe_hw_if *hw_if;
++	const struct xgbe_phy_if *phy_if;
++	const struct xgbe_desc_if *desc_if;
+ 
+ 	/* AXI DMA settings */
+ 	unsigned int coherent;
+@@ -951,6 +951,10 @@ struct xgbe_prv_data {
+ #endif
+ };
+ 
++extern const struct xgbe_hw_if default_xgbe_hw_if;
++extern const struct xgbe_phy_if default_xgbe_phy_if;
++extern const struct xgbe_desc_if default_xgbe_desc_if;
++
+ /* Function prototypes*/
+ 
+ void xgbe_init_function_ptrs_dev(struct xgbe_hw_if *);

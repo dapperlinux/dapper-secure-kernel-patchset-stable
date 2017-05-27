@@ -1,0 +1,13 @@
+diff --git a/drivers/bluetooth/btwilink.c b/drivers/bluetooth/btwilink.c
+index b6bb58c..7d47151 100644
+--- a/drivers/bluetooth/btwilink.c
++++ b/drivers/bluetooth/btwilink.c
+@@ -277,7 +277,7 @@ static int ti_st_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
+ 
+ static int bt_ti_probe(struct platform_device *pdev)
+ {
+-	static struct ti_st *hst;
++	struct ti_st *hst;
+ 	struct hci_dev *hdev;
+ 	int err;
+ 

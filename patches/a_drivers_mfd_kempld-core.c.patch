@@ -1,0 +1,13 @@
+diff --git a/drivers/mfd/kempld-core.c b/drivers/mfd/kempld-core.c
+index da5722d..d405030 100644
+--- a/drivers/mfd/kempld-core.c
++++ b/drivers/mfd/kempld-core.c
+@@ -494,7 +494,7 @@ static struct platform_driver kempld_driver = {
+ 	.remove		= kempld_remove,
+ };
+ 
+-static struct dmi_system_id kempld_dmi_table[] __initdata = {
++static const struct dmi_system_id kempld_dmi_table[] __initconst = {
+ 	{
+ 		.ident = "BBL6",
+ 		.matches = {

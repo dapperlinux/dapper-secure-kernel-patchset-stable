@@ -1,0 +1,13 @@
+diff --git a/drivers/scsi/scsi.c b/drivers/scsi/scsi.c
+index 1deb6ad..3057db5 100644
+--- a/drivers/scsi/scsi.c
++++ b/drivers/scsi/scsi.c
+@@ -591,7 +591,7 @@ void scsi_finish_command(struct scsi_cmnd *cmd)
+ 
+ 	good_bytes = scsi_bufflen(cmd);
+         if (cmd->request->cmd_type != REQ_TYPE_BLOCK_PC) {
+-		int old_good_bytes = good_bytes;
++		unsigned int old_good_bytes = good_bytes;
+ 		drv = scsi_cmd_to_driver(cmd);
+ 		if (drv->done)
+ 			good_bytes = drv->done(cmd);

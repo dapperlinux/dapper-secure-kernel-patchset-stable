@@ -1,0 +1,13 @@
+diff --git a/drivers/gpu/drm/amd/amdkfd/kfd_kernel_queue.h b/drivers/gpu/drm/amd/amdkfd/kfd_kernel_queue.h
+index 5940531..a75b0e5 100644
+--- a/drivers/gpu/drm/amd/amdkfd/kfd_kernel_queue.h
++++ b/drivers/gpu/drm/amd/amdkfd/kfd_kernel_queue.h
+@@ -62,7 +62,7 @@ struct kernel_queue_ops {
+ 
+ 	void	(*submit_packet)(struct kernel_queue *kq);
+ 	void	(*rollback_packet)(struct kernel_queue *kq);
+-};
++} __no_const;
+ 
+ struct kernel_queue {
+ 	struct kernel_queue_ops ops;

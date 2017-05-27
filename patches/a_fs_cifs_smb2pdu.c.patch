@@ -1,0 +1,14 @@
+diff --git a/fs/cifs/smb2pdu.c b/fs/cifs/smb2pdu.c
+index 7080dac..28a6a3048 100644
+--- a/fs/cifs/smb2pdu.c
++++ b/fs/cifs/smb2pdu.c
+@@ -2625,8 +2625,7 @@ SMB2_query_directory(const unsigned int xid, struct cifs_tcon *tcon,
+ 	default:
+ 		cifs_dbg(VFS, "info level %u isn't supported\n",
+ 			 srch_inf->info_level);
+-		rc = -EINVAL;
+-		goto qdir_exit;
++		return -EINVAL;
+ 	}
+ 
+ 	req->FileIndex = cpu_to_le32(index);

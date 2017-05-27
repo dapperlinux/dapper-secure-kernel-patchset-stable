@@ -1,0 +1,13 @@
+diff --git a/net/ceph/ceph_common.c b/net/ceph/ceph_common.c
+index 464e885..1fbb9dc 100644
+--- a/net/ceph/ceph_common.c
++++ b/net/ceph/ceph_common.c
+@@ -5,7 +5,7 @@
+ #include <linux/fs.h>
+ #include <linux/inet.h>
+ #include <linux/in6.h>
+-#include <linux/key.h>
++#include <linux/key-type.h>
+ #include <keys/ceph-type.h>
+ #include <linux/module.h>
+ #include <linux/mount.h>

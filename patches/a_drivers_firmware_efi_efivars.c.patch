@@ -1,0 +1,13 @@
+diff --git a/drivers/firmware/efi/efivars.c b/drivers/firmware/efi/efivars.c
+index 3e626fd..1ccae43 100644
+--- a/drivers/firmware/efi/efivars.c
++++ b/drivers/firmware/efi/efivars.c
+@@ -587,7 +587,7 @@ efivar_create_sysfs_entry(struct efivar_entry *new_var)
+ static int
+ create_efivars_bin_attributes(void)
+ {
+-	struct bin_attribute *attr;
++	bin_attribute_no_const *attr;
+ 	int error;
+ 
+ 	/* new_var */

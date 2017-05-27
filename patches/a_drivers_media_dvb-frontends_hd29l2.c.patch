@@ -1,0 +1,13 @@
+diff --git a/drivers/media/dvb-frontends/hd29l2.c b/drivers/media/dvb-frontends/hd29l2.c
+index 1c7eb47..c1cd6b8 100644
+--- a/drivers/media/dvb-frontends/hd29l2.c
++++ b/drivers/media/dvb-frontends/hd29l2.c
+@@ -555,7 +555,7 @@ static enum dvbfe_search hd29l2_search(struct dvb_frontend *fe)
+ 	return DVBFE_ALGO_SEARCH_ERROR;
+ }
+ 
+-static int hd29l2_get_frontend_algo(struct dvb_frontend *fe)
++static enum dvbfe_algo hd29l2_get_frontend_algo(struct dvb_frontend *fe)
+ {
+ 	return DVBFE_ALGO_CUSTOM;
+ }

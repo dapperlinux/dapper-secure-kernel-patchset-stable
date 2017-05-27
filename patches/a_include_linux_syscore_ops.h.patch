@@ -1,0 +1,13 @@
+diff --git a/include/linux/syscore_ops.h b/include/linux/syscore_ops.h
+index 27b3b0b..e093dd9 100644
+--- a/include/linux/syscore_ops.h
++++ b/include/linux/syscore_ops.h
+@@ -16,7 +16,7 @@ struct syscore_ops {
+ 	int (*suspend)(void);
+ 	void (*resume)(void);
+ 	void (*shutdown)(void);
+-};
++} __do_const;
+ 
+ extern void register_syscore_ops(struct syscore_ops *ops);
+ extern void unregister_syscore_ops(struct syscore_ops *ops);

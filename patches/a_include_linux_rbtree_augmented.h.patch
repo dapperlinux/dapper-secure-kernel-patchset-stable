@@ -1,0 +1,15 @@
+diff --git a/include/linux/rbtree_augmented.h b/include/linux/rbtree_augmented.h
+index d076183..9702b6e 100644
+--- a/include/linux/rbtree_augmented.h
++++ b/include/linux/rbtree_augmented.h
+@@ -90,7 +90,9 @@ rbname ## _rotate(struct rb_node *rb_old, struct rb_node *rb_new)	\
+ 	old->rbaugmented = rbcompute(old);				\
+ }									\
+ rbstatic const struct rb_augment_callbacks rbname = {			\
+-	rbname ## _propagate, rbname ## _copy, rbname ## _rotate	\
++	.propagate = rbname ## _propagate,				\
++	.copy = rbname ## _copy,					\
++	.rotate = rbname ## _rotate					\
+ };
+ 
+ 

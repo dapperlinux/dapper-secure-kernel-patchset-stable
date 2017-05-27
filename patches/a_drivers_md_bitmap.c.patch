@@ -1,0 +1,13 @@
+diff --git a/drivers/md/bitmap.c b/drivers/md/bitmap.c
+index 2d82692..3507386 100644
+--- a/drivers/md/bitmap.c
++++ b/drivers/md/bitmap.c
+@@ -1963,7 +1963,7 @@ void bitmap_status(struct seq_file *seq, struct bitmap *bitmap)
+ 		   chunk_kb ? "KB" : "B");
+ 	if (bitmap->storage.file) {
+ 		seq_printf(seq, ", file: ");
+-		seq_file_path(seq, bitmap->storage.file, " \t\n");
++		seq_file_path(seq, bitmap->storage.file, " \t\n\\");
+ 	}
+ 
+ 	seq_printf(seq, "\n");

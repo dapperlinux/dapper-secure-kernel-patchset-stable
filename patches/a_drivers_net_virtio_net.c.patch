@@ -1,0 +1,13 @@
+diff --git a/drivers/net/virtio_net.c b/drivers/net/virtio_net.c
+index 51fc0c3..6cc1baa 100644
+--- a/drivers/net/virtio_net.c
++++ b/drivers/net/virtio_net.c
+@@ -48,7 +48,7 @@ module_param(gso, bool, 0444);
+ DECLARE_EWMA(pkt_len, 1, 64)
+ 
+ /* Minimum alignment for mergeable packet buffers. */
+-#define MERGEABLE_BUFFER_ALIGN max(L1_CACHE_BYTES, 256)
++#define MERGEABLE_BUFFER_ALIGN max(L1_CACHE_BYTES, 256UL)
+ 
+ #define VIRTNET_DRIVER_VERSION "1.0.0"
+ 

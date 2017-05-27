@@ -1,0 +1,25 @@
+diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
+index 9c5b231..aaa4a5c 100644
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -588,7 +588,7 @@ static int log_store(int facility, int level,
+ 	return msg->text_len;
+ }
+ 
+-int dmesg_restrict = IS_ENABLED(CONFIG_SECURITY_DMESG_RESTRICT);
++int dmesg_restrict __read_only = IS_ENABLED(CONFIG_SECURITY_DMESG_RESTRICT);
+ 
+ static int syslog_action_restricted(int type)
+ {
+@@ -611,6 +611,11 @@ int check_syslog_permissions(int type, int source)
+ 	if (source == SYSLOG_FROM_PROC && type != SYSLOG_ACTION_OPEN)
+ 		goto ok;
+ 
++#ifdef CONFIG_GRKERNSEC_DMESG
++	if (grsec_enable_dmesg && !capable(CAP_SYSLOG) && !capable_nolog(CAP_SYS_ADMIN))
++		return -EPERM;
++#endif
++
+ 	if (syslog_action_restricted(type)) {
+ 		if (capable(CAP_SYSLOG))
+ 			goto ok;

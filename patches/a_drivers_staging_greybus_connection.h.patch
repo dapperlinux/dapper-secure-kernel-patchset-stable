@@ -1,0 +1,13 @@
+diff --git a/drivers/staging/greybus/connection.h b/drivers/staging/greybus/connection.h
+index 4d9f4c6..0f7a9a0 100644
+--- a/drivers/staging/greybus/connection.h
++++ b/drivers/staging/greybus/connection.h
+@@ -55,7 +55,7 @@ struct gb_connection {
+ 	char				name[16];
+ 	struct workqueue_struct		*wq;
+ 
+-	atomic_t			op_cycle;
++	atomic_unchecked_t		op_cycle;
+ 
+ 	void				*private;
+ 

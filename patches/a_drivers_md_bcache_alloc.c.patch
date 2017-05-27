@@ -1,0 +1,13 @@
+diff --git a/drivers/md/bcache/alloc.c b/drivers/md/bcache/alloc.c
+index ca4abe1..0b029ef 100644
+--- a/drivers/md/bcache/alloc.c
++++ b/drivers/md/bcache/alloc.c
+@@ -631,7 +631,7 @@ bool bch_alloc_sectors(struct cache_set *c, struct bkey *k, unsigned sectors,
+ 	for (i = 0; i < KEY_PTRS(&b->key); i++) {
+ 		SET_PTR_OFFSET(&b->key, i, PTR_OFFSET(&b->key, i) + sectors);
+ 
+-		atomic_long_add(sectors,
++		atomic_long_add_unchecked(sectors,
+ 				&PTR_CACHE(c, &b->key, i)->sectors_written);
+ 	}
+ 

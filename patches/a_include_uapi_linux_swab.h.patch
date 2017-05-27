@@ -1,0 +1,31 @@
+diff --git a/include/uapi/linux/swab.h b/include/uapi/linux/swab.h
+index 8f3a8f6..736a542 100644
+--- a/include/uapi/linux/swab.h
++++ b/include/uapi/linux/swab.h
+@@ -43,7 +43,7 @@
+  * ___swab16, ___swab32, ___swab64, ___swahw32, ___swahb32
+  */
+ 
+-static inline __attribute_const__ __u16 __fswab16(__u16 val)
++static inline __intentional_overflow(0) __attribute_const__ __u16 __fswab16(__u16 val)
+ {
+ #if defined (__arch_swab16)
+ 	return __arch_swab16(val);
+@@ -52,7 +52,7 @@ static inline __attribute_const__ __u16 __fswab16(__u16 val)
+ #endif
+ }
+ 
+-static inline __attribute_const__ __u32 __fswab32(__u32 val)
++static inline __intentional_overflow(0) __attribute_const__ __u32 __fswab32(__u32 val)
+ {
+ #if defined(__arch_swab32)
+ 	return __arch_swab32(val);
+@@ -61,7 +61,7 @@ static inline __attribute_const__ __u32 __fswab32(__u32 val)
+ #endif
+ }
+ 
+-static inline __attribute_const__ __u64 __fswab64(__u64 val)
++static inline __intentional_overflow(0) __attribute_const__ __u64 __fswab64(__u64 val)
+ {
+ #if defined (__arch_swab64)
+ 	return __arch_swab64(val);

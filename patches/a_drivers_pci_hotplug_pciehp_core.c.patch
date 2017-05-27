@@ -1,0 +1,13 @@
+diff --git a/drivers/pci/hotplug/pciehp_core.c b/drivers/pci/hotplug/pciehp_core.c
+index 7d32fa33..62d9b1d2 100644
+--- a/drivers/pci/hotplug/pciehp_core.c
++++ b/drivers/pci/hotplug/pciehp_core.c
+@@ -86,7 +86,7 @@ static int init_slot(struct controller *ctrl)
+ 	struct slot *slot = ctrl->slot;
+ 	struct hotplug_slot *hotplug = NULL;
+ 	struct hotplug_slot_info *info = NULL;
+-	struct hotplug_slot_ops *ops = NULL;
++	hotplug_slot_ops_no_const *ops = NULL;
+ 	char name[SLOT_NAME_SIZE];
+ 	int retval = -ENOMEM;
+ 

@@ -1,0 +1,13 @@
+diff --git a/drivers/isdn/hardware/mISDN/netjet.c b/drivers/isdn/hardware/mISDN/netjet.c
+index afde4ed..e9fcae4 100644
+--- a/drivers/isdn/hardware/mISDN/netjet.c
++++ b/drivers/isdn/hardware/mISDN/netjet.c
+@@ -111,7 +111,7 @@ _set_debug(struct tiger_hw *card)
+ }
+ 
+ static int
+-set_debug(const char *val, struct kernel_param *kp)
++set_debug(const char *val, const struct kernel_param *kp)
+ {
+ 	int ret;
+ 	struct tiger_hw *card;

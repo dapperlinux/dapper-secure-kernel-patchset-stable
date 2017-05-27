@@ -1,0 +1,13 @@
+diff --git a/drivers/net/wireless/ralink/rt2x00/rt2x00.h b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
+index f68d492..38ba52d 100644
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
+@@ -378,7 +378,7 @@ struct rt2x00_intf {
+ 	 * for hardware which doesn't support hardware
+ 	 * sequence counting.
+ 	 */
+-	atomic_t seqno;
++	atomic_unchecked_t seqno;
+ };
+ 
+ static inline struct rt2x00_intf* vif_to_intf(struct ieee80211_vif *vif)

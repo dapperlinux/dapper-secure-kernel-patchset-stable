@@ -1,0 +1,28 @@
+diff --git a/arch/x86/crypto/aes-i586-asm_32.S b/arch/x86/crypto/aes-i586-asm_32.S
+index 2849dbc..d7ff39c 100644
+--- a/arch/x86/crypto/aes-i586-asm_32.S
++++ b/arch/x86/crypto/aes-i586-asm_32.S
+@@ -38,6 +38,7 @@
+ 
+ #include <linux/linkage.h>
+ #include <asm/asm-offsets.h>
++#include <asm/alternative-asm.h>
+ 
+ #define tlen 1024   // length of each of 4 'xor' arrays (256 32-bit words)
+ 
+@@ -286,7 +287,7 @@ ENTRY(aes_enc_blk)
+ 	pop     %ebx
+ 	mov     %r0,(%ebp)
+ 	pop     %ebp
+-	ret
++	pax_ret aes_enc_blk
+ ENDPROC(aes_enc_blk)
+ 
+ // AES (Rijndael) Decryption Subroutine
+@@ -358,5 +359,5 @@ ENTRY(aes_dec_blk)
+ 	pop     %ebx
+ 	mov     %r0,(%ebp)
+ 	pop     %ebp
+-	ret
++	pax_ret aes_dec_blk
+ ENDPROC(aes_dec_blk)

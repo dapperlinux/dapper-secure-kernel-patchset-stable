@@ -1,0 +1,12 @@
+diff --git a/drivers/staging/wilc1000/host_interface.h b/drivers/staging/wilc1000/host_interface.h
+index ddfea29..5305b38 100644
+--- a/drivers/staging/wilc1000/host_interface.h
++++ b/drivers/staging/wilc1000/host_interface.h
+@@ -1,6 +1,7 @@
+ #ifndef HOST_INT_H
+ #define HOST_INT_H
+ 
++#include <linux/netdevice.h>
+ #include "coreconfigurator.h"
+ 
+ #define IP_ALEN  4

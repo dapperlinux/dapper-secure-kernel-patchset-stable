@@ -1,0 +1,13 @@
+diff --git a/drivers/isdn/i4l/isdn_common.c b/drivers/isdn/i4l/isdn_common.c
+index 9b856e1..fa03c92 100644
+--- a/drivers/isdn/i4l/isdn_common.c
++++ b/drivers/isdn/i4l/isdn_common.c
+@@ -1654,6 +1654,8 @@ isdn_ioctl(struct file *file, uint cmd, ulong arg)
+ 			} else
+ 				return -EINVAL;
+ 		case IIOCDBGVAR:
++			if (!capable(CAP_SYS_RAWIO))
++				return -EPERM;
+ 			if (arg) {
+ 				if (copy_to_user(argp, &dev, sizeof(ulong)))
+ 					return -EFAULT;

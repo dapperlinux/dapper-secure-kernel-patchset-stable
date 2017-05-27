@@ -1,0 +1,13 @@
+diff --git a/drivers/block/rbd.c b/drivers/block/rbd.c
+index 7b274ff..b7e6d24 100644
+--- a/drivers/block/rbd.c
++++ b/drivers/block/rbd.c
+@@ -65,7 +65,7 @@
+  * If the counter is already at its maximum value returns
+  * -EINVAL without updating it.
+  */
+-static int atomic_inc_return_safe(atomic_t *v)
++static int __intentional_overflow(-1) atomic_inc_return_safe(atomic_t *v)
+ {
+ 	unsigned int counter;
+ 

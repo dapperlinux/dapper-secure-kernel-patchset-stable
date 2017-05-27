@@ -1,0 +1,13 @@
+diff --git a/drivers/nvme/host/pci.c b/drivers/nvme/host/pci.c
+index 8a9c186..117d53c 100644
+--- a/drivers/nvme/host/pci.c
++++ b/drivers/nvme/host/pci.c
+@@ -2040,7 +2040,7 @@ static int nvme_resume(struct device *dev)
+ static SIMPLE_DEV_PM_OPS(nvme_dev_pm_ops, nvme_suspend, nvme_resume);
+ 
+ static pci_ers_result_t nvme_error_detected(struct pci_dev *pdev,
+-						pci_channel_state_t state)
++						enum pci_channel_state state)
+ {
+ 	struct nvme_dev *dev = pci_get_drvdata(pdev);
+ 

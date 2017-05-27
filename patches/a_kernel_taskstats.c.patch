@@ -1,0 +1,27 @@
+diff --git a/kernel/taskstats.c b/kernel/taskstats.c
+index cbb387a..99d91f6 100644
+--- a/kernel/taskstats.c
++++ b/kernel/taskstats.c
+@@ -28,9 +28,12 @@
+ #include <linux/fs.h>
+ #include <linux/file.h>
+ #include <linux/pid_namespace.h>
++#include <linux/grsecurity.h>
+ #include <net/genetlink.h>
+ #include <linux/atomic.h>
+ 
++extern int gr_is_taskstats_denied(int pid);
++
+ /*
+  * Maximum length of a cpumask that can be specified in
+  * the TASKSTATS_CMD_ATTR_REGISTER/DEREGISTER_CPUMASK attribute
+@@ -544,6 +547,9 @@ static int cmd_attr_tgid(struct genl_info *info)
+ 
+ static int taskstats_user_cmd(struct sk_buff *skb, struct genl_info *info)
+ {
++	if (gr_is_taskstats_denied(current->pid))
++		return -EACCES;
++
+ 	if (info->attrs[TASKSTATS_CMD_ATTR_REGISTER_CPUMASK])
+ 		return cmd_attr_register_cpumask(info);
+ 	else if (info->attrs[TASKSTATS_CMD_ATTR_DEREGISTER_CPUMASK])

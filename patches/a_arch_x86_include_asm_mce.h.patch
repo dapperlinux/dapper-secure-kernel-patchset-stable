@@ -1,0 +1,16 @@
+diff --git a/arch/x86/include/asm/mce.h b/arch/x86/include/asm/mce.h
+index 9bd7ff5..d9c8715 100644
+--- a/arch/x86/include/asm/mce.h
++++ b/arch/x86/include/asm/mce.h
+@@ -187,7 +187,7 @@ struct mca_msr_regs {
+ 	u32 (*status)	(int bank);
+ 	u32 (*addr)	(int bank);
+ 	u32 (*misc)	(int bank);
+-};
++} __no_const;
+ 
+ extern struct mce_vendor_flags mce_flags;
+ 
+diff --git a/arch/x86/include/asm/mman.h b/arch/x86/include/asm/mman.h
+new file mode 100644
+index 0000000..2bfd3ba

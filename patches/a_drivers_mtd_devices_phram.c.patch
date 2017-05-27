@@ -1,0 +1,13 @@
+diff --git a/drivers/mtd/devices/phram.c b/drivers/mtd/devices/phram.c
+index 8b66e52..7287696 100644
+--- a/drivers/mtd/devices/phram.c
++++ b/drivers/mtd/devices/phram.c
+@@ -266,7 +266,7 @@ static int phram_setup(const char *val)
+ 	return ret;
+ }
+ 
+-static int phram_param_call(const char *val, struct kernel_param *kp)
++static int phram_param_call(const char *val, const struct kernel_param *kp)
+ {
+ #ifdef MODULE
+ 	return phram_setup(val);

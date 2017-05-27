@@ -1,0 +1,13 @@
+diff --git a/include/keys/rxrpc-type.h b/include/keys/rxrpc-type.h
+index 5de0673..5e8f2c5 100644
+--- a/include/keys/rxrpc-type.h
++++ b/include/keys/rxrpc-type.h
+@@ -12,7 +12,7 @@
+ #ifndef _KEYS_RXRPC_TYPE_H
+ #define _KEYS_RXRPC_TYPE_H
+ 
+-#include <linux/key.h>
++#include <linux/key-type.h>
+ 
+ /*
+  * key type for AF_RXRPC keys

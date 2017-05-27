@@ -1,0 +1,13 @@
+diff --git a/drivers/xen/xen-pciback/pci_stub.c b/drivers/xen/xen-pciback/pci_stub.c
+index 6331a95..f457058 100644
+--- a/drivers/xen/xen-pciback/pci_stub.c
++++ b/drivers/xen/xen-pciback/pci_stub.c
+@@ -883,7 +883,7 @@ static pci_ers_result_t xen_pcibk_mmio_enabled(struct pci_dev *dev)
+ */
+ 
+ static pci_ers_result_t xen_pcibk_error_detected(struct pci_dev *dev,
+-	pci_channel_state_t error)
++	enum pci_channel_state error)
+ {
+ 	struct pcistub_device *psdev;
+ 	pci_ers_result_t result;

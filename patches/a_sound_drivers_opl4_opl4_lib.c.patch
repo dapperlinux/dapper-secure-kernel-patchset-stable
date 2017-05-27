@@ -1,0 +1,13 @@
+diff --git a/sound/drivers/opl4/opl4_lib.c b/sound/drivers/opl4/opl4_lib.c
+index 89c7aa0..6d75e49 100644
+--- a/sound/drivers/opl4/opl4_lib.c
++++ b/sound/drivers/opl4/opl4_lib.c
+@@ -29,7 +29,7 @@ MODULE_AUTHOR("Clemens Ladisch <clemens@ladisch.de>");
+ MODULE_DESCRIPTION("OPL4 driver");
+ MODULE_LICENSE("GPL");
+ 
+-static void inline snd_opl4_wait(struct snd_opl4 *opl4)
++static inline void snd_opl4_wait(struct snd_opl4 *opl4)
+ {
+ 	int timeout = 10;
+ 	while ((inb(opl4->fm_port) & OPL4_STATUS_BUSY) && --timeout > 0)

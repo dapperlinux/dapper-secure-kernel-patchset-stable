@@ -1,0 +1,13 @@
+diff --git a/drivers/infiniband/hw/mlx4/mlx4_ib.h b/drivers/infiniband/hw/mlx4/mlx4_ib.h
+index 35141f4..652e92e 100644
+--- a/drivers/infiniband/hw/mlx4/mlx4_ib.h
++++ b/drivers/infiniband/hw/mlx4/mlx4_ib.h
+@@ -457,7 +457,7 @@ struct mlx4_ib_demux_ctx {
+ 	struct list_head	mcg_mgid0_list;
+ 	struct workqueue_struct	*mcg_wq;
+ 	struct mlx4_ib_demux_pv_ctx **tun;
+-	atomic_t tid;
++	atomic_unchecked_t tid;
+ 	int    flushing; /* flushing the work queue */
+ };
+ 

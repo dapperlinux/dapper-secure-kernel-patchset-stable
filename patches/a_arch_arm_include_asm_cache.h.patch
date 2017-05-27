@@ -1,0 +1,16 @@
+diff --git a/arch/arm/include/asm/cache.h b/arch/arm/include/asm/cache.h
+index 75fe66b..2255c86 100644
+--- a/arch/arm/include/asm/cache.h
++++ b/arch/arm/include/asm/cache.h
+@@ -4,8 +4,10 @@
+ #ifndef __ASMARM_CACHE_H
+ #define __ASMARM_CACHE_H
+ 
++#include <linux/const.h>
++
+ #define L1_CACHE_SHIFT		CONFIG_ARM_L1_CACHE_SHIFT
+-#define L1_CACHE_BYTES		(1 << L1_CACHE_SHIFT)
++#define L1_CACHE_BYTES		(_AC(1,UL) << L1_CACHE_SHIFT)
+ 
+ /*
+  * Memory returned by kmalloc() may be used for DMA, so we must make

@@ -1,0 +1,14 @@
+diff --git a/include/asm-generic/cache.h b/include/asm-generic/cache.h
+index 1bfcfe5..e04c5c9 100644
+--- a/include/asm-generic/cache.h
++++ b/include/asm-generic/cache.h
+@@ -6,7 +6,7 @@
+  * cache lines need to provide their own cache.h.
+  */
+ 
+-#define L1_CACHE_SHIFT		5
+-#define L1_CACHE_BYTES		(1 << L1_CACHE_SHIFT)
++#define L1_CACHE_SHIFT		5UL
++#define L1_CACHE_BYTES		(1UL << L1_CACHE_SHIFT)
+ 
+ #endif /* __ASM_GENERIC_CACHE_H */

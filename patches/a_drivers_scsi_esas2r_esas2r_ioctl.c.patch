@@ -1,0 +1,13 @@
+diff --git a/drivers/scsi/esas2r/esas2r_ioctl.c b/drivers/scsi/esas2r/esas2r_ioctl.c
+index 3e84834..34976f9 100644
+--- a/drivers/scsi/esas2r/esas2r_ioctl.c
++++ b/drivers/scsi/esas2r/esas2r_ioctl.c
+@@ -1301,7 +1301,7 @@ int esas2r_ioctl_handler(void *hostdata, int cmd, void __user *arg)
+ 	ioctl = kzalloc(sizeof(struct atto_express_ioctl), GFP_KERNEL);
+ 	if (ioctl == NULL) {
+ 		esas2r_log(ESAS2R_LOG_WARN,
+-			   "ioctl_handler kzalloc failed for %d bytes",
++			   "ioctl_handler kzalloc failed for %lu bytes",
+ 			   sizeof(struct atto_express_ioctl));
+ 		return -ENOMEM;
+ 	}

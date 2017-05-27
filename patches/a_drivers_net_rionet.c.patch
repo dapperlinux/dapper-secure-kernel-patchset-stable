@@ -1,0 +1,13 @@
+diff --git a/drivers/net/rionet.c b/drivers/net/rionet.c
+index a31f461..949a77a 100644
+--- a/drivers/net/rionet.c
++++ b/drivers/net/rionet.c
+@@ -170,7 +170,7 @@ static int rionet_queue_tx_msg(struct sk_buff *skb, struct net_device *ndev,
+ 	return 0;
+ }
+ 
+-static int rionet_start_xmit(struct sk_buff *skb, struct net_device *ndev)
++static netdev_tx_t rionet_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ {
+ 	int i;
+ 	struct rionet_private *rnet = netdev_priv(ndev);

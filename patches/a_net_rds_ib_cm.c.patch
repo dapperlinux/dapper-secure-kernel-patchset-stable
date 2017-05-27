@@ -1,0 +1,13 @@
+diff --git a/net/rds/ib_cm.c b/net/rds/ib_cm.c
+index 5b2ab95..be81157 100644
+--- a/net/rds/ib_cm.c
++++ b/net/rds/ib_cm.c
+@@ -833,7 +833,7 @@ void rds_ib_conn_path_shutdown(struct rds_conn_path *cp)
+ 	/* Clear the ACK state */
+ 	clear_bit(IB_ACK_IN_FLIGHT, &ic->i_ack_flags);
+ #ifdef KERNEL_HAS_ATOMIC64
+-	atomic64_set(&ic->i_ack_next, 0);
++	atomic64_set_unchecked(&ic->i_ack_next, 0);
+ #else
+ 	ic->i_ack_next = 0;
+ #endif

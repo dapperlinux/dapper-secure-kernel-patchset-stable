@@ -1,0 +1,13 @@
+diff --git a/drivers/net/macsec.c b/drivers/net/macsec.c
+index d2e61e0..8c0d77a 100644
+--- a/drivers/net/macsec.c
++++ b/drivers/net/macsec.c
+@@ -3389,7 +3389,7 @@ static int macsec_fill_info(struct sk_buff *skb,
+ 	return -EMSGSIZE;
+ }
+ 
+-static struct rtnl_link_ops macsec_link_ops __read_mostly = {
++static struct rtnl_link_ops macsec_link_ops = {
+ 	.kind		= "macsec",
+ 	.priv_size	= sizeof(struct macsec_dev),
+ 	.maxtype	= IFLA_MACSEC_MAX,

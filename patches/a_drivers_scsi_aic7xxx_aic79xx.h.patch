@@ -1,0 +1,13 @@
+diff --git a/drivers/scsi/aic7xxx/aic79xx.h b/drivers/scsi/aic7xxx/aic79xx.h
+index d47b527..f2c4a89 100644
+--- a/drivers/scsi/aic7xxx/aic79xx.h
++++ b/drivers/scsi/aic7xxx/aic79xx.h
+@@ -1046,7 +1046,7 @@ typedef enum {
+ 
+ typedef uint8_t ahd_mode_state;
+ 
+-typedef void ahd_callback_t (void *);
++typedef void ahd_linux_callback_t (u_long);
+ 
+ struct ahd_completion
+ {

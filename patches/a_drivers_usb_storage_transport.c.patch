@@ -1,0 +1,13 @@
+diff --git a/drivers/usb/storage/transport.c b/drivers/usb/storage/transport.c
+index 1a59f33..35f4c56 100644
+--- a/drivers/usb/storage/transport.c
++++ b/drivers/usb/storage/transport.c
+@@ -709,7 +709,7 @@ void usb_stor_invoke_transport(struct scsi_cmnd *srb, struct us_data *us)
+ 	if (need_auto_sense) {
+ 		int temp_result;
+ 		struct scsi_eh_save ses;
+-		int sense_size = US_SENSE_SIZE;
++		unsigned int sense_size = US_SENSE_SIZE;
+ 		struct scsi_sense_hdr sshdr;
+ 		const u8 *scdd;
+ 		u8 fm_ili;

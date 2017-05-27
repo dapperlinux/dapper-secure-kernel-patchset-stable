@@ -1,0 +1,13 @@
+diff --git a/include/linux/sonet.h b/include/linux/sonet.h
+index 680f9a3..f13aeb0 100644
+--- a/include/linux/sonet.h
++++ b/include/linux/sonet.h
+@@ -7,7 +7,7 @@
+ #include <uapi/linux/sonet.h>
+ 
+ struct k_sonet_stats {
+-#define __HANDLE_ITEM(i) atomic_t i
++#define __HANDLE_ITEM(i) atomic_unchecked_t i
+ 	__SONET_ITEMS
+ #undef __HANDLE_ITEM
+ };

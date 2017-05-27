@@ -1,0 +1,13 @@
+diff --git a/include/linux/fscache-cache.h b/include/linux/fscache-cache.h
+index 13ba552..c4db760 100644
+--- a/include/linux/fscache-cache.h
++++ b/include/linux/fscache-cache.h
+@@ -117,7 +117,7 @@ struct fscache_operation {
+ 	fscache_operation_release_t release;
+ };
+ 
+-extern atomic_t fscache_op_debug_id;
++extern atomic_unchecked_t fscache_op_debug_id;
+ extern void fscache_op_work_func(struct work_struct *work);
+ 
+ extern void fscache_enqueue_operation(struct fscache_operation *);

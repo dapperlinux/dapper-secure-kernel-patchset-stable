@@ -1,0 +1,13 @@
+diff --git a/net/decnet/dn_dev.c b/net/decnet/dn_dev.c
+index b2c26b0..41f803e 100644
+--- a/net/decnet/dn_dev.c
++++ b/net/decnet/dn_dev.c
+@@ -201,7 +201,7 @@ static struct dn_dev_sysctl_table {
+ 		.extra1 = &min_t3,
+ 		.extra2 = &max_t3
+ 	},
+-	{0}
++	{ }
+ 	},
+ };
+ 

@@ -1,0 +1,13 @@
+diff --git a/net/unix/sysctl_net_unix.c b/net/unix/sysctl_net_unix.c
+index b3d5150..ff3a837 100644
+--- a/net/unix/sysctl_net_unix.c
++++ b/net/unix/sysctl_net_unix.c
+@@ -28,7 +28,7 @@ static struct ctl_table unix_table[] = {
+ 
+ int __net_init unix_sysctl_register(struct net *net)
+ {
+-	struct ctl_table *table;
++	ctl_table_no_const *table;
+ 
+ 	table = kmemdup(unix_table, sizeof(unix_table), GFP_KERNEL);
+ 	if (table == NULL)

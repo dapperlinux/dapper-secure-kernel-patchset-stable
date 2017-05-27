@@ -1,0 +1,13 @@
+diff --git a/arch/sparc/mm/Makefile b/arch/sparc/mm/Makefile
+index 30c3ecc..736f015 100644
+--- a/arch/sparc/mm/Makefile
++++ b/arch/sparc/mm/Makefile
+@@ -2,7 +2,7 @@
+ #
+ 
+ asflags-y := -ansi
+-ccflags-y := -Werror
++#ccflags-y := -Werror
+ 
+ obj-$(CONFIG_SPARC64)   += ultra.o tlb.o tsb.o gup.o
+ obj-y                   += fault_$(BITS).o

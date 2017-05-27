@@ -1,0 +1,12 @@
+diff --git a/arch/metag/mm/hugetlbpage.c b/arch/metag/mm/hugetlbpage.c
+index db1b7da..8e13684 100644
+--- a/arch/metag/mm/hugetlbpage.c
++++ b/arch/metag/mm/hugetlbpage.c
+@@ -189,6 +189,7 @@ hugetlb_get_unmapped_area_new_pmd(unsigned long len)
+ 	info.high_limit = TASK_SIZE;
+ 	info.align_mask = PAGE_MASK & HUGEPT_MASK;
+ 	info.align_offset = 0;
++	info.threadstack_offset = 0;
+ 	return vm_unmapped_area(&info);
+ }
+ 

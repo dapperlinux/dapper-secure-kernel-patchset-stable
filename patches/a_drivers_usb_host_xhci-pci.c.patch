@@ -1,0 +1,13 @@
+diff --git a/drivers/usb/host/xhci-pci.c b/drivers/usb/host/xhci-pci.c
+index 954abfd..fca40d7 100644
+--- a/drivers/usb/host/xhci-pci.c
++++ b/drivers/usb/host/xhci-pci.c
+@@ -32,7 +32,7 @@
+ #define SSIC_PORT_CFG2		0x880c
+ #define SSIC_PORT_CFG2_OFFSET	0x30
+ #define PROG_DONE		(1 << 30)
+-#define SSIC_PORT_UNUSED	(1 << 31)
++#define SSIC_PORT_UNUSED	(1U << 31)
+ 
+ /* Device for a quirk */
+ #define PCI_VENDOR_ID_FRESCO_LOGIC	0x1b73

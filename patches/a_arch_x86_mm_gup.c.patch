@@ -1,0 +1,24 @@
+diff --git a/arch/x86/mm/gup.c b/arch/x86/mm/gup.c
+index 1680768..7b7d958 100644
+--- a/arch/x86/mm/gup.c
++++ b/arch/x86/mm/gup.c
+@@ -317,7 +317,7 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 	addr = start;
+ 	len = (unsigned long) nr_pages << PAGE_SHIFT;
+ 	end = start + len;
+-	if (unlikely(!access_ok(write ? VERIFY_WRITE : VERIFY_READ,
++	if (unlikely(!access_ok_noprefault(write ? VERIFY_WRITE : VERIFY_READ,
+ 					(void __user *)start, len)))
+ 		return 0;
+ 
+@@ -393,6 +393,10 @@ int get_user_pages_fast(unsigned long start, int nr_pages, int write,
+ 		goto slow_irqon;
+ #endif
+ 
++	if (unlikely(!access_ok_noprefault(write ? VERIFY_WRITE : VERIFY_READ,
++					(void __user *)start, len)))
++		return 0;
++
+ 	/*
+ 	 * XXX: batch / limit 'nr', to avoid large irq off latency
+ 	 * needs some instrumenting to determine the common sizes used by

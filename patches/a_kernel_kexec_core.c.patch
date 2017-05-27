@@ -1,0 +1,13 @@
+diff --git a/kernel/kexec_core.c b/kernel/kexec_core.c
+index 5616755..0affaae 100644
+--- a/kernel/kexec_core.c
++++ b/kernel/kexec_core.c
+@@ -871,7 +871,7 @@ int kimage_load_segment(struct kimage *image,
+ 
+ struct kimage *kexec_image;
+ struct kimage *kexec_crash_image;
+-int kexec_load_disabled;
++int kexec_load_disabled __read_only;
+ 
+ /*
+  * No panic_cpu check version of crash_kexec().  This function is called

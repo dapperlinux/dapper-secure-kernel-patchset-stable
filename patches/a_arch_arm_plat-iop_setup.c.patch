@@ -1,0 +1,13 @@
+diff --git a/arch/arm/plat-iop/setup.c b/arch/arm/plat-iop/setup.c
+index 8151bde..9be301f 100644
+--- a/arch/arm/plat-iop/setup.c
++++ b/arch/arm/plat-iop/setup.c
+@@ -24,7 +24,7 @@ static struct map_desc iop3xx_std_desc[] __initdata = {
+ 		.virtual	= IOP3XX_PERIPHERAL_VIRT_BASE,
+ 		.pfn		= __phys_to_pfn(IOP3XX_PERIPHERAL_PHYS_BASE),
+ 		.length		= IOP3XX_PERIPHERAL_SIZE,
+-		.type		= MT_UNCACHED,
++		.type		= MT_UNCACHED_RW,
+ 	},
+ };
+ 

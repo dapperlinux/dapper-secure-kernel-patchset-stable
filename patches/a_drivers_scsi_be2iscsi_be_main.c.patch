@@ -1,0 +1,13 @@
+diff --git a/drivers/scsi/be2iscsi/be_main.c b/drivers/scsi/be2iscsi/be_main.c
+index d9239c2..dc556c3 100644
+--- a/drivers/scsi/be2iscsi/be_main.c
++++ b/drivers/scsi/be2iscsi/be_main.c
+@@ -5547,7 +5547,7 @@ static void beiscsi_recover_port(struct work_struct *work)
+ }
+ 
+ static pci_ers_result_t beiscsi_eeh_err_detected(struct pci_dev *pdev,
+-		pci_channel_state_t state)
++		enum pci_channel_state state)
+ {
+ 	struct beiscsi_hba *phba = NULL;
+ 

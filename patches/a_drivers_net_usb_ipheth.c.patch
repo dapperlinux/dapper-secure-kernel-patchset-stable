@@ -1,0 +1,13 @@
+diff --git a/drivers/net/usb/ipheth.c b/drivers/net/usb/ipheth.c
+index 76465b1..2d72355 100644
+--- a/drivers/net/usb/ipheth.c
++++ b/drivers/net/usb/ipheth.c
+@@ -400,7 +400,7 @@ static int ipheth_close(struct net_device *net)
+ 	return 0;
+ }
+ 
+-static int ipheth_tx(struct sk_buff *skb, struct net_device *net)
++static netdev_tx_t ipheth_tx(struct sk_buff *skb, struct net_device *net)
+ {
+ 	struct ipheth_device *dev = netdev_priv(net);
+ 	struct usb_device *udev = dev->udev;

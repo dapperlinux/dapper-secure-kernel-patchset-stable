@@ -1,0 +1,13 @@
+diff --git a/drivers/usb/storage/usb.h b/drivers/usb/storage/usb.h
+index 8fae28b..8b4bfec 100644
+--- a/drivers/usb/storage/usb.h
++++ b/drivers/usb/storage/usb.h
+@@ -64,7 +64,7 @@ struct us_unusual_dev {
+ 	__u8  useProtocol;
+ 	__u8  useTransport;
+ 	int (*initFunction)(struct us_data *);
+-};
++} __do_const;
+ 
+ 
+ /* Dynamic bitflag definitions (us->dflags): used in set_bit() etc. */

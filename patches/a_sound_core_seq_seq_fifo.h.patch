@@ -1,0 +1,13 @@
+diff --git a/sound/core/seq/seq_fifo.h b/sound/core/seq/seq_fifo.h
+index 062c446..a4b6f4c 100644
+--- a/sound/core/seq/seq_fifo.h
++++ b/sound/core/seq/seq_fifo.h
+@@ -35,7 +35,7 @@ struct snd_seq_fifo {
+ 	spinlock_t lock;
+ 	snd_use_lock_t use_lock;
+ 	wait_queue_head_t input_sleep;
+-	atomic_t overflow;
++	atomic_unchecked_t overflow;
+ 
+ };
+ 

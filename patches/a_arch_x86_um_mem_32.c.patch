@@ -1,0 +1,13 @@
+diff --git a/arch/x86/um/mem_32.c b/arch/x86/um/mem_32.c
+index 744afdc..a0b8a0d 100644
+--- a/arch/x86/um/mem_32.c
++++ b/arch/x86/um/mem_32.c
+@@ -20,7 +20,7 @@ static int __init gate_vma_init(void)
+ 	gate_vma.vm_start = FIXADDR_USER_START;
+ 	gate_vma.vm_end = FIXADDR_USER_END;
+ 	gate_vma.vm_flags = VM_READ | VM_MAYREAD | VM_EXEC | VM_MAYEXEC;
+-	gate_vma.vm_page_prot = __P101;
++	gate_vma.vm_page_prot = vm_get_page_prot(gate_vma.vm_flags);
+ 
+ 	return 0;
+ }

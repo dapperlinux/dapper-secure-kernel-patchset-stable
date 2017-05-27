@@ -1,0 +1,13 @@
+diff --git a/include/linux/devfreq.h b/include/linux/devfreq.h
+index e0acb0e..7627e4b 100644
+--- a/include/linux/devfreq.h
++++ b/include/linux/devfreq.h
+@@ -127,7 +127,7 @@ struct devfreq_governor {
+ 	int (*get_target_freq)(struct devfreq *this, unsigned long *freq);
+ 	int (*event_handler)(struct devfreq *devfreq,
+ 				unsigned int event, void *data);
+-};
++} __do_const;
+ 
+ /**
+  * struct devfreq - Device devfreq structure

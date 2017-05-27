@@ -1,0 +1,22 @@
+diff --git a/ipc/msgutil.c b/ipc/msgutil.c
+index bf74eaa..dc6dbf7 100644
+--- a/ipc/msgutil.c
++++ b/ipc/msgutil.c
+@@ -53,7 +53,7 @@ static struct msg_msg *alloc_msg(size_t len)
+ 	size_t alen;
+ 
+ 	alen = min(len, DATALEN_MSG);
+-	msg = kmalloc(sizeof(*msg) + alen, GFP_KERNEL_ACCOUNT);
++	msg = kmalloc(sizeof(*msg) + alen, GFP_KERNEL_ACCOUNT|GFP_USERCOPY);
+ 	if (msg == NULL)
+ 		return NULL;
+ 
+@@ -65,7 +65,7 @@ static struct msg_msg *alloc_msg(size_t len)
+ 	while (len > 0) {
+ 		struct msg_msgseg *seg;
+ 		alen = min(len, DATALEN_SEG);
+-		seg = kmalloc(sizeof(*seg) + alen, GFP_KERNEL_ACCOUNT);
++		seg = kmalloc(sizeof(*seg) + alen, GFP_KERNEL_ACCOUNT|GFP_USERCOPY);
+ 		if (seg == NULL)
+ 			goto out_err;
+ 		*pseg = seg;

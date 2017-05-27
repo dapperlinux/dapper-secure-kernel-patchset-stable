@@ -1,0 +1,13 @@
+diff --git a/arch/powerpc/include/asm/book3s/32/pgtable.h b/arch/powerpc/include/asm/book3s/32/pgtable.h
+index 6b8b2d5..cf17a29 100644
+--- a/arch/powerpc/include/asm/book3s/32/pgtable.h
++++ b/arch/powerpc/include/asm/book3s/32/pgtable.h
+@@ -227,7 +227,7 @@ static inline void __ptep_set_access_flags(struct mm_struct *mm,
+ 					   pte_t *ptep, pte_t entry)
+ {
+ 	unsigned long set = pte_val(entry) &
+-		(_PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_RW | _PAGE_EXEC);
++		(_PAGE_DIRTY | _PAGE_ACCESSED | _PAGE_RW | _PAGE_EXEC | _PAGE_NX);
+ 	unsigned long clr = ~pte_val(entry) & _PAGE_RO;
+ 
+ 	pte_update(ptep, clr, set);

@@ -1,0 +1,12 @@
+diff --git a/arch/score/include/asm/exec.h b/arch/score/include/asm/exec.h
+index f9f3cd5..58ff438 100644
+--- a/arch/score/include/asm/exec.h
++++ b/arch/score/include/asm/exec.h
+@@ -1,6 +1,6 @@
+ #ifndef _ASM_SCORE_EXEC_H
+ #define _ASM_SCORE_EXEC_H
+ 
+-extern unsigned long arch_align_stack(unsigned long sp);
++#define arch_align_stack(x) (x)
+ 
+ #endif /* _ASM_SCORE_EXEC_H */

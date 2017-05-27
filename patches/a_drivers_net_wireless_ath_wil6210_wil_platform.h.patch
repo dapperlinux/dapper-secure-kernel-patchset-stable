@@ -1,0 +1,13 @@
+diff --git a/drivers/net/wireless/ath/wil6210/wil_platform.h b/drivers/net/wireless/ath/wil6210/wil_platform.h
+index f8c4117..72c917e 100644
+--- a/drivers/net/wireless/ath/wil6210/wil_platform.h
++++ b/drivers/net/wireless/ath/wil6210/wil_platform.h
+@@ -37,7 +37,7 @@ struct wil_platform_ops {
+ 	int (*resume)(void *handle);
+ 	void (*uninit)(void *handle);
+ 	int (*notify)(void *handle, enum wil_platform_event evt);
+-};
++} __no_const;
+ 
+ /**
+  * struct wil_platform_rops - wil platform module callbacks from

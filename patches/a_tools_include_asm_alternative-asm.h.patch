@@ -1,0 +1,12 @@
+diff --git a/tools/include/asm/alternative-asm.h b/tools/include/asm/alternative-asm.h
+index 2a4d1bf..68e0eec 100644
+--- a/tools/include/asm/alternative-asm.h
++++ b/tools/include/asm/alternative-asm.h
+@@ -6,4 +6,7 @@
+ #define altinstruction_entry #
+ #define ALTERNATIVE_2 #
+ 
++	.macro pax_force_retaddr rip=0, reload=0
++	.endm
++
+ #endif

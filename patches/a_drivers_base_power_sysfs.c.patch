@@ -1,0 +1,13 @@
+diff --git a/drivers/base/power/sysfs.c b/drivers/base/power/sysfs.c
+index a7b4679..d302490 100644
+--- a/drivers/base/power/sysfs.c
++++ b/drivers/base/power/sysfs.c
+@@ -181,7 +181,7 @@ static ssize_t rtpm_status_show(struct device *dev,
+ 			return -EIO;
+ 		}
+ 	}
+-	return sprintf(buf, p);
++	return sprintf(buf, "%s", p);
+ }
+ 
+ static DEVICE_ATTR(runtime_status, 0444, rtpm_status_show, NULL);

@@ -1,0 +1,13 @@
+diff --git a/include/net/inet_connection_sock.h b/include/net/inet_connection_sock.h
+index 197a30d..677cd909 100644
+--- a/include/net/inet_connection_sock.h
++++ b/include/net/inet_connection_sock.h
+@@ -65,7 +65,7 @@ struct inet_connection_sock_af_ops {
+ 	int	    (*bind_conflict)(const struct sock *sk,
+ 				     const struct inet_bind_bucket *tb, bool relax);
+ 	void	    (*mtu_reduced)(struct sock *sk);
+-};
++} __do_const;
+ 
+ /** inet_connection_sock - INET connection oriented sock
+  *

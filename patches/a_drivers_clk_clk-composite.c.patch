@@ -1,0 +1,13 @@
+diff --git a/drivers/clk/clk-composite.c b/drivers/clk/clk-composite.c
+index 00269de..3e17e60 100644
+--- a/drivers/clk/clk-composite.c
++++ b/drivers/clk/clk-composite.c
+@@ -221,7 +221,7 @@ struct clk_hw *clk_hw_register_composite(struct device *dev, const char *name,
+ 	struct clk_hw *hw;
+ 	struct clk_init_data init;
+ 	struct clk_composite *composite;
+-	struct clk_ops *clk_composite_ops;
++	clk_ops_no_const *clk_composite_ops;
+ 	int ret;
+ 
+ 	composite = kzalloc(sizeof(*composite), GFP_KERNEL);

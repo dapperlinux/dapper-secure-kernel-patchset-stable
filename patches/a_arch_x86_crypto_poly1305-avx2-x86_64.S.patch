@@ -1,0 +1,19 @@
+diff --git a/arch/x86/crypto/poly1305-avx2-x86_64.S b/arch/x86/crypto/poly1305-avx2-x86_64.S
+index eff2f41..932718e 100644
+--- a/arch/x86/crypto/poly1305-avx2-x86_64.S
++++ b/arch/x86/crypto/poly1305-avx2-x86_64.S
+@@ -10,6 +10,7 @@
+  */
+ 
+ #include <linux/linkage.h>
++#include <asm/alternative-asm.h>
+ 
+ .data
+ .align 32
+@@ -382,5 +383,5 @@ ENTRY(poly1305_4block_avx2)
+ 	pop		%r13
+ 	pop		%r12
+ 	pop		%rbx
+-	ret
++	pax_ret poly1305_4block_avx2
+ ENDPROC(poly1305_4block_avx2)

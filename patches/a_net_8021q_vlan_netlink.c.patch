@@ -1,0 +1,13 @@
+diff --git a/net/8021q/vlan_netlink.c b/net/8021q/vlan_netlink.c
+index 1270207..d165bb5 100644
+--- a/net/8021q/vlan_netlink.c
++++ b/net/8021q/vlan_netlink.c
+@@ -248,7 +248,7 @@ static struct net *vlan_get_link_net(const struct net_device *dev)
+ 	return dev_net(real_dev);
+ }
+ 
+-struct rtnl_link_ops vlan_link_ops __read_mostly = {
++struct rtnl_link_ops vlan_link_ops = {
+ 	.kind		= "vlan",
+ 	.maxtype	= IFLA_VLAN_MAX,
+ 	.policy		= vlan_policy,

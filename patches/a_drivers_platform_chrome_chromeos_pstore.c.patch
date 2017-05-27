@@ -1,0 +1,13 @@
+diff --git a/drivers/platform/chrome/chromeos_pstore.c b/drivers/platform/chrome/chromeos_pstore.c
+index 308a853..b0693fd 100644
+--- a/drivers/platform/chrome/chromeos_pstore.c
++++ b/drivers/platform/chrome/chromeos_pstore.c
+@@ -14,7 +14,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/pstore_ram.h>
+ 
+-static struct dmi_system_id chromeos_pstore_dmi_table[] __initdata = {
++static const struct dmi_system_id chromeos_pstore_dmi_table[] __initconst = {
+ 	{
+ 		/*
+ 		 * Today all Chromebooks/boxes ship with Google_* as version and

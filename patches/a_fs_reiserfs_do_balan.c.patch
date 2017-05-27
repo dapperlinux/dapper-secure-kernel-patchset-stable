@@ -1,0 +1,13 @@
+diff --git a/fs/reiserfs/do_balan.c b/fs/reiserfs/do_balan.c
+index 9c02d96..6562c10 100644
+--- a/fs/reiserfs/do_balan.c
++++ b/fs/reiserfs/do_balan.c
+@@ -1887,7 +1887,7 @@ void do_balance(struct tree_balance *tb, struct item_head *ih,
+ 		return;
+ 	}
+ 
+-	atomic_inc(&fs_generation(tb->tb_sb));
++	atomic_inc_unchecked(&fs_generation(tb->tb_sb));
+ 	do_balance_starts(tb);
+ 
+ 	/*

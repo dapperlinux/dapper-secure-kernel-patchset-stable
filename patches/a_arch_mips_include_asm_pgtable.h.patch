@@ -1,0 +1,14 @@
+diff --git a/arch/mips/include/asm/pgtable.h b/arch/mips/include/asm/pgtable.h
+index 9e9e94415..43354f5 100644
+--- a/arch/mips/include/asm/pgtable.h
++++ b/arch/mips/include/asm/pgtable.h
+@@ -20,6 +20,9 @@
+ #include <asm/io.h>
+ #include <asm/pgtable-bits.h>
+ 
++#define ktla_ktva(addr)		(addr)
++#define ktva_ktla(addr)		(addr)
++
+ struct mm_struct;
+ struct vm_area_struct;
+ 

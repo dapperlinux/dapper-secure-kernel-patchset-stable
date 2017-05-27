@@ -1,0 +1,13 @@
+diff --git a/drivers/usb/host/ohci-hcd.c b/drivers/usb/host/ohci-hcd.c
+index 86612ac..d432505 100644
+--- a/drivers/usb/host/ohci-hcd.c
++++ b/drivers/usb/host/ohci-hcd.c
+@@ -444,7 +444,7 @@ static int ohci_init (struct ohci_hcd *ohci)
+ 	struct usb_hcd *hcd = ohci_to_hcd(ohci);
+ 
+ 	/* Accept arbitrarily long scatter-gather lists */
+-	hcd->self.sg_tablesize = ~0;
++	hcd->self.sg_tablesize = SG_ALL;
+ 
+ 	if (distrust_firmware)
+ 		ohci->flags |= OHCI_QUIRK_HUB_POWER;

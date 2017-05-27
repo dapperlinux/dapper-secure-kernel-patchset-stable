@@ -1,0 +1,13 @@
+diff --git a/include/linux/usb/renesas_usbhs.h b/include/linux/usb/renesas_usbhs.h
+index 00a47d0..ed482765 100644
+--- a/include/linux/usb/renesas_usbhs.h
++++ b/include/linux/usb/renesas_usbhs.h
+@@ -39,7 +39,7 @@ enum {
+  */
+ struct renesas_usbhs_driver_callback {
+ 	int (*notify_hotplug)(struct platform_device *pdev);
+-};
++} __no_const;
+ 
+ /*
+  * callback functions for platform

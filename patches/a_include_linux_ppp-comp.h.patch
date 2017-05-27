@@ -1,0 +1,13 @@
+diff --git a/include/linux/ppp-comp.h b/include/linux/ppp-comp.h
+index 4ea1d37..80f4b33 100644
+--- a/include/linux/ppp-comp.h
++++ b/include/linux/ppp-comp.h
+@@ -84,7 +84,7 @@ struct compressor {
+ 	struct module *owner;
+ 	/* Extra skb space needed by the compressor algorithm */
+ 	unsigned int comp_extra;
+-};
++} __do_const;
+ 
+ /*
+  * The return value from decompress routine is the length of the

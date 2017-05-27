@@ -1,0 +1,13 @@
+diff --git a/include/crypto/algapi.h b/include/crypto/algapi.h
+index 404e955..5fa5211 100644
+--- a/include/crypto/algapi.h
++++ b/include/crypto/algapi.h
+@@ -37,7 +37,7 @@ struct crypto_type {
+ 	unsigned int maskclear;
+ 	unsigned int maskset;
+ 	unsigned int tfmsize;
+-};
++} __do_const;
+ 
+ struct crypto_instance {
+ 	struct crypto_alg alg;

@@ -1,0 +1,13 @@
+diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
+index 34cce96..c925afb 100644
+--- a/include/linux/pid_namespace.h
++++ b/include/linux/pid_namespace.h
+@@ -46,7 +46,7 @@ struct pid_namespace {
+ 	int hide_pid;
+ 	int reboot;	/* group exit code if this pidns was rebooted */
+ 	struct ns_common ns;
+-};
++} __randomize_layout;
+ 
+ extern struct pid_namespace init_pid_ns;
+ 

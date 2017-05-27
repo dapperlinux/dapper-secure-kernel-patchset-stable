@@ -1,0 +1,13 @@
+diff --git a/include/linux/proc_ns.h b/include/linux/proc_ns.h
+index 12cb8bd..00d5162 100644
+--- a/include/linux/proc_ns.h
++++ b/include/linux/proc_ns.h
+@@ -20,7 +20,7 @@ struct proc_ns_operations {
+ 	int (*install)(struct nsproxy *nsproxy, struct ns_common *ns);
+ 	struct user_namespace *(*owner)(struct ns_common *ns);
+ 	struct ns_common *(*get_parent)(struct ns_common *ns);
+-};
++} __do_const __randomize_layout;
+ 
+ extern const struct proc_ns_operations netns_operations;
+ extern const struct proc_ns_operations utsns_operations;

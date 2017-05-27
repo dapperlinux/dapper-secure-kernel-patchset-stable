@@ -1,0 +1,26 @@
+--- /dev/null
++++ b/grsecurity/grsec_proc.c
+@@ -0,0 +1,20 @@
++#include <linux/kernel.h>
++#include <linux/sched.h>
++#include <linux/grsecurity.h>
++#include <linux/grinternal.h>
++
++int gr_proc_is_restricted(void)
++{
++#if defined(CONFIG_GRKERNSEC_PROC_USER) || defined(CONFIG_GRKERNSEC_PROC_USERGROUP)
++	const struct cred *cred = current_cred();
++#endif
++
++#ifdef CONFIG_GRKERNSEC_PROC_USER
++	if (!uid_eq(cred->fsuid, GLOBAL_ROOT_UID))
++		return -EACCES;
++#elif defined(CONFIG_GRKERNSEC_PROC_USERGROUP)
++	if (!uid_eq(cred->fsuid, GLOBAL_ROOT_UID) && !in_group_p(grsec_proc_gid))
++		return -EACCES;
++#endif
++	return 0;
++}
+diff --git a/grsecurity/grsec_ptrace.c b/grsecurity/grsec_ptrace.c
+new file mode 100644
+index 0000000..304c518

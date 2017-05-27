@@ -1,0 +1,13 @@
+diff --git a/net/netfilter/xt_recent.c b/net/netfilter/xt_recent.c
+index e3b7a09..ee271ac 100644
+--- a/net/netfilter/xt_recent.c
++++ b/net/netfilter/xt_recent.c
+@@ -639,7 +639,7 @@ static int __net_init recent_proc_net_init(struct net *net)
+ {
+ 	struct recent_net *recent_net = recent_pernet(net);
+ 
+-	recent_net->xt_recent = proc_mkdir("xt_recent", net->proc_net);
++	recent_net->xt_recent = proc_mkdir_restrict("xt_recent", net->proc_net);
+ 	if (!recent_net->xt_recent)
+ 		return -ENOMEM;
+ 	return 0;

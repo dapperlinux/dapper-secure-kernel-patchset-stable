@@ -1,0 +1,12 @@
+diff --git a/drivers/mtd/nand/denali.c b/drivers/mtd/nand/denali.c
+index 0476ae8..8d320ef 100644
+--- a/drivers/mtd/nand/denali.c
++++ b/drivers/mtd/nand/denali.c
+@@ -24,6 +24,7 @@
+ #include <linux/slab.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/module.h>
++#include <linux/slab.h>
+ 
+ #include "denali.h"
+ 

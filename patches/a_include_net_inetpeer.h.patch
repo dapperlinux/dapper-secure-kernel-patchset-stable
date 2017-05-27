@@ -1,0 +1,13 @@
+diff --git a/include/net/inetpeer.h b/include/net/inetpeer.h
+index 235c781..160d4a3 100644
+--- a/include/net/inetpeer.h
++++ b/include/net/inetpeer.h
+@@ -52,7 +52,7 @@ struct inet_peer {
+ 	 */
+ 	union {
+ 		struct {
+-			atomic_t			rid;		/* Frag reception counter */
++			atomic_unchecked_t		rid;		/* Frag reception counter */
+ 		};
+ 		struct rcu_head         rcu;
+ 		struct inet_peer	*gc_next;

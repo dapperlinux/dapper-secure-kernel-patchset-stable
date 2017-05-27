@@ -1,0 +1,13 @@
+diff --git a/drivers/tty/serial/8250/8250_pci.c b/drivers/tty/serial/8250/8250_pci.c
+index 6e3e636..9064253 100644
+--- a/drivers/tty/serial/8250/8250_pci.c
++++ b/drivers/tty/serial/8250/8250_pci.c
+@@ -5588,7 +5588,7 @@ static struct pci_device_id serial_pci_tbl[] = {
+ };
+ 
+ static pci_ers_result_t serial8250_io_error_detected(struct pci_dev *dev,
+-						pci_channel_state_t state)
++						enum pci_channel_state state)
+ {
+ 	struct serial_private *priv = pci_get_drvdata(dev);
+ 

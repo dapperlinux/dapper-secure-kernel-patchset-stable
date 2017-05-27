@@ -1,0 +1,15 @@
+diff --git a/arch/x86/include/asm/hw_irq.h b/arch/x86/include/asm/hw_irq.h
+index b90e105..30a5950 100644
+--- a/arch/x86/include/asm/hw_irq.h
++++ b/arch/x86/include/asm/hw_irq.h
+@@ -164,8 +164,8 @@ static inline void unlock_vector_lock(void) {}
+ #endif	/* CONFIG_X86_LOCAL_APIC */
+ 
+ /* Statistics */
+-extern atomic_t irq_err_count;
+-extern atomic_t irq_mis_count;
++extern atomic_unchecked_t irq_err_count;
++extern atomic_unchecked_t irq_mis_count;
+ 
+ extern void elcr_set_level_irq(unsigned int irq);
+ 

@@ -1,0 +1,13 @@
+diff --git a/include/linux/extcon.h b/include/linux/extcon.h
+index b871c0c..3e43dba 100644
+--- a/include/linux/extcon.h
++++ b/include/linux/extcon.h
+@@ -214,7 +214,7 @@ struct extcon_dev {
+ 	/* /sys/class/extcon/.../mutually_exclusive/... */
+ 	struct attribute_group attr_g_muex;
+ 	struct attribute **attrs_muex;
+-	struct device_attribute *d_attrs_muex;
++	device_attribute_no_const *d_attrs_muex;
+ };
+ 
+ #if IS_ENABLED(CONFIG_EXTCON)

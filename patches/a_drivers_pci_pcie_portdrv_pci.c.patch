@@ -1,0 +1,13 @@
+diff --git a/drivers/pci/pcie/portdrv_pci.c b/drivers/pci/pcie/portdrv_pci.c
+index 79327cc..28fde3f 100644
+--- a/drivers/pci/pcie/portdrv_pci.c
++++ b/drivers/pci/pcie/portdrv_pci.c
+@@ -360,7 +360,7 @@ static int __init dmi_pcie_pme_disable_msi(const struct dmi_system_id *d)
+ 	return 0;
+ }
+ 
+-static struct dmi_system_id __initdata pcie_portdrv_dmi_table[] = {
++static const struct dmi_system_id __initconst pcie_portdrv_dmi_table[] = {
+ 	/*
+ 	 * Boxes that should not use MSI for PCIe PME signaling.
+ 	 */

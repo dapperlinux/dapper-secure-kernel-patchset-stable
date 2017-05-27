@@ -1,0 +1,13 @@
+diff --git a/net/core/net-sysfs.c b/net/core/net-sysfs.c
+index 6e4f347..8eff663 100644
+--- a/net/core/net-sysfs.c
++++ b/net/core/net-sysfs.c
+@@ -290,7 +290,7 @@ static ssize_t carrier_changes_show(struct device *dev,
+ {
+ 	struct net_device *netdev = to_net_dev(dev);
+ 	return sprintf(buf, fmt_dec,
+-		       atomic_read(&netdev->carrier_changes));
++		       atomic_read_unchecked(&netdev->carrier_changes));
+ }
+ static DEVICE_ATTR_RO(carrier_changes);
+ 

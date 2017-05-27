@@ -1,0 +1,13 @@
+diff --git a/lib/irq_poll.c b/lib/irq_poll.c
+index 1d6565e8..effaf13 100644
+--- a/lib/irq_poll.c
++++ b/lib/irq_poll.c
+@@ -74,7 +74,7 @@ void irq_poll_complete(struct irq_poll *iop)
+ }
+ EXPORT_SYMBOL(irq_poll_complete);
+ 
+-static void __latent_entropy irq_poll_softirq(struct softirq_action *h)
++static void __latent_entropy irq_poll_softirq(void)
+ {
+ 	struct list_head *list = this_cpu_ptr(&blk_cpu_iopoll);
+ 	int rearm = 0, budget = irq_poll_budget;

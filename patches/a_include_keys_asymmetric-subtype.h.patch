@@ -1,0 +1,13 @@
+diff --git a/include/keys/asymmetric-subtype.h b/include/keys/asymmetric-subtype.h
+index 2480469..afcbfd4 100644
+--- a/include/keys/asymmetric-subtype.h
++++ b/include/keys/asymmetric-subtype.h
+@@ -37,7 +37,7 @@ struct asymmetric_key_subtype {
+ 	/* Verify the signature on a key of this subtype (optional) */
+ 	int (*verify_signature)(const struct key *key,
+ 				const struct public_key_signature *sig);
+-};
++} __do_const;
+ 
+ /**
+  * asymmetric_key_subtype - Get the subtype from an asymmetric key

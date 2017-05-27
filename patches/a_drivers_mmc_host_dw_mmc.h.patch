@@ -1,0 +1,11 @@
+diff --git a/drivers/mmc/host/dw_mmc.h b/drivers/mmc/host/dw_mmc.h
+index e8cd2de..c1640f6 100644
+--- a/drivers/mmc/host/dw_mmc.h
++++ b/drivers/mmc/host/dw_mmc.h
+@@ -298,5 +298,5 @@ struct dw_mci_drv_data {
+ 						struct mmc_ios *ios);
+ 	int		(*switch_voltage)(struct mmc_host *mmc,
+ 					  struct mmc_ios *ios);
+-};
++} __do_const;
+ #endif /* _DW_MMC_H_ */

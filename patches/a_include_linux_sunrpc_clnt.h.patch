@@ -1,0 +1,13 @@
+diff --git a/include/linux/sunrpc/clnt.h b/include/linux/sunrpc/clnt.h
+index 333ad11..1c14c60 100644
+--- a/include/linux/sunrpc/clnt.h
++++ b/include/linux/sunrpc/clnt.h
+@@ -103,7 +103,7 @@ struct rpc_procinfo {
+ 	unsigned int		p_timer;	/* Which RTT timer to use */
+ 	u32			p_statidx;	/* Which procedure to account */
+ 	const char *		p_name;		/* name of procedure */
+-};
++} __do_const;
+ 
+ #ifdef __KERNEL__
+ 

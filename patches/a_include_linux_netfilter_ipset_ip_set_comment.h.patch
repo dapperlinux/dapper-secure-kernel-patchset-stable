@@ -1,0 +1,15 @@
+diff --git a/include/linux/netfilter/ipset/ip_set_comment.h b/include/linux/netfilter/ipset/ip_set_comment.h
+index 8d02485..a1e1aa5 100644
+--- a/include/linux/netfilter/ipset/ip_set_comment.h
++++ b/include/linux/netfilter/ipset/ip_set_comment.h
+@@ -58,8 +58,9 @@ ip_set_put_comment(struct sk_buff *skb, struct ip_set_comment *comment)
+  * of the set data anymore.
+  */
+ static inline void
+-ip_set_comment_free(struct ip_set_comment *comment)
++ip_set_comment_free(void *_comment)
+ {
++	struct ip_set_comment *comment = _comment;
+ 	struct ip_set_comment_rcu *c;
+ 
+ 	c = rcu_dereference_protected(comment->c, 1);

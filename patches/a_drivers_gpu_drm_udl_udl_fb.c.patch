@@ -1,0 +1,12 @@
+diff --git a/drivers/gpu/drm/udl/udl_fb.c b/drivers/gpu/drm/udl/udl_fb.c
+index 611b6b9..e0faec1 100644
+--- a/drivers/gpu/drm/udl/udl_fb.c
++++ b/drivers/gpu/drm/udl/udl_fb.c
+@@ -242,7 +242,6 @@ static int udl_fb_release(struct fb_info *info, int user)
+ 		fb_deferred_io_cleanup(info);
+ 		kfree(info->fbdefio);
+ 		info->fbdefio = NULL;
+-		info->fbops->fb_mmap = udl_fb_mmap;
+ 	}
+ #endif
+ 

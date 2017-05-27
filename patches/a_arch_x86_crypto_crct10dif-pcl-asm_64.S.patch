@@ -1,0 +1,21 @@
+diff --git a/arch/x86/crypto/crct10dif-pcl-asm_64.S b/arch/x86/crypto/crct10dif-pcl-asm_64.S
+index 35e9756..5048353 100644
+--- a/arch/x86/crypto/crct10dif-pcl-asm_64.S
++++ b/arch/x86/crypto/crct10dif-pcl-asm_64.S
+@@ -59,6 +59,7 @@
+ #
+ 
+ #include <linux/linkage.h>
++#include <asm/alternative-asm.h>
+ 
+ .text
+ 
+@@ -367,7 +368,7 @@ _cleanup:
+ 	# scale the result back to 16 bits
+ 	shr	$16, %eax
+ 	mov     %rcx, %rsp
+-	ret
++	pax_ret crc_t10dif_pcl
+ 
+ ########################################################################
+ 

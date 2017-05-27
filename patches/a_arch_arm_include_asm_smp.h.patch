@@ -1,0 +1,13 @@
+diff --git a/arch/arm/include/asm/smp.h b/arch/arm/include/asm/smp.h
+index 3d6dc8b..1262ad3 100644
+--- a/arch/arm/include/asm/smp.h
++++ b/arch/arm/include/asm/smp.h
+@@ -108,7 +108,7 @@ struct smp_operations {
+ 	int  (*cpu_disable)(unsigned int cpu);
+ #endif
+ #endif
+-};
++} __no_const;
+ 
+ struct of_cpu_method {
+ 	const char *method;

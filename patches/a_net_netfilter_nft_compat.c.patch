@@ -1,0 +1,20 @@
+diff --git a/net/netfilter/nft_compat.c b/net/netfilter/nft_compat.c
+index c21e7eb..79f6314 100644
+--- a/net/netfilter/nft_compat.c
++++ b/net/netfilter/nft_compat.c
+@@ -337,14 +337,7 @@ static void nft_match_eval(const struct nft_expr *expr,
+ 		return;
+ 	}
+ 
+-	switch (ret ? 1 : 0) {
+-	case 1:
+-		regs->verdict.code = NFT_CONTINUE;
+-		break;
+-	case 0:
+-		regs->verdict.code = NFT_BREAK;
+-		break;
+-	}
++	regs->verdict.code = ret ? NFT_CONTINUE : NFT_BREAK;
+ }
+ 
+ static const struct nla_policy nft_match_policy[NFTA_MATCH_MAX + 1] = {

@@ -1,0 +1,16 @@
+diff --git a/arch/avr32/include/asm/cache.h b/arch/avr32/include/asm/cache.h
+index c3a58a1..78fbf54 100644
+--- a/arch/avr32/include/asm/cache.h
++++ b/arch/avr32/include/asm/cache.h
+@@ -1,8 +1,10 @@
+ #ifndef __ASM_AVR32_CACHE_H
+ #define __ASM_AVR32_CACHE_H
+ 
++#include <linux/const.h>
++
+ #define L1_CACHE_SHIFT 5
+-#define L1_CACHE_BYTES (1 << L1_CACHE_SHIFT)
++#define L1_CACHE_BYTES (_AC(1,UL) << L1_CACHE_SHIFT)
+ 
+ /*
+  * Memory returned by kmalloc() may be used for DMA, so we must make

@@ -1,0 +1,14 @@
+diff --git a/lib/is_single_threaded.c b/lib/is_single_threaded.c
+index 391fd23..96e17b6 100644
+--- a/lib/is_single_threaded.c
++++ b/lib/is_single_threaded.c
+@@ -22,6 +22,9 @@ bool current_is_single_threaded(void)
+ 	struct task_struct *p, *t;
+ 	bool ret;
+ 
++	if (!mm)
++		return true;
++
+ 	if (atomic_read(&task->signal->live) != 1)
+ 		return false;
+ 

@@ -1,0 +1,13 @@
+diff --git a/drivers/staging/rtl8712/rtl871x_io.h b/drivers/staging/rtl8712/rtl871x_io.h
+index 26dd24c..2eb37c9 100644
+--- a/drivers/staging/rtl8712/rtl871x_io.h
++++ b/drivers/staging/rtl8712/rtl871x_io.h
+@@ -108,7 +108,7 @@ struct	_io_ops {
+ 			  u8 *pmem);
+ 	u32 (*_write_port)(struct intf_hdl *pintfhdl, u32 addr, u32 cnt,
+ 			   u8 *pmem);
+-};
++} __no_const;
+ 
+ struct io_req {
+ 	struct list_head list;

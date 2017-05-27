@@ -1,0 +1,4 @@
+--- /dev/null
++++ b/scripts/gcc-plugins/.gitignore
+@@ -0,0 +1 @@
++randomize_layout_seed.h

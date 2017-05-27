@@ -1,0 +1,13 @@
+diff --git a/drivers/gpu/drm/drm_drv.c b/drivers/gpu/drm/drm_drv.c
+index 6efdba4..ce6514a 100644
+--- a/drivers/gpu/drm/drm_drv.c
++++ b/drivers/gpu/drm/drm_drv.c
+@@ -385,7 +385,7 @@ void drm_unplug_dev(struct drm_device *dev)
+ 
+ 	drm_device_set_unplugged(dev);
+ 
+-	if (dev->open_count == 0) {
++	if (local_read(&dev->open_count) == 0) {
+ 		drm_put_dev(dev);
+ 	}
+ 	mutex_unlock(&drm_global_mutex);

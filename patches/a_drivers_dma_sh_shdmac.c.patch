@@ -1,0 +1,13 @@
+diff --git a/drivers/dma/sh/shdmac.c b/drivers/dma/sh/shdmac.c
+index c94ffab..82c11f0 100644
+--- a/drivers/dma/sh/shdmac.c
++++ b/drivers/dma/sh/shdmac.c
+@@ -513,7 +513,7 @@ static int sh_dmae_nmi_handler(struct notifier_block *self,
+ 	return ret;
+ }
+ 
+-static struct notifier_block sh_dmae_nmi_notifier __read_mostly = {
++static struct notifier_block sh_dmae_nmi_notifier = {
+ 	.notifier_call	= sh_dmae_nmi_handler,
+ 
+ 	/* Run before NMI debug handler and KGDB */

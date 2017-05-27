@@ -1,0 +1,13 @@
+diff --git a/scripts/tags.sh b/scripts/tags.sh
+index a2ff338..fec3117 100755
+--- a/scripts/tags.sh
++++ b/scripts/tags.sh
+@@ -26,7 +26,7 @@ else
+ fi
+ 
+ # ignore userspace tools
+-ignore="$ignore ( -path ${tree}tools ) -prune -o"
++ignore="$ignore ( -path \"${tree}tools/[^g]*\" ) -prune -o"
+ 
+ # Find all available archs
+ find_all_archs()

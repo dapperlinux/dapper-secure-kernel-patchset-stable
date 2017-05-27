@@ -1,0 +1,23 @@
+diff --git a/include/linux/slub_def.h b/include/linux/slub_def.h
+index 75f56c2..97880d2 100644
+--- a/include/linux/slub_def.h
++++ b/include/linux/slub_def.h
+@@ -74,7 +74,7 @@ struct kmem_cache {
+ 	struct kmem_cache_order_objects max;
+ 	struct kmem_cache_order_objects min;
+ 	gfp_t allocflags;	/* gfp flags to use on each alloc */
+-	int refcount;		/* Refcount for slab cache destroy */
++	atomic_t refcount;	/* Refcount for slab cache destroy */
+ 	void (*ctor)(void *);
+ 	int inuse;		/* Offset to metadata */
+ 	int align;		/* Alignment */
+@@ -108,6 +108,9 @@ struct kmem_cache {
+ 	struct kasan_cache kasan_info;
+ #endif
+ 
++	size_t useroffset;	/* USERCOPY region offset */
++	size_t usersize;	/* USERCOPY region size */
++
+ 	struct kmem_cache_node *node[MAX_NUMNODES];
+ };
+ 

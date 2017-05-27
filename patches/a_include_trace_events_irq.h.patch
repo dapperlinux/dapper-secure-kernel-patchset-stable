@@ -1,0 +1,22 @@
+diff --git a/include/trace/events/irq.h b/include/trace/events/irq.h
+index 1c41b74..10fc30d 100644
+--- a/include/trace/events/irq.h
++++ b/include/trace/events/irq.h
+@@ -51,7 +51,7 @@ SOFTIRQ_NAME_LIST
+  */
+ TRACE_EVENT(irq_handler_entry,
+ 
+-	TP_PROTO(int irq, struct irqaction *action),
++	TP_PROTO(int irq, const struct irqaction *action),
+ 
+ 	TP_ARGS(irq, action),
+ 
+@@ -81,7 +81,7 @@ TRACE_EVENT(irq_handler_entry,
+  */
+ TRACE_EVENT(irq_handler_exit,
+ 
+-	TP_PROTO(int irq, struct irqaction *action, int ret),
++	TP_PROTO(int irq, const struct irqaction *action, int ret),
+ 
+ 	TP_ARGS(irq, action, ret),
+ 

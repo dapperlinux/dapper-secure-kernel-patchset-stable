@@ -1,0 +1,13 @@
+diff --git a/drivers/media/dvb-frontends/cxd2820r_core.c b/drivers/media/dvb-frontends/cxd2820r_core.c
+index f6ebbb4..3e0d8cb 100644
+--- a/drivers/media/dvb-frontends/cxd2820r_core.c
++++ b/drivers/media/dvb-frontends/cxd2820r_core.c
+@@ -403,7 +403,7 @@ static enum dvbfe_search cxd2820r_search(struct dvb_frontend *fe)
+ 	return DVBFE_ALGO_SEARCH_ERROR;
+ }
+ 
+-static int cxd2820r_get_frontend_algo(struct dvb_frontend *fe)
++static enum dvbfe_algo cxd2820r_get_frontend_algo(struct dvb_frontend *fe)
+ {
+ 	return DVBFE_ALGO_CUSTOM;
+ }

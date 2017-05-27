@@ -1,0 +1,12 @@
+diff --git a/arch/x86/kernel/early_printk.c b/arch/x86/kernel/early_printk.c
+index 8a12199..e63bebf 100644
+--- a/arch/x86/kernel/early_printk.c
++++ b/arch/x86/kernel/early_printk.c
+@@ -7,6 +7,7 @@
+ #include <linux/pci_regs.h>
+ #include <linux/pci_ids.h>
+ #include <linux/errno.h>
++#include <linux/sched.h>
+ #include <asm/io.h>
+ #include <asm/processor.h>
+ #include <asm/fcntl.h>

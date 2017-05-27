@@ -1,0 +1,8 @@
+--- /dev/null
++++ b/scripts/gcc-plugins/size_overflow_plugin/.gitignore
+@@ -0,0 +1,2 @@
++disable.h
++e_*.h
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/Makefile b/scripts/gcc-plugins/size_overflow_plugin/Makefile
+new file mode 100644
+index 0000000..a8039b2

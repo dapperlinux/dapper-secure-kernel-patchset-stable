@@ -1,0 +1,13 @@
+diff --git a/drivers/infiniband/hw/mthca/mthca_provider.c b/drivers/infiniband/hw/mthca/mthca_provider.c
+index 358930a4..abd0b77 100644
+--- a/drivers/infiniband/hw/mthca/mthca_provider.c
++++ b/drivers/infiniband/hw/mthca/mthca_provider.c
+@@ -773,7 +773,7 @@ static int mthca_alloc_resize_buf(struct mthca_dev *dev, struct mthca_cq *cq,
+ 	return 0;
+ }
+ 
+-static int mthca_resize_cq(struct ib_cq *ibcq, int entries, struct ib_udata *udata)
++static int __intentional_overflow(-1) mthca_resize_cq(struct ib_cq *ibcq, int entries, struct ib_udata *udata)
+ {
+ 	struct mthca_dev *dev = to_mdev(ibcq->device);
+ 	struct mthca_cq *cq = to_mcq(ibcq);

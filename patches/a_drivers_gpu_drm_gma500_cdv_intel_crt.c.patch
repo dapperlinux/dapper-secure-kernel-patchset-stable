@@ -1,0 +1,13 @@
+diff --git a/drivers/gpu/drm/gma500/cdv_intel_crt.c b/drivers/gpu/drm/gma500/cdv_intel_crt.c
+index b837e7a..cb5a14b 100644
+--- a/drivers/gpu/drm/gma500/cdv_intel_crt.c
++++ b/drivers/gpu/drm/gma500/cdv_intel_crt.c
+@@ -64,7 +64,7 @@ static void cdv_intel_crt_dpms(struct drm_encoder *encoder, int mode)
+ 	REG_WRITE(reg, temp);
+ }
+ 
+-static int cdv_intel_crt_mode_valid(struct drm_connector *connector,
++static enum drm_mode_status cdv_intel_crt_mode_valid(struct drm_connector *connector,
+ 				struct drm_display_mode *mode)
+ {
+ 	if (mode->flags & DRM_MODE_FLAG_DBLSCAN)

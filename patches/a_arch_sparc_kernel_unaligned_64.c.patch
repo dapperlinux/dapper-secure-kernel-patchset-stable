@@ -1,0 +1,13 @@
+diff --git a/arch/sparc/kernel/unaligned_64.c b/arch/sparc/kernel/unaligned_64.c
+index 52c00d9..6f8aa4e 100644
+--- a/arch/sparc/kernel/unaligned_64.c
++++ b/arch/sparc/kernel/unaligned_64.c
+@@ -297,7 +297,7 @@ static void log_unaligned(struct pt_regs *regs)
+ 	static DEFINE_RATELIMIT_STATE(ratelimit, 5 * HZ, 5);
+ 
+ 	if (__ratelimit(&ratelimit)) {
+-		printk("Kernel unaligned access at TPC[%lx] %pS\n",
++		printk("Kernel unaligned access at TPC[%lx] %pA\n",
+ 		       regs->tpc, (void *) regs->tpc);
+ 	}
+ }

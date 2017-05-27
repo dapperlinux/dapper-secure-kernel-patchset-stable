@@ -1,0 +1,13 @@
+diff --git a/net/packet/diag.c b/net/packet/diag.c
+index 0ed68f0..54c1dbe 100644
+--- a/net/packet/diag.c
++++ b/net/packet/diag.c
+@@ -236,7 +236,7 @@ static int packet_diag_handler_dump(struct sk_buff *skb, struct nlmsghdr *h)
+ 		return -EINVAL;
+ 
+ 	if (h->nlmsg_flags & NLM_F_DUMP) {
+-		struct netlink_dump_control c = {
++		static struct netlink_dump_control c = {
+ 			.dump = packet_diag_dump,
+ 		};
+ 		return netlink_dump_start(net->diag_nlsk, skb, h, &c);

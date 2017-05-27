@@ -1,0 +1,13 @@
+diff --git a/drivers/media/dvb-frontends/lgdt3306a.c b/drivers/media/dvb-frontends/lgdt3306a.c
+index 0ca4e81..fa72611 100644
+--- a/drivers/media/dvb-frontends/lgdt3306a.c
++++ b/drivers/media/dvb-frontends/lgdt3306a.c
+@@ -1734,7 +1734,7 @@ static int lgdt3306a_get_tune_settings(struct dvb_frontend *fe,
+ 	return 0;
+ }
+ 
+-static int lgdt3306a_search(struct dvb_frontend *fe)
++static enum dvbfe_search lgdt3306a_search(struct dvb_frontend *fe)
+ {
+ 	enum fe_status status = 0;
+ 	int ret;

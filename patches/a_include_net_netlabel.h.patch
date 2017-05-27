@@ -1,0 +1,12 @@
+diff --git a/include/net/netlabel.h b/include/net/netlabel.h
+index efe9806..bec155a 100644
+--- a/include/net/netlabel.h
++++ b/include/net/netlabel.h
+@@ -669,6 +669,7 @@ static inline int netlbl_skbuff_getattr(const struct sk_buff *skb,
+ 	return -ENOSYS;
+ }
+ static inline void netlbl_skbuff_err(struct sk_buff *skb,
++				     u16 family,
+ 				     int error,
+ 				     int gateway)
+ {

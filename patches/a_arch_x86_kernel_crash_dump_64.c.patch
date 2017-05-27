@@ -1,0 +1,13 @@
+diff --git a/arch/x86/kernel/crash_dump_64.c b/arch/x86/kernel/crash_dump_64.c
+index afa64ad..dce67dd 100644
+--- a/arch/x86/kernel/crash_dump_64.c
++++ b/arch/x86/kernel/crash_dump_64.c
+@@ -36,7 +36,7 @@ ssize_t copy_oldmem_page(unsigned long pfn, char *buf,
+ 		return -ENOMEM;
+ 
+ 	if (userbuf) {
+-		if (copy_to_user(buf, vaddr + offset, csize)) {
++		if (copy_to_user((char __force_user *)buf, vaddr + offset, csize)) {
+ 			iounmap(vaddr);
+ 			return -EFAULT;
+ 		}

@@ -1,0 +1,13 @@
+diff --git a/drivers/mtd/devices/block2mtd.c b/drivers/mtd/devices/block2mtd.c
+index 7c887f1..62fd690 100644
+--- a/drivers/mtd/devices/block2mtd.c
++++ b/drivers/mtd/devices/block2mtd.c
+@@ -431,7 +431,7 @@ static int block2mtd_setup2(const char *val)
+ }
+ 
+ 
+-static int block2mtd_setup(const char *val, struct kernel_param *kp)
++static int block2mtd_setup(const char *val, const struct kernel_param *kp)
+ {
+ #ifdef MODULE
+ 	return block2mtd_setup2(val);

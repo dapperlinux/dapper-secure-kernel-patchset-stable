@@ -1,0 +1,12 @@
+diff --git a/drivers/media/pci/zoran/zoran.h b/drivers/media/pci/zoran/zoran.h
+index 4e7db89..bd7ef95 100644
+--- a/drivers/media/pci/zoran/zoran.h
++++ b/drivers/media/pci/zoran/zoran.h
+@@ -178,7 +178,6 @@ struct zoran_fh;
+ 
+ struct zoran_mapping {
+ 	struct zoran_fh *fh;
+-	atomic_t count;
+ };
+ 
+ struct zoran_buffer {

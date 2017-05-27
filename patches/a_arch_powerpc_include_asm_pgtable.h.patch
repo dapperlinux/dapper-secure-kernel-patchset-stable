@@ -1,0 +1,12 @@
+diff --git a/arch/powerpc/include/asm/pgtable.h b/arch/powerpc/include/asm/pgtable.h
+index 9bd87f2..f600e6d 100644
+--- a/arch/powerpc/include/asm/pgtable.h
++++ b/arch/powerpc/include/asm/pgtable.h
+@@ -1,6 +1,7 @@
+ #ifndef _ASM_POWERPC_PGTABLE_H
+ #define _ASM_POWERPC_PGTABLE_H
+ 
++#include <linux/const.h>
+ #ifndef __ASSEMBLY__
+ #include <linux/mmdebug.h>
+ #include <linux/mmzone.h>

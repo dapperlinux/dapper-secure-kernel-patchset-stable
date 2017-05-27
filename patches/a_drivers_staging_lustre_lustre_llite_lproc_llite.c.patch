@@ -1,0 +1,17 @@
+diff --git a/drivers/staging/lustre/lustre/llite/lproc_llite.c b/drivers/staging/lustre/lustre/llite/lproc_llite.c
+index 23fda9d..2e43092 100644
+--- a/drivers/staging/lustre/lustre/llite/lproc_llite.c
++++ b/drivers/staging/lustre/lustre/llite/lproc_llite.c
+@@ -686,9 +686,9 @@ static int ll_statahead_stats_seq_show(struct seq_file *m, void *v)
+ 		   "statahead total: %u\n"
+ 		   "statahead wrong: %u\n"
+ 		   "agl total: %u\n",
+-		   atomic_read(&sbi->ll_sa_total),
+-		   atomic_read(&sbi->ll_sa_wrong),
+-		   atomic_read(&sbi->ll_agl_total));
++		   atomic_read_unchecked(&sbi->ll_sa_total),
++		   atomic_read_unchecked(&sbi->ll_sa_wrong),
++		   atomic_read_unchecked(&sbi->ll_agl_total));
+ 	return 0;
+ }
+ 

@@ -1,0 +1,16 @@
+diff --git a/include/sound/control.h b/include/sound/control.h
+index 21d047f..9573462 100644
+--- a/include/sound/control.h
++++ b/include/sound/control.h
+@@ -214,8 +214,10 @@ int _snd_ctl_add_slave(struct snd_kcontrol *master, struct snd_kcontrol *slave,
+  * Return: Zero if successful or a negative error code.
+  */
+ static inline int
+-snd_ctl_add_slave(struct snd_kcontrol *master, struct snd_kcontrol *slave)
++snd_ctl_add_slave(void *_master, struct snd_kcontrol *slave)
+ {
++	struct snd_kcontrol *master = _master;
++
+ 	return _snd_ctl_add_slave(master, slave, 0);
+ }
+ 

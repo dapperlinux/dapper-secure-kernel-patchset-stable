@@ -1,0 +1,13 @@
+diff --git a/drivers/net/wireless/marvell/mwifiex/util.c b/drivers/net/wireless/marvell/mwifiex/util.c
+index 18fbb96..db73632 100644
+--- a/drivers/net/wireless/marvell/mwifiex/util.c
++++ b/drivers/net/wireless/marvell/mwifiex/util.c
+@@ -751,7 +751,7 @@ void mwifiex_hist_data_reset(struct mwifiex_private *priv)
+ void *mwifiex_alloc_dma_align_buf(int rx_len, gfp_t flags)
+ {
+ 	struct sk_buff *skb;
+-	int buf_len, pad;
++	long buf_len, pad;
+ 
+ 	buf_len = rx_len + MWIFIEX_RX_HEADROOM + MWIFIEX_DMA_ALIGN_SZ;
+ 

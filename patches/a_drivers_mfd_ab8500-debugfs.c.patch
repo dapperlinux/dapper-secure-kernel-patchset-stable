@@ -1,0 +1,13 @@
+diff --git a/drivers/mfd/ab8500-debugfs.c b/drivers/mfd/ab8500-debugfs.c
+index acf6c00..481c929 100644
+--- a/drivers/mfd/ab8500-debugfs.c
++++ b/drivers/mfd/ab8500-debugfs.c
+@@ -100,7 +100,7 @@ static int irq_last;
+ static u32 *irq_count;
+ static int num_irqs;
+ 
+-static struct device_attribute **dev_attr;
++static device_attribute_no_const **dev_attr;
+ static char **event_name;
+ 
+ static u8 avg_sample = SAMPLE_16;

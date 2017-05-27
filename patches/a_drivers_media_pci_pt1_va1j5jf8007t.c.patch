@@ -1,0 +1,13 @@
+diff --git a/drivers/media/pci/pt1/va1j5jf8007t.c b/drivers/media/pci/pt1/va1j5jf8007t.c
+index 0268f20..de9dff7 100644
+--- a/drivers/media/pci/pt1/va1j5jf8007t.c
++++ b/drivers/media/pci/pt1/va1j5jf8007t.c
+@@ -92,7 +92,7 @@ static int va1j5jf8007t_read_snr(struct dvb_frontend *fe, u16 *snr)
+ 	return 0;
+ }
+ 
+-static int va1j5jf8007t_get_frontend_algo(struct dvb_frontend *fe)
++static enum dvbfe_algo va1j5jf8007t_get_frontend_algo(struct dvb_frontend *fe)
+ {
+ 	return DVBFE_ALGO_HW;
+ }

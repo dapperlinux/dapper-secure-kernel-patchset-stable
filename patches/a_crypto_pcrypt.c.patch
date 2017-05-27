@@ -1,0 +1,13 @@
+diff --git a/crypto/pcrypt.c b/crypto/pcrypt.c
+index ee9cfb9..30b36ed 100644
+--- a/crypto/pcrypt.c
++++ b/crypto/pcrypt.c
+@@ -392,7 +392,7 @@ static int pcrypt_sysfs_add(struct padata_instance *pinst, const char *name)
+ 	int ret;
+ 
+ 	pinst->kobj.kset = pcrypt_kset;
+-	ret = kobject_add(&pinst->kobj, NULL, name);
++	ret = kobject_add(&pinst->kobj, NULL, "%s", name);
+ 	if (!ret)
+ 		kobject_uevent(&pinst->kobj, KOBJ_ADD);
+ 

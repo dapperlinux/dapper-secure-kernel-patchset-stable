@@ -1,0 +1,13 @@
+diff --git a/drivers/input/mousedev.c b/drivers/input/mousedev.c
+index b604564..3f14ae4 100644
+--- a/drivers/input/mousedev.c
++++ b/drivers/input/mousedev.c
+@@ -744,7 +744,7 @@ static ssize_t mousedev_read(struct file *file, char __user *buffer,
+ 
+ 	spin_unlock_irq(&client->packet_lock);
+ 
+-	if (copy_to_user(buffer, data, count))
++	if (count > sizeof(data) || copy_to_user(buffer, data, count))
+ 		return -EFAULT;
+ 
+ 	return count;

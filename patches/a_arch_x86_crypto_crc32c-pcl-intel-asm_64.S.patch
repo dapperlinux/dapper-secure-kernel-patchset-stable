@@ -1,0 +1,21 @@
+diff --git a/arch/x86/crypto/crc32c-pcl-intel-asm_64.S b/arch/x86/crypto/crc32c-pcl-intel-asm_64.S
+index dc05f010..83302a8 100644
+--- a/arch/x86/crypto/crc32c-pcl-intel-asm_64.S
++++ b/arch/x86/crypto/crc32c-pcl-intel-asm_64.S
+@@ -45,6 +45,7 @@
+ 
+ #include <asm/inst.h>
+ #include <linux/linkage.h>
++#include <asm/alternative-asm.h>
+ 
+ ## ISCSI CRC 32 Implementation with crc32 and pclmulqdq Instruction
+ 
+@@ -309,7 +310,7 @@ do_return:
+ 	popq    %rsi
+ 	popq    %rdi
+ 	popq    %rbx
+-        ret
++	pax_ret crc_pcl
+ ENDPROC(crc_pcl)
+ 
+ .section	.rodata, "a", %progbits

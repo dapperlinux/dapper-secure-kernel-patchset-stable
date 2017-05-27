@@ -1,0 +1,20 @@
+diff --git a/net/bridge/br_netfilter_hooks.c b/net/bridge/br_netfilter_hooks.c
+index aa1df1a..0a9f1a9 100644
+--- a/net/bridge/br_netfilter_hooks.c
++++ b/net/bridge/br_netfilter_hooks.c
+@@ -959,13 +959,13 @@ static void __net_exit brnf_exit_net(struct net *net)
+ 	brnet->enabled = false;
+ }
+ 
+-static struct pernet_operations brnf_net_ops __read_mostly = {
++static struct pernet_operations brnf_net_ops = {
+ 	.exit = brnf_exit_net,
+ 	.id   = &brnf_net_id,
+ 	.size = sizeof(struct brnf_net),
+ };
+ 
+-static struct notifier_block brnf_notifier __read_mostly = {
++static struct notifier_block brnf_notifier = {
+ 	.notifier_call = brnf_device_event,
+ };
+ 

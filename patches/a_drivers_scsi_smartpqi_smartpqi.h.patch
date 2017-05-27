@@ -1,0 +1,13 @@
+diff --git a/drivers/scsi/smartpqi/smartpqi.h b/drivers/scsi/smartpqi/smartpqi.h
+index 07b6444..b4d84e1 100644
+--- a/drivers/scsi/smartpqi/smartpqi.h
++++ b/drivers/scsi/smartpqi/smartpqi.h
+@@ -956,7 +956,7 @@ struct pqi_ctrl_info {
+ 	struct pqi_event pending_events[PQI_NUM_SUPPORTED_EVENTS];
+ 	struct work_struct event_work;
+ 
+-	atomic_t	num_interrupts;
++	atomic_unchecked_t num_interrupts;
+ 	int		previous_num_interrupts;
+ 	unsigned int	num_heartbeats_requested;
+ 	struct timer_list heartbeat_timer;

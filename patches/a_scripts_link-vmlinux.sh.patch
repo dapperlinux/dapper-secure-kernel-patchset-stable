@@ -1,0 +1,13 @@
+diff --git a/scripts/link-vmlinux.sh b/scripts/link-vmlinux.sh
+index f742c65..d12920b 100755
+--- a/scripts/link-vmlinux.sh
++++ b/scripts/link-vmlinux.sh
+@@ -229,7 +229,7 @@ else
+ fi;
+ 
+ # final build of init/
+-${MAKE} -f "${srctree}/scripts/Makefile.build" obj=init GCC_PLUGINS_CFLAGS="${GCC_PLUGINS_CFLAGS}"
++${MAKE} -f "${srctree}/scripts/Makefile.build" obj=init GCC_PLUGINS_CFLAGS="${GCC_PLUGINS_CFLAGS}" GCC_PLUGINS_AFLAGS="${GCC_PLUGINS_AFLAGS}"
+ 
+ kallsymso=""
+ kallsyms_vmlinux=""

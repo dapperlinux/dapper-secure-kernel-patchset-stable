@@ -1,0 +1,13 @@
+diff --git a/arch/x86/mm/pat_rbtree.c b/arch/x86/mm/pat_rbtree.c
+index 159b52c..2b68583 100644
+--- a/arch/x86/mm/pat_rbtree.c
++++ b/arch/x86/mm/pat_rbtree.c
+@@ -170,7 +170,7 @@ static int memtype_rb_check_conflict(struct rb_root *root,
+ 
+ failure:
+ 	pr_info("x86/PAT: %s:%d conflicting memory types %Lx-%Lx %s<->%s\n",
+-		current->comm, current->pid, start, end,
++		current->comm, task_pid_nr(current), start, end,
+ 		cattr_name(found_type), cattr_name(match->type));
+ 	return -EBUSY;
+ }

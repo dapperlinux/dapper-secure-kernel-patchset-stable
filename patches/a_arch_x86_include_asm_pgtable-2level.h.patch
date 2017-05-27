@@ -1,0 +1,14 @@
+diff --git a/arch/x86/include/asm/pgtable-2level.h b/arch/x86/include/asm/pgtable-2level.h
+index fd74a11..35fd5af 100644
+--- a/arch/x86/include/asm/pgtable-2level.h
++++ b/arch/x86/include/asm/pgtable-2level.h
+@@ -18,7 +18,9 @@ static inline void native_set_pte(pte_t *ptep , pte_t pte)
+ 
+ static inline void native_set_pmd(pmd_t *pmdp, pmd_t pmd)
+ {
++	pax_open_kernel();
+ 	*pmdp = pmd;
++	pax_close_kernel();
+ }
+ 
+ static inline void native_set_pte_atomic(pte_t *ptep, pte_t pte)

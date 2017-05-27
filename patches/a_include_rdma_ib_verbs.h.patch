@@ -1,0 +1,13 @@
+diff --git a/include/rdma/ib_verbs.h b/include/rdma/ib_verbs.h
+index 5ad43a4..57937f0 100644
+--- a/include/rdma/ib_verbs.h
++++ b/include/rdma/ib_verbs.h
+@@ -1204,7 +1204,7 @@ struct ib_sge {
+ 
+ struct ib_cqe {
+ 	void (*done)(struct ib_cq *cq, struct ib_wc *wc);
+-};
++} __no_const;
+ 
+ struct ib_send_wr {
+ 	struct ib_send_wr      *next;

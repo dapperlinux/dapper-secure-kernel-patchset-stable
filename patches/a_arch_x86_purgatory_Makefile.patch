@@ -1,0 +1,13 @@
+diff --git a/arch/x86/purgatory/Makefile b/arch/x86/purgatory/Makefile
+index 555b9fa..3ae31c3 100644
+--- a/arch/x86/purgatory/Makefile
++++ b/arch/x86/purgatory/Makefile
+@@ -10,6 +10,8 @@ targets += purgatory.ro
+ 
+ KCOV_INSTRUMENT := n
+ 
++GCC_PLUGINS := n
++
+ # Default KBUILD_CFLAGS can have -pg option set when FTRACE is enabled. That
+ # in turn leaves some undefined symbols like __fentry__ in purgatory and not
+ # sure how to relocate those. Like kexec-tools, use custom flags.

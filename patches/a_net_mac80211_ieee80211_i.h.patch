@@ -1,0 +1,21 @@
+diff --git a/net/mac80211/ieee80211_i.h b/net/mac80211/ieee80211_i.h
+index 34c2add..322c6a3 100644
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -31,6 +31,7 @@
+ #include <net/cfg80211.h>
+ #include <net/mac80211.h>
+ #include <net/fq.h>
++#include <asm/local.h>
+ #include "key.h"
+ #include "sta_info.h"
+ #include "debug.h"
+@@ -1151,7 +1152,7 @@ struct ieee80211_local {
+ 	/* also used to protect ampdu_ac_queue and amdpu_ac_stop_refcnt */
+ 	spinlock_t queue_stop_reason_lock;
+ 
+-	int open_count;
++	local_t open_count;
+ 	int monitors, cooked_mntrs;
+ 	/* number of interfaces with corresponding FIF_ flags */
+ 	int fif_fcsfail, fif_plcpfail, fif_control, fif_other_bss, fif_pspoll,

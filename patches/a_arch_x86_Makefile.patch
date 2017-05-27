@@ -1,0 +1,42 @@
+diff --git a/arch/x86/Makefile b/arch/x86/Makefile
+index 2d44933..86ecceb 100644
+--- a/arch/x86/Makefile
++++ b/arch/x86/Makefile
+@@ -75,9 +75,6 @@ ifeq ($(CONFIG_X86_32),y)
+         # CPU-specific tuning. Anything which can be shared with UML should go here.
+         include arch/x86/Makefile_32.cpu
+         KBUILD_CFLAGS += $(cflags-y)
+-
+-        # temporary until string.h is fixed
+-        KBUILD_CFLAGS += -ffreestanding
+ else
+         BITS := 64
+         UTS_MACHINE := x86_64
+@@ -126,6 +123,9 @@ else
+         KBUILD_CFLAGS += $(call cc-option,-maccumulate-outgoing-args)
+ endif
+ 
++# temporary until string.h is fixed
++KBUILD_CFLAGS += -ffreestanding
++
+ ifdef CONFIG_X86_X32
+ 	x32_ld_ok := $(call try-run,\
+ 			/bin/echo -e '1: .quad 1b' | \
+@@ -192,6 +192,7 @@ archheaders:
+ 	$(Q)$(MAKE) $(build)=arch/x86/entry/syscalls all
+ 
+ archprepare:
++	$(if $(LDFLAGS_BUILD_ID),,$(error $(OLD_LD)))
+ ifeq ($(CONFIG_KEXEC_FILE),y)
+ 	$(Q)$(MAKE) $(build)=arch/x86/purgatory arch/x86/purgatory/kexec-purgatory.c
+ endif
+@@ -278,3 +279,9 @@ define archhelp
+   echo  '                  FDARGS="..."  arguments for the booted kernel'
+   echo  '                  FDINITRD=file initrd for the booted kernel'
+ endef
++
++define OLD_LD
++
++*** ${VERSION}.${PATCHLEVEL} PaX kernels no longer build correctly with old versions of binutils.
++*** Please upgrade your binutils to 2.18 or newer
++endef

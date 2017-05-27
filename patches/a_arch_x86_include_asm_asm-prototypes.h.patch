@@ -1,0 +1,13 @@
+diff --git a/arch/x86/include/asm/asm-prototypes.h b/arch/x86/include/asm/asm-prototypes.h
+index 44b8762..59e9d90 100644
+--- a/arch/x86/include/asm/asm-prototypes.h
++++ b/arch/x86/include/asm/asm-prototypes.h
+@@ -11,6 +11,8 @@
+ #include <asm/special_insns.h>
+ #include <asm/preempt.h>
+ 
++#include <asm/desc.h>
++
+ #ifndef CONFIG_X86_CMPXCHG64
+ extern void cmpxchg8b_emu(void);
+ #endif

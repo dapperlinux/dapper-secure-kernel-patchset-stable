@@ -1,0 +1,12 @@
+diff --git a/fs/pstore/ftrace.c b/fs/pstore/ftrace.c
+index d488770..10f088f 100644
+--- a/fs/pstore/ftrace.c
++++ b/fs/pstore/ftrace.c
+@@ -13,6 +13,7 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/compiler.h>
++#include <linux/bug.h>
+ #include <linux/irqflags.h>
+ #include <linux/percpu.h>
+ #include <linux/smp.h>

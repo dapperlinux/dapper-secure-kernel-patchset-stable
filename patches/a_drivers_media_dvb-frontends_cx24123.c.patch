@@ -1,0 +1,13 @@
+diff --git a/drivers/media/dvb-frontends/cx24123.c b/drivers/media/dvb-frontends/cx24123.c
+index 113b094..c9424e6 100644
+--- a/drivers/media/dvb-frontends/cx24123.c
++++ b/drivers/media/dvb-frontends/cx24123.c
+@@ -1009,7 +1009,7 @@ static int cx24123_tune(struct dvb_frontend *fe,
+ 	return retval;
+ }
+ 
+-static int cx24123_get_algo(struct dvb_frontend *fe)
++static enum dvbfe_algo cx24123_get_algo(struct dvb_frontend *fe)
+ {
+ 	return DVBFE_ALGO_HW;
+ }

@@ -1,0 +1,13 @@
+diff --git a/arch/x86/kernel/reboot_fixups_32.c b/arch/x86/kernel/reboot_fixups_32.c
+index c8e41e9..64049ef 100644
+--- a/arch/x86/kernel/reboot_fixups_32.c
++++ b/arch/x86/kernel/reboot_fixups_32.c
+@@ -57,7 +57,7 @@ struct device_fixup {
+ 	unsigned int vendor;
+ 	unsigned int device;
+ 	void (*reboot_fixup)(struct pci_dev *);
+-};
++} __do_const;
+ 
+ /*
+  * PCI ids solely used for fixups_table go here

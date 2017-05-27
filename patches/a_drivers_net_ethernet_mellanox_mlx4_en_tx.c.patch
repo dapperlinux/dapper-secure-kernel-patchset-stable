@@ -1,0 +1,15 @@
+diff --git a/drivers/net/ethernet/mellanox/mlx4/en_tx.c b/drivers/net/ethernet/mellanox/mlx4/en_tx.c
+index e2509bb..8357fef 100644
+--- a/drivers/net/ethernet/mellanox/mlx4/en_tx.c
++++ b/drivers/net/ethernet/mellanox/mlx4/en_tx.c
+@@ -495,8 +495,8 @@ static bool mlx4_en_process_tx_cq(struct net_device *dev,
+ 	wmb();
+ 
+ 	/* we want to dirty this cache line once */
+-	ACCESS_ONCE(ring->last_nr_txbb) = last_nr_txbb;
+-	ACCESS_ONCE(ring->cons) = ring_cons + txbbs_skipped;
++	ACCESS_ONCE_RW(ring->last_nr_txbb) = last_nr_txbb;
++	ACCESS_ONCE_RW(ring->cons) = ring_cons + txbbs_skipped;
+ 
+ 	if (ring->free_tx_desc == mlx4_en_recycle_tx_desc)
+ 		return done < budget;

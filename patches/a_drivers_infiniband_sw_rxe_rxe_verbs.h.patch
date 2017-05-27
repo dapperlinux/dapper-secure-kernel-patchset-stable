@@ -1,0 +1,13 @@
+diff --git a/drivers/infiniband/sw/rxe/rxe_verbs.h b/drivers/infiniband/sw/rxe/rxe_verbs.h
+index cac1d52..29bb903 100644
+--- a/drivers/infiniband/sw/rxe/rxe_verbs.h
++++ b/drivers/infiniband/sw/rxe/rxe_verbs.h
+@@ -262,7 +262,7 @@ struct rxe_qp {
+ 	struct rxe_comp_info	comp;
+ 	struct rxe_resp_info	resp;
+ 
+-	atomic_t		ssn;
++	atomic_unchecked_t	ssn;
+ 	atomic_t		skb_out;
+ 	int			need_req_skb;
+ 

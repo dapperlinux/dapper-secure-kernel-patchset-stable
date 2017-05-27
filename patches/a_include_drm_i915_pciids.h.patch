@@ -1,0 +1,13 @@
+diff --git a/include/drm/i915_pciids.h b/include/drm/i915_pciids.h
+index 61766a4..2f88e2b 100644
+--- a/include/drm/i915_pciids.h
++++ b/include/drm/i915_pciids.h
+@@ -37,7 +37,7 @@
+  */
+ #define INTEL_VGA_DEVICE(id, info) {		\
+ 	0x8086,	id,				\
+-	~0, ~0,					\
++	PCI_ANY_ID, PCI_ANY_ID,			\
+ 	0x030000, 0xff0000,			\
+ 	(unsigned long) info }
+ 

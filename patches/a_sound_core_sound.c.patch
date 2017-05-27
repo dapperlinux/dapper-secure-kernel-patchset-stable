@@ -1,0 +1,13 @@
+diff --git a/sound/core/sound.c b/sound/core/sound.c
+index 175f9e4..3518d31 100644
+--- a/sound/core/sound.c
++++ b/sound/core/sound.c
+@@ -86,7 +86,7 @@ static void snd_request_other(int minor)
+ 	case SNDRV_MINOR_TIMER:		str = "snd-timer";	break;
+ 	default:			return;
+ 	}
+-	request_module(str);
++	request_module("%s", str);
+ }
+ 
+ #endif	/* modular kernel */

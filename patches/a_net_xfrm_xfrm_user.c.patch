@@ -1,0 +1,13 @@
+diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
+index a7e27e1..0040091 100644
+--- a/net/xfrm/xfrm_user.c
++++ b/net/xfrm/xfrm_user.c
+@@ -2478,7 +2478,7 @@ static int xfrm_user_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+ 			return -EINVAL;
+ 
+ 		{
+-			struct netlink_dump_control c = {
++			netlink_dump_control_no_const c = {
+ 				.dump = link->dump,
+ 				.done = link->done,
+ 			};

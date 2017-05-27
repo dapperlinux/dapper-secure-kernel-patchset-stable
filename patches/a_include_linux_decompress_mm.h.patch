@@ -1,0 +1,13 @@
+diff --git a/include/linux/decompress/mm.h b/include/linux/decompress/mm.h
+index 7925bf0..d5143d2 100644
+--- a/include/linux/decompress/mm.h
++++ b/include/linux/decompress/mm.h
+@@ -77,7 +77,7 @@ static void free(void *where)
+  * warnings when not needed (indeed large_malloc / large_free are not
+  * needed by inflate */
+ 
+-#define malloc(a) kmalloc(a, GFP_KERNEL)
++#define malloc(a) kmalloc((a), GFP_KERNEL)
+ #define free(a) kfree(a)
+ 
+ #define large_malloc(a) vmalloc(a)

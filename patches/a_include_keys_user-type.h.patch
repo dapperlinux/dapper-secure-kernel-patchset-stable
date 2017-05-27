@@ -1,0 +1,13 @@
+diff --git a/include/keys/user-type.h b/include/keys/user-type.h
+index c56fef4..c9ebdc7 100644
+--- a/include/keys/user-type.h
++++ b/include/keys/user-type.h
+@@ -12,7 +12,7 @@
+ #ifndef _KEYS_USER_TYPE_H
+ #define _KEYS_USER_TYPE_H
+ 
+-#include <linux/key.h>
++#include <linux/key-type.h>
+ #include <linux/rcupdate.h>
+ 
+ #ifdef CONFIG_KEYS

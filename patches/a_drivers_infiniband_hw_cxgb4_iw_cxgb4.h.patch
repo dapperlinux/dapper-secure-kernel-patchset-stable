@@ -1,0 +1,13 @@
+diff --git a/drivers/infiniband/hw/cxgb4/iw_cxgb4.h b/drivers/infiniband/hw/cxgb4/iw_cxgb4.h
+index 7d54066..4b8a84c 100644
+--- a/drivers/infiniband/hw/cxgb4/iw_cxgb4.h
++++ b/drivers/infiniband/hw/cxgb4/iw_cxgb4.h
+@@ -182,7 +182,7 @@ struct c4iw_rdev {
+ 	struct c4iw_stats stats;
+ 	struct c4iw_hw_queue hw_queue;
+ 	struct t4_dev_status_page *status_page;
+-	atomic_t wr_log_idx;
++	atomic_unchecked_t wr_log_idx;
+ 	struct wr_log_entry *wr_log;
+ 	int wr_log_size;
+ 	struct workqueue_struct *free_workq;

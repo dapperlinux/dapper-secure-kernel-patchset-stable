@@ -1,0 +1,13 @@
+diff --git a/arch/sparc/include/asm/pgtable.h b/arch/sparc/include/asm/pgtable.h
+index 59ba6f6..4518128 100644
+--- a/arch/sparc/include/asm/pgtable.h
++++ b/arch/sparc/include/asm/pgtable.h
+@@ -5,4 +5,8 @@
+ #else
+ #include <asm/pgtable_32.h>
+ #endif
++
++#define ktla_ktva(addr)		(addr)
++#define ktva_ktla(addr)		(addr)
++
+ #endif

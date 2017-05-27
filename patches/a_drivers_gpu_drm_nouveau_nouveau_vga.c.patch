@@ -1,0 +1,13 @@
+diff --git a/drivers/gpu/drm/nouveau/nouveau_vga.c b/drivers/gpu/drm/nouveau/nouveau_vga.c
+index c6a180a..c5c7855 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_vga.c
++++ b/drivers/gpu/drm/nouveau/nouveau_vga.c
+@@ -73,7 +73,7 @@ nouveau_switcheroo_can_switch(struct pci_dev *pdev)
+ 	 * locking inversion with the driver load path. And the access here is
+ 	 * completely racy anyway. So don't bother with locking for now.
+ 	 */
+-	return dev->open_count == 0;
++	return local_read(&dev->open_count) == 0;
+ }
+ 
+ static const struct vga_switcheroo_client_ops

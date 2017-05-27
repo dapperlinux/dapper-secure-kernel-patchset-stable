@@ -1,0 +1,18 @@
+diff --git a/sound/core/pcm_native.c b/sound/core/pcm_native.c
+index 9d33c1e..23b36d1 100644
+--- a/sound/core/pcm_native.c
++++ b/sound/core/pcm_native.c
+@@ -3016,11 +3016,11 @@ int snd_pcm_kernel_ioctl(struct snd_pcm_substream *substream,
+ 	switch (substream->stream) {
+ 	case SNDRV_PCM_STREAM_PLAYBACK:
+ 		result = snd_pcm_playback_ioctl1(NULL, substream, cmd,
+-						 (void __user *)arg);
++						 (void __force_user *)arg);
+ 		break;
+ 	case SNDRV_PCM_STREAM_CAPTURE:
+ 		result = snd_pcm_capture_ioctl1(NULL, substream, cmd,
+-						(void __user *)arg);
++						(void __force_user *)arg);
+ 		break;
+ 	default:
+ 		result = -EINVAL;

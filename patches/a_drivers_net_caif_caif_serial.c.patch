@@ -1,0 +1,13 @@
+diff --git a/drivers/net/caif/caif_serial.c b/drivers/net/caif/caif_serial.c
+index c2dea49..4bf83b5 100644
+--- a/drivers/net/caif/caif_serial.c
++++ b/drivers/net/caif/caif_serial.c
+@@ -277,7 +277,7 @@ static int handle_tx(struct ser_device *ser)
+ 	return tty_wr;
+ }
+ 
+-static int caif_xmit(struct sk_buff *skb, struct net_device *dev)
++static netdev_tx_t caif_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct ser_device *ser;
+ 

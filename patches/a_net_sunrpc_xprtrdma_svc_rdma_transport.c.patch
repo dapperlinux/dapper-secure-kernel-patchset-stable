@@ -1,0 +1,13 @@
+diff --git a/net/sunrpc/xprtrdma/svc_rdma_transport.c b/net/sunrpc/xprtrdma/svc_rdma_transport.c
+index 1334de2..1fa9a7f 100644
+--- a/net/sunrpc/xprtrdma/svc_rdma_transport.c
++++ b/net/sunrpc/xprtrdma/svc_rdma_transport.c
+@@ -1342,7 +1342,7 @@ int svc_rdma_send(struct svcxprt_rdma *xprt, struct ib_send_wr *wr)
+ 		spin_lock_bh(&xprt->sc_lock);
+ 		if (xprt->sc_sq_depth < atomic_read(&xprt->sc_sq_count) + wr_count) {
+ 			spin_unlock_bh(&xprt->sc_lock);
+-			atomic_inc(&rdma_stat_sq_starve);
++			atomic_inc_unchecked(&rdma_stat_sq_starve);
+ 
+ 			/* Wait until SQ WR available if SQ still full */
+ 			wait_event(xprt->sc_send_wait,

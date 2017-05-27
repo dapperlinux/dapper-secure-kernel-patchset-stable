@@ -1,0 +1,13 @@
+diff --git a/drivers/tty/mips_ejtag_fdc.c b/drivers/tty/mips_ejtag_fdc.c
+index 234123b..2e2b1f7 100644
+--- a/drivers/tty/mips_ejtag_fdc.c
++++ b/drivers/tty/mips_ejtag_fdc.c
+@@ -1258,7 +1258,7 @@ static void kgdbfdc_write_char(u8 chr)
+ 		kgdbfdc_push_one();
+ }
+ 
+-static struct kgdb_io kgdbfdc_io_ops = {
++static struct kgdb_io kgdbfdc_io_ops __read_only = {
+ 	.name		= "kgdbfdc",
+ 	.read_char	= kgdbfdc_read_char,
+ 	.write_char	= kgdbfdc_write_char,

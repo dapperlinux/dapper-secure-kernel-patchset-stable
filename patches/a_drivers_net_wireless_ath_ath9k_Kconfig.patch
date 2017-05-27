@@ -1,0 +1,12 @@
+diff --git a/drivers/net/wireless/ath/ath9k/Kconfig b/drivers/net/wireless/ath/ath9k/Kconfig
+index 8f231c6..48902b8 100644
+--- a/drivers/net/wireless/ath/ath9k/Kconfig
++++ b/drivers/net/wireless/ath/ath9k/Kconfig
+@@ -3,7 +3,6 @@ config ATH9K_HW
+ config ATH9K_COMMON
+ 	tristate
+ 	select ATH_COMMON
+-	select DEBUG_FS
+ 	select RELAY
+ config ATH9K_DFS_DEBUGFS
+ 	def_bool y

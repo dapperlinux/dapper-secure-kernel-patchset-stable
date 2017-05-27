@@ -1,0 +1,13 @@
+diff --git a/include/net/llc_s_ac.h b/include/net/llc_s_ac.h
+index a61b98c..aade1eb 100644
+--- a/include/net/llc_s_ac.h
++++ b/include/net/llc_s_ac.h
+@@ -23,7 +23,7 @@
+ #define SAP_ACT_TEST_IND	9
+ 
+ /* All action functions must look like this */
+-typedef int (*llc_sap_action_t)(struct llc_sap *sap, struct sk_buff *skb);
++typedef int (* const llc_sap_action_t)(struct llc_sap *sap, struct sk_buff *skb);
+ 
+ int llc_sap_action_unitdata_ind(struct llc_sap *sap, struct sk_buff *skb);
+ int llc_sap_action_send_ui(struct llc_sap *sap, struct sk_buff *skb);

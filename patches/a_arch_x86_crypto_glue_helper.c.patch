@@ -1,0 +1,13 @@
+diff --git a/arch/x86/crypto/glue_helper.c b/arch/x86/crypto/glue_helper.c
+index 6a85598..fed2ada 100644
+--- a/arch/x86/crypto/glue_helper.c
++++ b/arch/x86/crypto/glue_helper.c
+@@ -165,7 +165,7 @@ __glue_cbc_decrypt_128bit(const struct common_glue_ctx *gctx,
+ 				src -= num_blocks - 1;
+ 				dst -= num_blocks - 1;
+ 
+-				gctx->funcs[i].fn_u.cbc(ctx, dst, src);
++				gctx->funcs[i].fn_u.cbc(ctx, (u8 *)dst, (u8 *)src);
+ 
+ 				nbytes -= bsize;
+ 				if (nbytes < bsize)

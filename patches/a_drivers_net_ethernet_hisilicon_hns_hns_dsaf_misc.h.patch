@@ -1,0 +1,13 @@
+diff --git a/drivers/net/ethernet/hisilicon/hns/hns_dsaf_misc.h b/drivers/net/ethernet/hisilicon/hns/hns_dsaf_misc.h
+index 310e802..5e0cca8 100644
+--- a/drivers/net/ethernet/hisilicon/hns/hns_dsaf_misc.h
++++ b/drivers/net/ethernet/hisilicon/hns/hns_dsaf_misc.h
+@@ -33,7 +33,7 @@
+ #define DSAF_LED_DATA_B 4
+ #define DSAF_LED_ANCHOR_B 5
+ 
+-struct dsaf_misc_op *hns_misc_op_get(struct dsaf_device *dsaf_dev);
++const struct dsaf_misc_op *hns_misc_op_get(struct dsaf_device *dsaf_dev);
+ struct
+ platform_device *hns_dsaf_find_platform_device(struct fwnode_handle *fwnode);
+ #endif

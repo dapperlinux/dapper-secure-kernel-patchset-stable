@@ -1,0 +1,21 @@
+diff --git a/arch/x86/math-emu/fpu_etc.c b/arch/x86/math-emu/fpu_etc.c
+index 233e5af5..dd82ff0 100644
+--- a/arch/x86/math-emu/fpu_etc.c
++++ b/arch/x86/math-emu/fpu_etc.c
+@@ -119,9 +119,14 @@ static void fxam(FPU_REG *st0_ptr, u_char st0tag)
+ 	setcc(c);
+ }
+ 
++static void FPU_ST0_illegal(FPU_REG *st0_ptr, u_char st0_tag)
++{
++	FPU_illegal();
++}
++
+ static FUNC_ST0 const fp_etc_table[] = {
+-	fchs, fabs, (FUNC_ST0) FPU_illegal, (FUNC_ST0) FPU_illegal,
+-	ftst_, fxam, (FUNC_ST0) FPU_illegal, (FUNC_ST0) FPU_illegal
++	fchs, fabs, FPU_ST0_illegal, FPU_ST0_illegal,
++	ftst_, fxam, FPU_ST0_illegal, FPU_ST0_illegal
+ };
+ 
+ void FPU_etc(void)

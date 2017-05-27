@@ -1,0 +1,14 @@
+diff --git a/include/linux/irqdomain.h b/include/linux/irqdomain.h
+index ffb8460..1ef1031 100644
+--- a/include/linux/irqdomain.h
++++ b/include/linux/irqdomain.h
+@@ -38,6 +38,9 @@ struct device_node;
+ struct irq_domain;
+ struct of_device_id;
+ struct irq_chip;
++#ifndef _LINUX_IRQ_H
++typedef struct irq_chip __no_const irq_chip_no_const;
++#endif
+ struct irq_data;
+ struct cpumask;
+ 

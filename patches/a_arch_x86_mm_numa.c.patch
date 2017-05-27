@@ -1,0 +1,13 @@
+diff --git a/arch/x86/mm/numa.c b/arch/x86/mm/numa.c
+index 3f35b48..a825b33 100644
+--- a/arch/x86/mm/numa.c
++++ b/arch/x86/mm/numa.c
+@@ -528,7 +528,7 @@ static void __init numa_clear_kernel_node_hotplug(void)
+ 	}
+ }
+ 
+-static int __init numa_register_memblks(struct numa_meminfo *mi)
++static int __init __intentional_overflow(-1) numa_register_memblks(struct numa_meminfo *mi)
+ {
+ 	unsigned long uninitialized_var(pfn_align);
+ 	int i, nid;

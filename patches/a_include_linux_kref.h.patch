@@ -1,0 +1,13 @@
+diff --git a/include/linux/kref.h b/include/linux/kref.h
+index e15828f..531fd0a 100644
+--- a/include/linux/kref.h
++++ b/include/linux/kref.h
+@@ -67,7 +67,7 @@ static inline void kref_get(struct kref *kref)
+ static inline int kref_sub(struct kref *kref, unsigned int count,
+ 	     void (*release)(struct kref *kref))
+ {
+-	WARN_ON(release == NULL);
++	BUG_ON(release == NULL);
+ 
+ 	if (atomic_sub_and_test((int) count, &kref->refcount)) {
+ 		release(kref);

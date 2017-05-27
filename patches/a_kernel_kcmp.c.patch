@@ -1,0 +1,15 @@
+diff --git a/kernel/kcmp.c b/kernel/kcmp.c
+index 3a47fa9..bcb17e3 100644
+--- a/kernel/kcmp.c
++++ b/kernel/kcmp.c
+@@ -100,6 +100,10 @@ SYSCALL_DEFINE5(kcmp, pid_t, pid1, pid_t, pid2, int, type,
+ 	struct task_struct *task1, *task2;
+ 	int ret;
+ 
++#ifdef CONFIG_GRKERNSEC
++	return -ENOSYS;
++#endif
++
+ 	rcu_read_lock();
+ 
+ 	/*

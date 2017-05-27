@@ -1,0 +1,13 @@
+diff --git a/drivers/staging/rtl8188eu/hal/rtl8188eu_recv.c b/drivers/staging/rtl8188eu/hal/rtl8188eu_recv.c
+index d0495a1..bac1045 100644
+--- a/drivers/staging/rtl8188eu/hal/rtl8188eu_recv.c
++++ b/drivers/staging/rtl8188eu/hal/rtl8188eu_recv.c
+@@ -31,7 +31,7 @@ int	rtw_hal_init_recv_priv(struct adapter *padapter)
+ 	struct recv_buf *precvbuf;
+ 
+ 	tasklet_init(&precvpriv->recv_tasklet,
+-		     (void(*)(unsigned long))rtl8188eu_recv_tasklet,
++		     rtl8188eu_recv_tasklet,
+ 		     (unsigned long)padapter);
+ 
+ 	/* init recv_buf */

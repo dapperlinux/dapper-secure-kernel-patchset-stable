@@ -1,0 +1,13 @@
+diff --git a/drivers/net/ethernet/broadcom/bnx2.c b/drivers/net/ethernet/broadcom/bnx2.c
+index 1f7034d..a5f3bb7 100644
+--- a/drivers/net/ethernet/broadcom/bnx2.c
++++ b/drivers/net/ethernet/broadcom/bnx2.c
+@@ -8732,7 +8732,7 @@ static SIMPLE_DEV_PM_OPS(bnx2_pm_ops, bnx2_suspend, bnx2_resume);
+  * this device has been detected.
+  */
+ static pci_ers_result_t bnx2_io_error_detected(struct pci_dev *pdev,
+-					       pci_channel_state_t state)
++					       enum pci_channel_state state)
+ {
+ 	struct net_device *dev = pci_get_drvdata(pdev);
+ 	struct bnx2 *bp = netdev_priv(dev);

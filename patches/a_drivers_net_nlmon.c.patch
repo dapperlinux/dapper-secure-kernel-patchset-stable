@@ -1,0 +1,13 @@
+diff --git a/drivers/net/nlmon.c b/drivers/net/nlmon.c
+index 7b7c70e..a92dc83 100644
+--- a/drivers/net/nlmon.c
++++ b/drivers/net/nlmon.c
+@@ -154,7 +154,7 @@ static int nlmon_validate(struct nlattr *tb[], struct nlattr *data[])
+ 	return 0;
+ }
+ 
+-static struct rtnl_link_ops nlmon_link_ops __read_mostly = {
++static struct rtnl_link_ops nlmon_link_ops = {
+ 	.kind			= "nlmon",
+ 	.priv_size		= sizeof(struct nlmon),
+ 	.setup			= nlmon_setup,

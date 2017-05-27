@@ -1,0 +1,13 @@
+diff --git a/include/net/llc_c_st.h b/include/net/llc_c_st.h
+index 48f3f89..0e92c50 100644
+--- a/include/net/llc_c_st.h
++++ b/include/net/llc_c_st.h
+@@ -37,7 +37,7 @@ struct llc_conn_state_trans {
+ 	u8		   next_state;
+ 	const llc_conn_ev_qfyr_t *ev_qualifiers;
+ 	const llc_conn_action_t  *ev_actions;
+-};
++} __do_const;
+ 
+ struct llc_conn_state {
+ 	u8			    current_state;

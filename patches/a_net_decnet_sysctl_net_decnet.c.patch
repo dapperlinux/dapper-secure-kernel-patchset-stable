@@ -1,0 +1,22 @@
+diff --git a/net/decnet/sysctl_net_decnet.c b/net/decnet/sysctl_net_decnet.c
+index 5325b54..a0d4d69 100644
+--- a/net/decnet/sysctl_net_decnet.c
++++ b/net/decnet/sysctl_net_decnet.c
+@@ -174,7 +174,7 @@ static int dn_node_address_handler(struct ctl_table *table, int write,
+ 
+ 	if (len > *lenp) len = *lenp;
+ 
+-	if (copy_to_user(buffer, addr, len))
++	if (len > sizeof addr || copy_to_user(buffer, addr, len))
+ 		return -EFAULT;
+ 
+ 	*lenp = len;
+@@ -237,7 +237,7 @@ static int dn_def_dev_handler(struct ctl_table *table, int write,
+ 
+ 	if (len > *lenp) len = *lenp;
+ 
+-	if (copy_to_user(buffer, devname, len))
++	if (len > sizeof devname || copy_to_user(buffer, devname, len))
+ 		return -EFAULT;
+ 
+ 	*lenp = len;

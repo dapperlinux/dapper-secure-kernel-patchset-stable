@@ -1,0 +1,10 @@
+diff --git a/drivers/gpu/drm/savage/savage_bci.c b/drivers/gpu/drm/savage/savage_bci.c
+index d47dff9..0752202 100644
+--- a/drivers/gpu/drm/savage/savage_bci.c
++++ b/drivers/gpu/drm/savage/savage_bci.c
+@@ -1080,4 +1080,4 @@ const struct drm_ioctl_desc savage_ioctls[] = {
+ 	DRM_IOCTL_DEF_DRV(SAVAGE_BCI_EVENT_WAIT, savage_bci_event_wait, DRM_AUTH),
+ };
+ 
+-int savage_max_ioctl = ARRAY_SIZE(savage_ioctls);
++const int savage_max_ioctl = ARRAY_SIZE(savage_ioctls);

@@ -1,0 +1,13 @@
+diff --git a/drivers/video/fbdev/aty/aty128fb.c b/drivers/video/fbdev/aty/aty128fb.c
+index fa07242..23708c5 100644
+--- a/drivers/video/fbdev/aty/aty128fb.c
++++ b/drivers/video/fbdev/aty/aty128fb.c
+@@ -144,7 +144,7 @@ enum {
+ };
+ 
+ /* Must match above enum */
+-static char * const r128_family[] = {
++static const char * const r128_family[] = {
+ 	"AGP",
+ 	"PCI",
+ 	"PRO AGP",

@@ -1,0 +1,13 @@
+diff --git a/drivers/net/ethernet/nuvoton/w90p910_ether.c b/drivers/net/ethernet/nuvoton/w90p910_ether.c
+index 712d8bc..52b4cde 100644
+--- a/drivers/net/ethernet/nuvoton/w90p910_ether.c
++++ b/drivers/net/ethernet/nuvoton/w90p910_ether.c
+@@ -633,7 +633,7 @@ static int w90p910_send_frame(struct net_device *dev,
+ 	return 0;
+ }
+ 
+-static int w90p910_ether_start_xmit(struct sk_buff *skb, struct net_device *dev)
++static netdev_tx_t w90p910_ether_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct w90p910_ether *ether = netdev_priv(dev);
+ 

@@ -1,0 +1,13 @@
+diff --git a/drivers/thermal/x86_pkg_temp_thermal.c b/drivers/thermal/x86_pkg_temp_thermal.c
+index 95f4c1b..98efc0d 100644
+--- a/drivers/thermal/x86_pkg_temp_thermal.c
++++ b/drivers/thermal/x86_pkg_temp_thermal.c
+@@ -568,7 +568,7 @@ static int pkg_temp_thermal_cpu_callback(struct notifier_block *nfb,
+ 	return NOTIFY_OK;
+ }
+ 
+-static struct notifier_block pkg_temp_thermal_notifier __refdata = {
++static struct notifier_block pkg_temp_thermal_notifier = {
+ 	.notifier_call = pkg_temp_thermal_cpu_callback,
+ };
+ 

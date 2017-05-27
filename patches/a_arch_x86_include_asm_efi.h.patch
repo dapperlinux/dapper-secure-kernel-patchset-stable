@@ -1,0 +1,16 @@
+diff --git a/arch/x86/include/asm/efi.h b/arch/x86/include/asm/efi.h
+index 389d700..fa51266 100644
+--- a/arch/x86/include/asm/efi.h
++++ b/arch/x86/include/asm/efi.h
+@@ -150,6 +150,11 @@ static inline bool efi_is_native(void)
+ 
+ static inline bool efi_runtime_supported(void)
+ {
++
++#if defined(CONFIG_X86_32) && defined(CONFIG_PAX_KERNEXEC)
++	return false;
++#endif
++
+ 	if (efi_is_native())
+ 		return true;
+ 

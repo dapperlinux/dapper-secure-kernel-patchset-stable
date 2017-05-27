@@ -1,0 +1,11 @@
+diff --git a/arch/x86/crypto/sha256-mb/sha256_mb_mgr.h b/arch/x86/crypto/sha256-mb/sha256_mb_mgr.h
+index b01ae40..880e1d4 100644
+--- a/arch/x86/crypto/sha256-mb/sha256_mb_mgr.h
++++ b/arch/x86/crypto/sha256-mb/sha256_mb_mgr.h
+@@ -104,5 +104,6 @@ struct job_sha256 *sha256_mb_mgr_submit_avx2(struct sha256_mb_mgr *state,
+ 					 struct job_sha256 *job);
+ struct job_sha256 *sha256_mb_mgr_flush_avx2(struct sha256_mb_mgr *state);
+ struct job_sha256 *sha256_mb_mgr_get_comp_job_avx2(struct sha256_mb_mgr *state);
++struct job_sha256 *sha256_x8_avx2(struct sha256_mb_mgr *state) __rap_hash;
+ 
+ #endif

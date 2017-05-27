@@ -1,0 +1,13 @@
+diff --git a/net/irda/discovery.c b/net/irda/discovery.c
+index 364d70a..c503f3f 100644
+--- a/net/irda/discovery.c
++++ b/net/irda/discovery.c
+@@ -136,7 +136,7 @@ void irlmp_add_discovery_log(hashbin_t *cachelog, hashbin_t *log)
+ 	}
+ 
+ 	/* Delete the now empty log */
+-	hashbin_delete(log, (FREE_FUNC) kfree);
++	hashbin_delete(log, irlmp_kfree);
+ }
+ 
+ /*

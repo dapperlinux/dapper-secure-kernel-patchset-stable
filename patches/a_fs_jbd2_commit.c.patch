@@ -1,0 +1,13 @@
+diff --git a/fs/jbd2/commit.c b/fs/jbd2/commit.c
+index 31f8ca0..0319008 100644
+--- a/fs/jbd2/commit.c
++++ b/fs/jbd2/commit.c
+@@ -1076,7 +1076,7 @@ void jbd2_journal_commit_transaction(journal_t *journal)
+ 	 */
+ 	stats.ts_tid = commit_transaction->t_tid;
+ 	stats.run.rs_handle_count =
+-		atomic_read(&commit_transaction->t_handle_count);
++		atomic_read_unchecked(&commit_transaction->t_handle_count);
+ 	trace_jbd2_run_stats(journal->j_fs_dev->bd_dev,
+ 			     commit_transaction->t_tid, &stats.run);
+ 	stats.ts_requested = (commit_transaction->t_requested) ? 1 : 0;

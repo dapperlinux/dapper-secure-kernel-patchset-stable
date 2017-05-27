@@ -1,0 +1,13 @@
+diff --git a/drivers/firmware/efi/runtime-map.c b/drivers/firmware/efi/runtime-map.c
+index 8e64b77..bc1695a 100644
+--- a/drivers/firmware/efi/runtime-map.c
++++ b/drivers/firmware/efi/runtime-map.c
+@@ -93,7 +93,7 @@ static void map_release(struct kobject *kobj)
+ 	kfree(entry);
+ }
+ 
+-static struct kobj_type __refdata map_ktype = {
++static const struct kobj_type __refconst map_ktype = {
+ 	.sysfs_ops	= &map_attr_ops,
+ 	.default_attrs	= def_attrs,
+ 	.release	= map_release,

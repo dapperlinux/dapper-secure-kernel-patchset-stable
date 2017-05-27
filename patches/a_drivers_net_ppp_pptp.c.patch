@@ -1,0 +1,13 @@
+diff --git a/drivers/net/ppp/pptp.c b/drivers/net/ppp/pptp.c
+index 1951b10..b02adc9 100644
+--- a/drivers/net/ppp/pptp.c
++++ b/drivers/net/ppp/pptp.c
+@@ -332,7 +332,7 @@ static int pptp_rcv_core(struct sock *sk, struct sk_buff *skb)
+ 		}
+ 
+ 		skb->ip_summed = CHECKSUM_NONE;
+-		skb_set_network_header(skb, skb->head-skb->data);
++		skb->network_header = 0;
+ 		ppp_input(&po->chan, skb);
+ 
+ 		return NET_RX_SUCCESS;

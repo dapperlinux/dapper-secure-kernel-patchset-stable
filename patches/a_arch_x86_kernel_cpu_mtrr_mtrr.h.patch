@@ -1,0 +1,13 @@
+diff --git a/arch/x86/kernel/cpu/mtrr/mtrr.h b/arch/x86/kernel/cpu/mtrr/mtrr.h
+index ad8bd76..e51b46f 100644
+--- a/arch/x86/kernel/cpu/mtrr/mtrr.h
++++ b/arch/x86/kernel/cpu/mtrr/mtrr.h
+@@ -25,7 +25,7 @@ struct mtrr_ops {
+ 	int	(*validate_add_page)(unsigned long base, unsigned long size,
+ 				     unsigned int type);
+ 	int	(*have_wrcomb)(void);
+-};
++} __do_const;
+ 
+ extern int generic_get_free_region(unsigned long base, unsigned long size,
+ 				   int replace_reg);

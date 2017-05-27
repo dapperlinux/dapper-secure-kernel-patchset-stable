@@ -1,0 +1,15 @@
+diff --git a/drivers/staging/iio/adc/ad7280a.c b/drivers/staging/iio/adc/ad7280a.c
+index b460dda..d68d538 100644
+--- a/drivers/staging/iio/adc/ad7280a.c
++++ b/drivers/staging/iio/adc/ad7280a.c
+@@ -547,8 +547,8 @@ static int ad7280_attr_init(struct ad7280_state *st)
+ {
+ 	int dev, ch, cnt;
+ 
+-	st->iio_attr = kcalloc(2, sizeof(*st->iio_attr) *
+-			       (st->slave_num + 1) * AD7280A_CELLS_PER_DEV,
++	st->iio_attr = kcalloc(sizeof(*st->iio_attr) *
++			       (st->slave_num + 1) * AD7280A_CELLS_PER_DEV, 2,
+ 			       GFP_KERNEL);
+ 	if (!st->iio_attr)
+ 		return -ENOMEM;

@@ -1,0 +1,13 @@
+diff --git a/drivers/gpu/drm/tegra/dsi.c b/drivers/gpu/drm/tegra/dsi.c
+index 3dea121..c2b888e 100644
+--- a/drivers/gpu/drm/tegra/dsi.c
++++ b/drivers/gpu/drm/tegra/dsi.c
+@@ -63,7 +63,7 @@ struct tegra_dsi {
+ 	struct clk *clk_lp;
+ 	struct clk *clk;
+ 
+-	struct drm_info_list *debugfs_files;
++	drm_info_list_no_const *debugfs_files;
+ 	struct drm_minor *minor;
+ 	struct dentry *debugfs;
+ 

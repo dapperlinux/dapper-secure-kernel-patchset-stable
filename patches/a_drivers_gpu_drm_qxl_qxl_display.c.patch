@@ -1,0 +1,13 @@
+diff --git a/drivers/gpu/drm/qxl/qxl_display.c b/drivers/gpu/drm/qxl/qxl_display.c
+index a61c0d4..fab7be1 100644
+--- a/drivers/gpu/drm/qxl/qxl_display.c
++++ b/drivers/gpu/drm/qxl/qxl_display.c
+@@ -880,7 +880,7 @@ static int qxl_conn_get_modes(struct drm_connector *connector)
+ 	return ret;
+ }
+ 
+-static int qxl_conn_mode_valid(struct drm_connector *connector,
++static enum drm_mode_status qxl_conn_mode_valid(struct drm_connector *connector,
+ 			       struct drm_display_mode *mode)
+ {
+ 	struct drm_device *ddev = connector->dev;

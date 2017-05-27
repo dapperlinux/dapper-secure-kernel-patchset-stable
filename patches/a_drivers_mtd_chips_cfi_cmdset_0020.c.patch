@@ -1,0 +1,13 @@
+diff --git a/drivers/mtd/chips/cfi_cmdset_0020.c b/drivers/mtd/chips/cfi_cmdset_0020.c
+index 94d3eb4..7d34296 100644
+--- a/drivers/mtd/chips/cfi_cmdset_0020.c
++++ b/drivers/mtd/chips/cfi_cmdset_0020.c
+@@ -666,7 +666,7 @@ cfi_staa_writev(struct mtd_info *mtd, const struct kvec *vecs,
+ 	size_t	 totlen = 0, thislen;
+ 	int	 ret = 0;
+ 	size_t	 buflen = 0;
+-	static char *buffer;
++	char *buffer;
+ 
+ 	if (!ECCBUF_SIZE) {
+ 		/* We should fall back to a general writev implementation.

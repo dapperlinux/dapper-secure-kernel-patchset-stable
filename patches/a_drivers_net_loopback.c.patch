@@ -1,0 +1,12 @@
+diff --git a/drivers/net/loopback.c b/drivers/net/loopback.c
+index 1b65f0f..55b35dc 100644
+--- a/drivers/net/loopback.c
++++ b/drivers/net/loopback.c
+@@ -217,6 +217,6 @@ static __net_init int loopback_net_init(struct net *net)
+ }
+ 
+ /* Registered in net/core/dev.c */
+-struct pernet_operations __net_initdata loopback_net_ops = {
++struct pernet_operations __net_initconst loopback_net_ops = {
+        .init = loopback_net_init,
+ };

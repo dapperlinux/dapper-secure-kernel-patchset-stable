@@ -1,0 +1,13 @@
+diff --git a/drivers/net/ethernet/chelsio/cxgb4/cxgb4_main.c b/drivers/net/ethernet/chelsio/cxgb4/cxgb4_main.c
+index 19dc9e2..e348455 100644
+--- a/drivers/net/ethernet/chelsio/cxgb4/cxgb4_main.c
++++ b/drivers/net/ethernet/chelsio/cxgb4/cxgb4_main.c
+@@ -3861,7 +3861,7 @@ static int adap_init0(struct adapter *adap)
+ /* EEH callbacks */
+ 
+ static pci_ers_result_t eeh_err_detected(struct pci_dev *pdev,
+-					 pci_channel_state_t state)
++					 enum pci_channel_state state)
+ {
+ 	int i;
+ 	struct adapter *adap = pci_get_drvdata(pdev);

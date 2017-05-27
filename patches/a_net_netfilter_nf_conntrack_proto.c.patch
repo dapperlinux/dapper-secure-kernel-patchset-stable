@@ -1,0 +1,13 @@
+diff --git a/net/netfilter/nf_conntrack_proto.c b/net/netfilter/nf_conntrack_proto.c
+index 8d2c7d8..9155e0c 100644
+--- a/net/netfilter/nf_conntrack_proto.c
++++ b/net/netfilter/nf_conntrack_proto.c
+@@ -52,7 +52,7 @@ nf_ct_register_sysctl(struct net *net,
+ 
+ static void
+ nf_ct_unregister_sysctl(struct ctl_table_header **header,
+-			struct ctl_table **table,
++			ctl_table_no_const **table,
+ 			unsigned int users)
+ {
+ 	if (users > 0)

@@ -1,0 +1,13 @@
+diff --git a/drivers/gpio/gpio-ich.c b/drivers/gpio/gpio-ich.c
+index 4f6d643..eb4655c 100644
+--- a/drivers/gpio/gpio-ich.c
++++ b/drivers/gpio/gpio-ich.c
+@@ -95,7 +95,7 @@ struct ichx_desc {
+ 	 * this option allows driver caching written output values
+ 	 */
+ 	bool use_outlvl_cache;
+-};
++} __do_const;
+ 
+ static struct {
+ 	spinlock_t lock;

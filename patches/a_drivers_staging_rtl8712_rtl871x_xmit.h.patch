@@ -1,0 +1,13 @@
+diff --git a/drivers/staging/rtl8712/rtl871x_xmit.h b/drivers/staging/rtl8712/rtl871x_xmit.h
+index d899d0c..f27928e 100644
+--- a/drivers/staging/rtl8712/rtl871x_xmit.h
++++ b/drivers/staging/rtl8712/rtl871x_xmit.h
+@@ -295,7 +295,7 @@ int r8712_pre_xmit(struct _adapter *padapter, struct xmit_frame *pxmitframe);
+ int r8712_xmit_enqueue(struct _adapter *padapter,
+ 		       struct xmit_frame *pxmitframe);
+ int r8712_xmit_direct(struct _adapter *padapter, struct xmit_frame *pxmitframe);
+-void r8712_xmit_bh(void *priv);
++void r8712_xmit_bh(unsigned long priv);
+ 
+ void xmitframe_xmitbuf_attach(struct xmit_frame *pxmitframe,
+ 			struct xmit_buf *pxmitbuf);

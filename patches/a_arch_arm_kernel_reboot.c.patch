@@ -1,0 +1,12 @@
+diff --git a/arch/arm/kernel/reboot.c b/arch/arm/kernel/reboot.c
+index 3fa867a..d610607 100644
+--- a/arch/arm/kernel/reboot.c
++++ b/arch/arm/kernel/reboot.c
+@@ -120,6 +120,7 @@ void machine_power_off(void)
+ 
+ 	if (pm_power_off)
+ 		pm_power_off();
++	while (1);
+ }
+ 
+ /*

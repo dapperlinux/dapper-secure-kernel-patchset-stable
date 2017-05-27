@@ -1,0 +1,12 @@
+diff --git a/arch/x86/xen/pmu.c b/arch/x86/xen/pmu.c
+index b9fc525..1368a4d 100644
+--- a/arch/x86/xen/pmu.c
++++ b/arch/x86/xen/pmu.c
+@@ -444,6 +444,7 @@ static unsigned long xen_get_guest_ip(void)
+ 		return 0;
+ 	}
+ 
++	// TODO: adjust with the segment base
+ 	return xenpmu_data->pmu.r.regs.ip;
+ }
+ 

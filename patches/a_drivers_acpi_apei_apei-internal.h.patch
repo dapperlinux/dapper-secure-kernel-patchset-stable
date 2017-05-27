@@ -1,0 +1,13 @@
+diff --git a/drivers/acpi/apei/apei-internal.h b/drivers/acpi/apei/apei-internal.h
+index 6e9f14c..7f9a99d 100644
+--- a/drivers/acpi/apei/apei-internal.h
++++ b/drivers/acpi/apei/apei-internal.h
+@@ -19,7 +19,7 @@ typedef int (*apei_exec_ins_func_t)(struct apei_exec_context *ctx,
+ struct apei_exec_ins_type {
+ 	u32 flags;
+ 	apei_exec_ins_func_t run;
+-};
++} __do_const;
+ 
+ struct apei_exec_context {
+ 	u32 ip;

@@ -1,0 +1,9 @@
+diff --git a/arch/x86/entry/Makefile b/arch/x86/entry/Makefile
+index 9976fce..4c336fd0 100644
+--- a/arch/x86/entry/Makefile
++++ b/arch/x86/entry/Makefile
+@@ -14,4 +14,3 @@ obj-y				+= vdso/
+ obj-y				+= vsyscall/
+ 
+ obj-$(CONFIG_IA32_EMULATION)	+= entry_64_compat.o syscall_32.o
+-

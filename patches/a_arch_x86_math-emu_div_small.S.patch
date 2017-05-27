@@ -1,0 +1,11 @@
+diff --git a/arch/x86/math-emu/div_small.S b/arch/x86/math-emu/div_small.S
+index 4709962..f9f329a 100644
+--- a/arch/x86/math-emu/div_small.S
++++ b/arch/x86/math-emu/div_small.S
+@@ -43,5 +43,5 @@ ENTRY(FPU_div_small)
+ 	popl	%esi
+ 
+ 	leave
+-	ret
++	pax_ret FPU_div_small
+ 

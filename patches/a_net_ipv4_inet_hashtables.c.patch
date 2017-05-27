@@ -1,0 +1,31 @@
+diff --git a/net/ipv4/inet_hashtables.c b/net/ipv4/inet_hashtables.c
+index ca97835..4876208 100644
+--- a/net/ipv4/inet_hashtables.c
++++ b/net/ipv4/inet_hashtables.c
+@@ -19,6 +19,7 @@
+ #include <linux/slab.h>
+ #include <linux/wait.h>
+ #include <linux/vmalloc.h>
++#include <linux/security.h>
+ 
+ #include <net/addrconf.h>
+ #include <net/inet_connection_sock.h>
+@@ -57,6 +58,8 @@ u32 sk_ehashfn(const struct sock *sk)
+ 			    sk->sk_daddr, sk->sk_dport);
+ }
+ 
++extern void gr_update_task_in_ip_table(const struct inet_sock *inet);
++
+ /*
+  * Allocate and initialize a new local port bind bucket.
+  * The bindhash mutex for snum's hash chain must be held here.
+@@ -644,6 +647,9 @@ int __inet_hash_connect(struct inet_timewait_death_row *death_row,
+ 	spin_unlock(&head->lock);
+ 	if (tw)
+ 		inet_twsk_deschedule_put(tw);
++
++	gr_update_task_in_ip_table(inet_sk(sk));
++
+ 	local_bh_enable();
+ 	return 0;
+ }

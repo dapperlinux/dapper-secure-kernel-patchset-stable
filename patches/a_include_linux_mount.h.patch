@@ -1,0 +1,13 @@
+diff --git a/include/linux/mount.h b/include/linux/mount.h
+index e0f3a82..377fcf1 100644
+--- a/include/linux/mount.h
++++ b/include/linux/mount.h
+@@ -67,7 +67,7 @@ struct vfsmount {
+ 	struct dentry *mnt_root;	/* root of the mounted tree */
+ 	struct super_block *mnt_sb;	/* pointer to superblock */
+ 	int mnt_flags;
+-};
++} __randomize_layout;
+ 
+ struct file; /* forward dec */
+ struct path;

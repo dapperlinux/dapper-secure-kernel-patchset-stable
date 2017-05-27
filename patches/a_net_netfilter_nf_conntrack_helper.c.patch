@@ -1,0 +1,13 @@
+diff --git a/net/netfilter/nf_conntrack_helper.c b/net/netfilter/nf_conntrack_helper.c
+index 6dc44d9..6ccf1a3 100644
+--- a/net/netfilter/nf_conntrack_helper.c
++++ b/net/netfilter/nf_conntrack_helper.c
+@@ -57,7 +57,7 @@ static struct ctl_table helper_sysctl_table[] = {
+ 
+ static int nf_conntrack_helper_init_sysctl(struct net *net)
+ {
+-	struct ctl_table *table;
++	ctl_table_no_const *table;
+ 
+ 	table = kmemdup(helper_sysctl_table, sizeof(helper_sysctl_table),
+ 			GFP_KERNEL);

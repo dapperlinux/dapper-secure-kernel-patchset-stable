@@ -1,0 +1,13 @@
+diff --git a/drivers/net/can/Kconfig b/drivers/net/can/Kconfig
+index 22570ea..c462375 100644
+--- a/drivers/net/can/Kconfig
++++ b/drivers/net/can/Kconfig
+@@ -81,7 +81,7 @@ config CAN_BFIN
+ 
+ config CAN_FLEXCAN
+ 	tristate "Support for Freescale FLEXCAN based chips"
+-	depends on ARM || PPC
++	depends on (ARM && CPU_LITTLE_ENDIAN) || PPC
+ 	---help---
+ 	  Say Y here if you want to support for Freescale FlexCAN.
+ 

@@ -1,0 +1,13 @@
+diff --git a/drivers/edac/edac_module.c b/drivers/edac/edac_module.c
+index 5f8543b..46aa017 100644
+--- a/drivers/edac/edac_module.c
++++ b/drivers/edac/edac_module.c
+@@ -19,7 +19,7 @@
+ 
+ #ifdef CONFIG_EDAC_DEBUG
+ 
+-static int edac_set_debug_level(const char *buf, struct kernel_param *kp)
++static int edac_set_debug_level(const char *buf, const struct kernel_param *kp)
+ {
+ 	unsigned long val;
+ 	int ret;

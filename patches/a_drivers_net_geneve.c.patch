@@ -1,0 +1,22 @@
+diff --git a/drivers/net/geneve.c b/drivers/net/geneve.c
+index 3c1f89a..9b9e82d 100644
+--- a/drivers/net/geneve.c
++++ b/drivers/net/geneve.c
+@@ -1473,7 +1473,7 @@ static int geneve_fill_info(struct sk_buff *skb, const struct net_device *dev)
+ 	return -EMSGSIZE;
+ }
+ 
+-static struct rtnl_link_ops geneve_link_ops __read_mostly = {
++static struct rtnl_link_ops geneve_link_ops = {
+ 	.kind		= "geneve",
+ 	.maxtype	= IFLA_GENEVE_MAX,
+ 	.policy		= geneve_policy,
+@@ -1539,7 +1539,7 @@ static int geneve_netdevice_event(struct notifier_block *unused,
+ 	return NOTIFY_DONE;
+ }
+ 
+-static struct notifier_block geneve_notifier_block __read_mostly = {
++static struct notifier_block geneve_notifier_block = {
+ 	.notifier_call = geneve_netdevice_event,
+ };
+ 

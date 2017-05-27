@@ -1,0 +1,13 @@
+diff --git a/drivers/md/dm-ioctl.c b/drivers/md/dm-ioctl.c
+index 966eb4b..aca05a3 100644
+--- a/drivers/md/dm-ioctl.c
++++ b/drivers/md/dm-ioctl.c
+@@ -1777,7 +1777,7 @@ static int validate_params(uint cmd, struct dm_ioctl *param)
+ 	    cmd == DM_LIST_VERSIONS_CMD)
+ 		return 0;
+ 
+-	if ((cmd == DM_DEV_CREATE_CMD)) {
++	if (cmd == DM_DEV_CREATE_CMD) {
+ 		if (!*param->name) {
+ 			DMWARN("name not supplied when creating device");
+ 			return -EINVAL;

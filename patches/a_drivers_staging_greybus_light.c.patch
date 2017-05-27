@@ -1,0 +1,13 @@
+diff --git a/drivers/staging/greybus/light.c b/drivers/staging/greybus/light.c
+index 8dffd8a..ef96a29 100644
+--- a/drivers/staging/greybus/light.c
++++ b/drivers/staging/greybus/light.c
+@@ -30,7 +30,7 @@ struct gb_channel {
+ 	u32				mode;
+ 	char				*mode_name;
+ 	struct attribute		**attrs;
+-	struct attribute_group		*attr_group;
++	attribute_group_no_const	*attr_group;
+ 	const struct attribute_group	**attr_groups;
+ 	struct led_classdev		*led;
+ #if IS_REACHABLE(CONFIG_LEDS_CLASS_FLASH)

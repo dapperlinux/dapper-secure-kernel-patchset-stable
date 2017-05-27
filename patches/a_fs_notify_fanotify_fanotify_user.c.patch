@@ -1,0 +1,15 @@
+diff --git a/fs/notify/fanotify/fanotify_user.c b/fs/notify/fanotify/fanotify_user.c
+index 7ebfca6..1d88503 100644
+--- a/fs/notify/fanotify/fanotify_user.c
++++ b/fs/notify/fanotify/fanotify_user.c
+@@ -216,8 +216,8 @@ static ssize_t copy_event_to_user(struct fsnotify_group *group,
+ 
+ 	fd = fanotify_event_metadata.fd;
+ 	ret = -EFAULT;
+-	if (copy_to_user(buf, &fanotify_event_metadata,
+-			 fanotify_event_metadata.event_len))
++	if (fanotify_event_metadata.event_len > sizeof fanotify_event_metadata ||
++	    copy_to_user(buf, &fanotify_event_metadata, fanotify_event_metadata.event_len))
+ 		goto out_close_fd;
+ 
+ #ifdef CONFIG_FANOTIFY_ACCESS_PERMISSIONS

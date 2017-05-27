@@ -1,0 +1,13 @@
+diff --git a/drivers/media/dvb-frontends/s921.c b/drivers/media/dvb-frontends/s921.c
+index b5e3d90..bd00dc6 100644
+--- a/drivers/media/dvb-frontends/s921.c
++++ b/drivers/media/dvb-frontends/s921.c
+@@ -464,7 +464,7 @@ static int s921_tune(struct dvb_frontend *fe,
+ 	return rc;
+ }
+ 
+-static int s921_get_algo(struct dvb_frontend *fe)
++static enum dvbfe_algo s921_get_algo(struct dvb_frontend *fe)
+ {
+ 	return DVBFE_ALGO_HW;
+ }

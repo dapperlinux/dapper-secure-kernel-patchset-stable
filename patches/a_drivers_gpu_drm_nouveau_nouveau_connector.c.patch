@@ -1,0 +1,13 @@
+diff --git a/drivers/gpu/drm/nouveau/nouveau_connector.c b/drivers/gpu/drm/nouveau/nouveau_connector.c
+index c108408..575750a 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_connector.c
++++ b/drivers/gpu/drm/nouveau/nouveau_connector.c
+@@ -862,7 +862,7 @@ get_tmds_link_bandwidth(struct drm_connector *connector, bool hdmi)
+ 		return 112000;
+ }
+ 
+-static int
++static enum drm_mode_status
+ nouveau_connector_mode_valid(struct drm_connector *connector,
+ 			     struct drm_display_mode *mode)
+ {

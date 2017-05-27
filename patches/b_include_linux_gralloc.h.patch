@@ -1,0 +1,15 @@
+--- /dev/null
++++ b/include/linux/gralloc.h
+@@ -0,0 +1,9 @@
++#ifndef __GRALLOC_H
++#define __GRALLOC_H
++
++void acl_free_all(void);
++int acl_alloc_stack_init(unsigned long size);
++void *acl_alloc(unsigned long len);
++void *acl_alloc_num(unsigned long num, unsigned long len);
++
++#endif
+diff --git a/include/linux/grdefs.h b/include/linux/grdefs.h
+new file mode 100644
+index 0000000..be66033

@@ -1,0 +1,12 @@
+diff --git a/arch/arm64/Kconfig.debug b/arch/arm64/Kconfig.debug
+index b661fe7..6d124fc 100644
+--- a/arch/arm64/Kconfig.debug
++++ b/arch/arm64/Kconfig.debug
+@@ -6,6 +6,7 @@ config ARM64_PTDUMP
+ 	bool "Export kernel pagetable layout to userspace via debugfs"
+ 	depends on DEBUG_KERNEL
+ 	select DEBUG_FS
++	depends on !GRKERNSEC_KMEM
+         help
+ 	  Say Y here if you want to show the kernel pagetable layout in a
+ 	  debugfs file. This information is only useful for kernel developers

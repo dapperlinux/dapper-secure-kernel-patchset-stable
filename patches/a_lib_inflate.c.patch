@@ -1,0 +1,13 @@
+diff --git a/lib/inflate.c b/lib/inflate.c
+index 013a761..c28f3fc 100644
+--- a/lib/inflate.c
++++ b/lib/inflate.c
+@@ -269,7 +269,7 @@ static void free(void *where)
+ 		malloc_ptr = free_mem_ptr;
+ }
+ #else
+-#define malloc(a) kmalloc(a, GFP_KERNEL)
++#define malloc(a) kmalloc((a), GFP_KERNEL)
+ #define free(a) kfree(a)
+ #endif
+ 

@@ -1,0 +1,13 @@
+diff --git a/drivers/usb/storage/usb.c b/drivers/usb/storage/usb.c
+index 2cba13a..e6bee5d 100644
+--- a/drivers/usb/storage/usb.c
++++ b/drivers/usb/storage/usb.c
+@@ -944,7 +944,7 @@ static void usb_stor_scan_dwork(struct work_struct *work)
+ 	clear_bit(US_FLIDX_SCAN_PENDING, &us->dflags);
+ }
+ 
+-static unsigned int usb_stor_sg_tablesize(struct usb_interface *intf)
++static unsigned short usb_stor_sg_tablesize(struct usb_interface *intf)
+ {
+ 	struct usb_device *usb_dev = interface_to_usbdev(intf);
+ 

@@ -1,0 +1,15 @@
+diff --git a/net/sunrpc/auth_gss/gss_rpc_upcall.c b/net/sunrpc/auth_gss/gss_rpc_upcall.c
+index f0c6a8c..3acb459 100644
+--- a/net/sunrpc/auth_gss/gss_rpc_upcall.c
++++ b/net/sunrpc/auth_gss/gss_rpc_upcall.c
+@@ -55,8 +55,8 @@ enum {
+ #define PROC(proc, name)				\
+ [GSSX_##proc] = {					\
+ 	.p_proc   = GSSX_##proc,			\
+-	.p_encode = (kxdreproc_t)gssx_enc_##name,	\
+-	.p_decode = (kxdrdproc_t)gssx_dec_##name,	\
++	.p_encode = gssx_enc_##name,			\
++	.p_decode = gssx_dec_##name,			\
+ 	.p_arglen = GSSX_ARG_##name##_sz,		\
+ 	.p_replen = GSSX_RES_##name##_sz, 		\
+ 	.p_statidx = GSSX_##proc,			\

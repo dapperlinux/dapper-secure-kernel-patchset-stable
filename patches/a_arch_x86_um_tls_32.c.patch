@@ -1,0 +1,13 @@
+diff --git a/arch/x86/um/tls_32.c b/arch/x86/um/tls_32.c
+index 48e3858..ab4458c 100644
+--- a/arch/x86/um/tls_32.c
++++ b/arch/x86/um/tls_32.c
+@@ -261,7 +261,7 @@ static int get_tls_entry(struct task_struct *task, struct user_desc *info,
+ 	if (unlikely(task == current &&
+ 		     !t->arch.tls_array[idx - GDT_ENTRY_TLS_MIN].flushed)) {
+ 		printk(KERN_ERR "get_tls_entry: task with pid %d got here "
+-				"without flushed TLS.", current->pid);
++				"without flushed TLS.", task_pid_nr(current));
+ 	}
+ 
+ 	return 0;

@@ -1,0 +1,12 @@
+diff --git a/lib/show_mem.c b/lib/show_mem.c
+index 1feed6a..4ede1e9 100644
+--- a/lib/show_mem.c
++++ b/lib/show_mem.c
+@@ -47,6 +47,6 @@ void show_mem(unsigned int filter)
+ 		quicklist_total_size());
+ #endif
+ #ifdef CONFIG_MEMORY_FAILURE
+-	printk("%lu pages hwpoisoned\n", atomic_long_read(&num_poisoned_pages));
++	printk("%lu pages hwpoisoned\n", atomic_long_read_unchecked(&num_poisoned_pages));
+ #endif
+ }

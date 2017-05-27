@@ -1,0 +1,20 @@
+diff --git a/security/min_addr.c b/security/min_addr.c
+index f728728..6457a0c 100644
+--- a/security/min_addr.c
++++ b/security/min_addr.c
+@@ -14,6 +14,7 @@ unsigned long dac_mmap_min_addr = CONFIG_DEFAULT_MMAP_MIN_ADDR;
+  */
+ static void update_mmap_min_addr(void)
+ {
++#ifndef SPARC
+ #ifdef CONFIG_LSM_MMAP_MIN_ADDR
+ 	if (dac_mmap_min_addr > CONFIG_LSM_MMAP_MIN_ADDR)
+ 		mmap_min_addr = dac_mmap_min_addr;
+@@ -22,6 +23,7 @@ static void update_mmap_min_addr(void)
+ #else
+ 	mmap_min_addr = dac_mmap_min_addr;
+ #endif
++#endif
+ }
+ 
+ /*

@@ -1,0 +1,13 @@
+diff --git a/arch/mips/include/asm/hw_irq.h b/arch/mips/include/asm/hw_irq.h
+index 9e8ef59..1139d6b 100644
+--- a/arch/mips/include/asm/hw_irq.h
++++ b/arch/mips/include/asm/hw_irq.h
+@@ -10,7 +10,7 @@
+ 
+ #include <linux/atomic.h>
+ 
+-extern atomic_t irq_err_count;
++extern atomic_unchecked_t irq_err_count;
+ 
+ /*
+  * interrupt-retrigger: NOP for now. This may not be appropriate for all

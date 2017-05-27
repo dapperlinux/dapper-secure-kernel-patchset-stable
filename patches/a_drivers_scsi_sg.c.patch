@@ -1,0 +1,13 @@
+diff --git a/drivers/scsi/sg.c b/drivers/scsi/sg.c
+index f753df2..2377b53 100644
+--- a/drivers/scsi/sg.c
++++ b/drivers/scsi/sg.c
+@@ -1085,7 +1085,7 @@ sg_ioctl(struct file *filp, unsigned int cmd_in, unsigned long arg)
+ 				       sdp->disk->disk_name,
+ 				       MKDEV(SCSI_GENERIC_MAJOR, sdp->index),
+ 				       NULL,
+-				       (char *)arg);
++				       (char __user *)arg);
+ 	case BLKTRACESTART:
+ 		return blk_trace_startstop(sdp->device->request_queue, 1);
+ 	case BLKTRACESTOP:

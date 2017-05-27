@@ -1,0 +1,12 @@
+diff --git a/include/linux/security.h b/include/linux/security.h
+index c2125e9..365bf43 100644
+--- a/include/linux/security.h
++++ b/include/linux/security.h
+@@ -30,6 +30,7 @@
+ #include <linux/string.h>
+ #include <linux/mm.h>
+ #include <linux/fs.h>
++#include <linux/grsecurity.h>
+ 
+ struct linux_binprm;
+ struct cred;

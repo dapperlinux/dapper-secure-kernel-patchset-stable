@@ -1,0 +1,13 @@
+diff --git a/drivers/gpu/drm/drm_property.c b/drivers/gpu/drm/drm_property.c
+index a4d81cf..3384497 100644
+--- a/drivers/gpu/drm/drm_property.c
++++ b/drivers/gpu/drm/drm_property.c
+@@ -493,7 +493,7 @@ int drm_mode_getproperty_ioctl(struct drm_device *dev,
+ 					goto done;
+ 				}
+ 
+-				if (copy_to_user(&enum_ptr[copied].name,
++				if (copy_to_user(enum_ptr[copied].name,
+ 						 &prop_enum->name, DRM_PROP_NAME_LEN)) {
+ 					ret = -EFAULT;
+ 					goto done;

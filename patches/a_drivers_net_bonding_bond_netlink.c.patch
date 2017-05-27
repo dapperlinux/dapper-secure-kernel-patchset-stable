@@ -1,0 +1,13 @@
+diff --git a/drivers/net/bonding/bond_netlink.c b/drivers/net/bonding/bond_netlink.c
+index b8df0f5..0d64b6e 100644
+--- a/drivers/net/bonding/bond_netlink.c
++++ b/drivers/net/bonding/bond_netlink.c
+@@ -666,7 +666,7 @@ static int bond_fill_info(struct sk_buff *skb,
+ 	return -EMSGSIZE;
+ }
+ 
+-struct rtnl_link_ops bond_link_ops __read_mostly = {
++struct rtnl_link_ops bond_link_ops = {
+ 	.kind			= "bond",
+ 	.priv_size		= sizeof(struct bonding),
+ 	.setup			= bond_setup,

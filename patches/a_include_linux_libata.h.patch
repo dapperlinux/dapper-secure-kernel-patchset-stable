@@ -1,0 +1,13 @@
+diff --git a/include/linux/libata.h b/include/linux/libata.h
+index 616eef4..8d208eb 100644
+--- a/include/linux/libata.h
++++ b/include/linux/libata.h
+@@ -998,7 +998,7 @@ struct ata_port_operations {
+ 	 * fields must be pointers.
+ 	 */
+ 	const struct ata_port_operations	*inherits;
+-};
++} __do_const;
+ 
+ struct ata_port_info {
+ 	unsigned long		flags;

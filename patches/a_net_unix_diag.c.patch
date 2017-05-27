@@ -1,0 +1,13 @@
+diff --git a/net/unix/diag.c b/net/unix/diag.c
+index 4d96797..ab6a813 100644
+--- a/net/unix/diag.c
++++ b/net/unix/diag.c
+@@ -299,7 +299,7 @@ static int unix_diag_handler_dump(struct sk_buff *skb, struct nlmsghdr *h)
+ 		return -EINVAL;
+ 
+ 	if (h->nlmsg_flags & NLM_F_DUMP) {
+-		struct netlink_dump_control c = {
++		static struct netlink_dump_control c = {
+ 			.dump = unix_diag_dump,
+ 		};
+ 		return netlink_dump_start(net->diag_nlsk, skb, h, &c);

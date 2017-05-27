@@ -1,0 +1,13 @@
+diff --git a/drivers/i2c/busses/i2c-nforce2-s4985.c b/drivers/i2c/busses/i2c-nforce2-s4985.c
+index 88eda09..cf40434 100644
+--- a/drivers/i2c/busses/i2c-nforce2-s4985.c
++++ b/drivers/i2c/busses/i2c-nforce2-s4985.c
+@@ -37,7 +37,7 @@
+ extern struct i2c_adapter *nforce2_smbus;
+ 
+ static struct i2c_adapter *s4985_adapter;
+-static struct i2c_algorithm *s4985_algo;
++static i2c_algorithm_no_const *s4985_algo;
+ 
+ /* Wrapper access functions for multiplexed SMBus */
+ static DEFINE_MUTEX(nforce2_lock);

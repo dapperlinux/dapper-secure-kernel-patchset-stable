@@ -1,0 +1,13 @@
+diff --git a/drivers/net/ethernet/broadcom/bnxt/bnxt.c b/drivers/net/ethernet/broadcom/bnxt/bnxt.c
+index f08a20b..6f9f924 100644
+--- a/drivers/net/ethernet/broadcom/bnxt/bnxt.c
++++ b/drivers/net/ethernet/broadcom/bnxt/bnxt.c
+@@ -6970,7 +6970,7 @@ static int bnxt_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
+  * this device has been detected.
+  */
+ static pci_ers_result_t bnxt_io_error_detected(struct pci_dev *pdev,
+-					       pci_channel_state_t state)
++					       enum pci_channel_state state)
+ {
+ 	struct net_device *netdev = pci_get_drvdata(pdev);
+ 	struct bnxt *bp = netdev_priv(netdev);

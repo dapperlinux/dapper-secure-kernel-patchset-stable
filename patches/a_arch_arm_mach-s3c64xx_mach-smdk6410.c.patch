@@ -1,0 +1,13 @@
+diff --git a/arch/arm/mach-s3c64xx/mach-smdk6410.c b/arch/arm/mach-s3c64xx/mach-smdk6410.c
+index 92ec8c3..3b09472 100644
+--- a/arch/arm/mach-s3c64xx/mach-smdk6410.c
++++ b/arch/arm/mach-s3c64xx/mach-smdk6410.c
+@@ -240,7 +240,7 @@ static struct platform_device smdk6410_b_pwr_5v = {
+ };
+ #endif
+ 
+-static struct s3c_ide_platdata smdk6410_ide_pdata __initdata = {
++static const struct s3c_ide_platdata smdk6410_ide_pdata __initconst = {
+ 	.setup_gpio	= s3c64xx_ide_setup_gpio,
+ };
+ 

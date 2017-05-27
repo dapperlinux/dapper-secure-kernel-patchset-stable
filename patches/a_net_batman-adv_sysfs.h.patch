@@ -1,0 +1,16 @@
+diff --git a/net/batman-adv/sysfs.h b/net/batman-adv/sysfs.h
+index c76021b..3aef377 100644
+--- a/net/batman-adv/sysfs.h
++++ b/net/batman-adv/sysfs.h
+@@ -37,9 +37,9 @@ struct net_device;
+ 
+ struct batadv_attribute {
+ 	struct attribute attr;
+-	ssize_t (*show)(struct kobject *kobj, struct attribute *attr,
++	ssize_t (*show)(struct kobject *kobj, struct kobj_attribute *attr,
+ 			char *buf);
+-	ssize_t (*store)(struct kobject *kobj, struct attribute *attr,
++	ssize_t (*store)(struct kobject *kobj, struct kobj_attribute *attr,
+ 			 char *buf, size_t count);
+ };
+ 

@@ -1,0 +1,13 @@
+diff --git a/arch/mips/sni/rm200.c b/arch/mips/sni/rm200.c
+index 160b880..3b53fdc 100644
+--- a/arch/mips/sni/rm200.c
++++ b/arch/mips/sni/rm200.c
+@@ -270,7 +270,7 @@ void sni_rm200_mask_and_ack_8259A(struct irq_data *d)
+ 			       "spurious RM200 8259A interrupt: IRQ%d.\n", irq);
+ 			spurious_irq_mask |= irqmask;
+ 		}
+-		atomic_inc(&irq_err_count);
++		atomic_inc_unchecked(&irq_err_count);
+ 		/*
+ 		 * Theoretically we do not have to handle this IRQ,
+ 		 * but in Linux this does not cause problems and is

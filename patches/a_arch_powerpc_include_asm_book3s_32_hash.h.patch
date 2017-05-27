@@ -1,0 +1,12 @@
+diff --git a/arch/powerpc/include/asm/book3s/32/hash.h b/arch/powerpc/include/asm/book3s/32/hash.h
+index 880db13..bb4ed4a 100644
+--- a/arch/powerpc/include/asm/book3s/32/hash.h
++++ b/arch/powerpc/include/asm/book3s/32/hash.h
+@@ -20,6 +20,7 @@
+ #define _PAGE_HASHPTE	0x002	/* hash_page has made an HPTE for this pte */
+ #define _PAGE_USER	0x004	/* usermode access allowed */
+ #define _PAGE_GUARDED	0x008	/* G: prohibit speculative access */
++#define _PAGE_NX	_PAGE_GUARDED
+ #define _PAGE_COHERENT	0x010	/* M: enforce memory coherence (SMP systems) */
+ #define _PAGE_NO_CACHE	0x020	/* I: cache inhibit */
+ #define _PAGE_WRITETHRU	0x040	/* W: cache write-through */

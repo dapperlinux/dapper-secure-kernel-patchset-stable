@@ -1,0 +1,13 @@
+diff --git a/lib/strncpy_from_user.c b/lib/strncpy_from_user.c
+index 7e35fc4..808ece4 100644
+--- a/lib/strncpy_from_user.c
++++ b/lib/strncpy_from_user.c
+@@ -24,7 +24,7 @@
+  */
+ static inline long do_strncpy_from_user(char *dst, const char __user *src, long count, unsigned long max)
+ {
+-	const struct word_at_a_time constants = WORD_AT_A_TIME_CONSTANTS;
++	static const struct word_at_a_time constants = WORD_AT_A_TIME_CONSTANTS;
+ 	long res = 0;
+ 
+ 	/*

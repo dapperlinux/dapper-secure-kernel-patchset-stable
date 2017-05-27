@@ -1,0 +1,14 @@
+diff --git a/fs/jffs2/wbuf.c b/fs/jffs2/wbuf.c
+index b25d28a..7934a69 100644
+--- a/fs/jffs2/wbuf.c
++++ b/fs/jffs2/wbuf.c
+@@ -1023,7 +1023,8 @@ static const struct jffs2_unknown_node oob_cleanmarker =
+ {
+ 	.magic = constant_cpu_to_je16(JFFS2_MAGIC_BITMASK),
+ 	.nodetype = constant_cpu_to_je16(JFFS2_NODETYPE_CLEANMARKER),
+-	.totlen = constant_cpu_to_je32(8)
++	.totlen = constant_cpu_to_je32(8),
++	.hdr_crc = constant_cpu_to_je32(0)
+ };
+ 
+ /*

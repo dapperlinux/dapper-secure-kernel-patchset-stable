@@ -1,0 +1,13 @@
+diff --git a/net/ipv4/icmp.c b/net/ipv4/icmp.c
+index 48734ee..3308079 100644
+--- a/net/ipv4/icmp.c
++++ b/net/ipv4/icmp.c
+@@ -1228,7 +1228,7 @@ static int __net_init icmp_sk_init(struct net *net)
+ 	return err;
+ }
+ 
+-static struct pernet_operations __net_initdata icmp_sk_ops = {
++static struct pernet_operations __net_initconst icmp_sk_ops = {
+        .init = icmp_sk_init,
+        .exit = icmp_sk_exit,
+ };

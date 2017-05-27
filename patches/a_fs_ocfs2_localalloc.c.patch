@@ -1,0 +1,13 @@
+diff --git a/fs/ocfs2/localalloc.c b/fs/ocfs2/localalloc.c
+index fe0d1f9..7ec8659 100644
+--- a/fs/ocfs2/localalloc.c
++++ b/fs/ocfs2/localalloc.c
+@@ -1317,7 +1317,7 @@ static int ocfs2_local_alloc_slide_window(struct ocfs2_super *osb,
+ 		goto bail;
+ 	}
+ 
+-	atomic_inc(&osb->alloc_stats.moves);
++	atomic_inc_unchecked(&osb->alloc_stats.moves);
+ 
+ bail:
+ 	if (handle)

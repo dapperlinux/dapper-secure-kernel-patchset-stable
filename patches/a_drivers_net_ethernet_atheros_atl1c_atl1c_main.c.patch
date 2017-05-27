@@ -1,0 +1,13 @@
+diff --git a/drivers/net/ethernet/atheros/atl1c/atl1c_main.c b/drivers/net/ethernet/atheros/atl1c/atl1c_main.c
+index a3200ea..d02b523 100644
+--- a/drivers/net/ethernet/atheros/atl1c/atl1c_main.c
++++ b/drivers/net/ethernet/atheros/atl1c/atl1c_main.c
+@@ -2704,7 +2704,7 @@ static void atl1c_remove(struct pci_dev *pdev)
+  * this device has been detected.
+  */
+ static pci_ers_result_t atl1c_io_error_detected(struct pci_dev *pdev,
+-						pci_channel_state_t state)
++						enum pci_channel_state state)
+ {
+ 	struct net_device *netdev = pci_get_drvdata(pdev);
+ 	struct atl1c_adapter *adapter = netdev_priv(netdev);

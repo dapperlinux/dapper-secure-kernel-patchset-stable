@@ -1,0 +1,13 @@
+diff --git a/drivers/char/nvram.c b/drivers/char/nvram.c
+index 678fa97..5598cef 100644
+--- a/drivers/char/nvram.c
++++ b/drivers/char/nvram.c
+@@ -235,7 +235,7 @@ static ssize_t nvram_read(struct file *file, char __user *buf,
+ 
+ 	spin_unlock_irq(&rtc_lock);
+ 
+-	if (copy_to_user(buf, contents, tmp - contents))
++	if (tmp - contents > sizeof(contents) || copy_to_user(buf, contents, tmp - contents))
+ 		return -EFAULT;
+ 
+ 	*ppos = i;

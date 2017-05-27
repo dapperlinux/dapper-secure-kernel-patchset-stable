@@ -1,0 +1,13 @@
+diff --git a/drivers/mfd/max8925-i2c.c b/drivers/mfd/max8925-i2c.c
+index 5c80aea..1006323 100644
+--- a/drivers/mfd/max8925-i2c.c
++++ b/drivers/mfd/max8925-i2c.c
+@@ -151,7 +151,7 @@ static int max8925_probe(struct i2c_client *client,
+ 				   const struct i2c_device_id *id)
+ {
+ 	struct max8925_platform_data *pdata = dev_get_platdata(&client->dev);
+-	static struct max8925_chip *chip;
++	struct max8925_chip *chip;
+ 	struct device_node *node = client->dev.of_node;
+ 
+ 	if (node && !pdata) {

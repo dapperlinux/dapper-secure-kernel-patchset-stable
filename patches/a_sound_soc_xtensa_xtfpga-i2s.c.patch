@@ -1,0 +1,13 @@
+diff --git a/sound/soc/xtensa/xtfpga-i2s.c b/sound/soc/xtensa/xtfpga-i2s.c
+index 8382ffa..86af7d0 100644
+--- a/sound/soc/xtensa/xtfpga-i2s.c
++++ b/sound/soc/xtensa/xtfpga-i2s.c
+@@ -437,7 +437,7 @@ static int xtfpga_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
+ 	case SNDRV_PCM_TRIGGER_START:
+ 	case SNDRV_PCM_TRIGGER_RESUME:
+ 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
+-		ACCESS_ONCE(i2s->tx_ptr) = 0;
++		ACCESS_ONCE_RW(i2s->tx_ptr) = 0;
+ 		rcu_assign_pointer(i2s->tx_substream, substream);
+ 		xtfpga_pcm_refill_fifo(i2s);
+ 		break;

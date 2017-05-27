@@ -1,0 +1,13 @@
+diff --git a/drivers/video/fbdev/via/via_clock.h b/drivers/video/fbdev/via/via_clock.h
+index 88714ae..16c2e11 100644
+--- a/drivers/video/fbdev/via/via_clock.h
++++ b/drivers/video/fbdev/via/via_clock.h
+@@ -56,7 +56,7 @@ struct via_clock {
+ 
+ 	void (*set_engine_pll_state)(u8 state);
+ 	void (*set_engine_pll)(struct via_pll_config config);
+-};
++} __no_const;
+ 
+ 
+ static inline u32 get_pll_internal_frequency(u32 ref_freq,

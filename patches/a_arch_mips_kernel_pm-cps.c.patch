@@ -1,0 +1,13 @@
+diff --git a/arch/mips/kernel/pm-cps.c b/arch/mips/kernel/pm-cps.c
+index 7cf653e..7df52f6 100644
+--- a/arch/mips/kernel/pm-cps.c
++++ b/arch/mips/kernel/pm-cps.c
+@@ -168,7 +168,7 @@ int cps_pm_enter_state(enum cps_pm_state state)
+ 	nc_core_ready_count = nc_addr;
+ 
+ 	/* Ensure ready_count is zero-initialised before the assembly runs */
+-	ACCESS_ONCE(*nc_core_ready_count) = 0;
++	ACCESS_ONCE_RW(*nc_core_ready_count) = 0;
+ 	coupled_barrier(&per_cpu(pm_barrier, core), online);
+ 
+ 	/* Run the generated entry code */

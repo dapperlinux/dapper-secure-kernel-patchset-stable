@@ -1,0 +1,13 @@
+diff --git a/drivers/net/wireless/zydas/zd1211rw/zd_usb.c b/drivers/net/wireless/zydas/zd1211rw/zd_usb.c
+index c5effd6c..0466667 100644
+--- a/drivers/net/wireless/zydas/zd1211rw/zd_usb.c
++++ b/drivers/net/wireless/zydas/zd1211rw/zd_usb.c
+@@ -385,7 +385,7 @@ static inline void handle_regs_int(struct urb *urb)
+ {
+ 	struct zd_usb *usb = urb->context;
+ 	struct zd_usb_interrupt *intr = &usb->intr;
+-	int len;
++	unsigned int len;
+ 	u16 int_num;
+ 
+ 	ZD_ASSERT(in_interrupt());

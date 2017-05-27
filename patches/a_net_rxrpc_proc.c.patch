@@ -1,0 +1,13 @@
+diff --git a/net/rxrpc/proc.c b/net/rxrpc/proc.c
+index 65cd980..dd6af9d 100644
+--- a/net/rxrpc/proc.c
++++ b/net/rxrpc/proc.c
+@@ -176,7 +176,7 @@ static int rxrpc_connection_seq_show(struct seq_file *seq, void *v)
+ 		   atomic_read(&conn->usage),
+ 		   rxrpc_conn_states[conn->state],
+ 		   key_serial(conn->params.key),
+-		   atomic_read(&conn->serial),
++		   atomic_read_unchecked(&conn->serial),
+ 		   conn->hi_serial);
+ 
+ 	return 0;

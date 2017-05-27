@@ -1,0 +1,13 @@
+diff --git a/drivers/gpu/drm/mgag200/mgag200_mode.c b/drivers/gpu/drm/mgag200/mgag200_mode.c
+index 6b21cb2..90c2876 100644
+--- a/drivers/gpu/drm/mgag200/mgag200_mode.c
++++ b/drivers/gpu/drm/mgag200/mgag200_mode.c
+@@ -1574,7 +1574,7 @@ static uint32_t mga_vga_calculate_mode_bandwidth(struct drm_display_mode *mode,
+ 
+ #define MODE_BANDWIDTH	MODE_BAD
+ 
+-static int mga_vga_mode_valid(struct drm_connector *connector,
++static enum drm_mode_status mga_vga_mode_valid(struct drm_connector *connector,
+ 				 struct drm_display_mode *mode)
+ {
+ 	struct drm_device *dev = connector->dev;

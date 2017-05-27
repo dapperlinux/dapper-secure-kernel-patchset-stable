@@ -1,0 +1,12 @@
+diff --git a/arch/arm/mach-omap2/omap-smp.c b/arch/arm/mach-omap2/omap-smp.c
+index b4de3da..e027393 100644
+--- a/arch/arm/mach-omap2/omap-smp.c
++++ b/arch/arm/mach-omap2/omap-smp.c
+@@ -19,6 +19,7 @@
+ #include <linux/device.h>
+ #include <linux/smp.h>
+ #include <linux/io.h>
++#include <linux/irq.h>
+ #include <linux/irqchip/arm-gic.h>
+ 
+ #include <asm/smp_scu.h>

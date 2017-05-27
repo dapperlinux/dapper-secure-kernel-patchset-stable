@@ -1,0 +1,13 @@
+diff --git a/net/x25/sysctl_net_x25.c b/net/x25/sysctl_net_x25.c
+index 4323952..a06dfe1 100644
+--- a/net/x25/sysctl_net_x25.c
++++ b/net/x25/sysctl_net_x25.c
+@@ -70,7 +70,7 @@ static struct ctl_table x25_table[] = {
+ 		.mode = 	0644,
+ 		.proc_handler = proc_dointvec,
+ 	},
+-	{ 0, },
++	{ },
+ };
+ 
+ void __init x25_register_sysctl(void)

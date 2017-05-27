@@ -1,0 +1,25 @@
+diff --git a/drivers/net/ethernet/neterion/vxge/vxge-config.c b/drivers/net/ethernet/neterion/vxge/vxge-config.c
+index 6223930..975033d 100644
+--- a/drivers/net/ethernet/neterion/vxge/vxge-config.c
++++ b/drivers/net/ethernet/neterion/vxge/vxge-config.c
+@@ -3457,7 +3457,10 @@ __vxge_hw_fifo_create(struct __vxge_hw_vpath_handle *vp,
+ 	struct __vxge_hw_fifo *fifo;
+ 	struct vxge_hw_fifo_config *config;
+ 	u32 txdl_size, txdl_per_memblock;
+-	struct vxge_hw_mempool_cbs fifo_mp_callback;
++	static struct vxge_hw_mempool_cbs fifo_mp_callback = {
++		.item_func_alloc = __vxge_hw_fifo_mempool_item_alloc,
++	};
++
+ 	struct __vxge_hw_virtualpath *vpath;
+ 
+ 	if ((vp == NULL) || (attr == NULL)) {
+@@ -3540,8 +3543,6 @@ __vxge_hw_fifo_create(struct __vxge_hw_vpath_handle *vp,
+ 		goto exit;
+ 	}
+ 
+-	fifo_mp_callback.item_func_alloc = __vxge_hw_fifo_mempool_item_alloc;
+-
+ 	fifo->mempool =
+ 		__vxge_hw_mempool_create(vpath->hldev,
+ 			fifo->config->memblock_size,

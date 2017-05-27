@@ -1,0 +1,13 @@
+diff --git a/arch/sparc/lib/Makefile b/arch/sparc/lib/Makefile
+index 69912d2..6c0c227 100644
+--- a/arch/sparc/lib/Makefile
++++ b/arch/sparc/lib/Makefile
+@@ -2,7 +2,7 @@
+ #
+ 
+ asflags-y := -ansi -DST_DIV0=0x02
+-ccflags-y := -Werror
++#ccflags-y := -Werror
+ 
+ lib-$(CONFIG_SPARC32) += ashrdi3.o
+ lib-$(CONFIG_SPARC32) += memcpy.o memset.o

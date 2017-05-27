@@ -1,0 +1,25 @@
+diff --git a/include/sound/soc.h b/include/sound/soc.h
+index 4f1c784..ae5c48b 100644
+--- a/include/sound/soc.h
++++ b/include/sound/soc.h
+@@ -923,7 +923,7 @@ struct snd_soc_codec_driver {
+ 			     enum snd_soc_dapm_type, int);
+ 
+ 	bool ignore_pmdown_time;  /* Doesn't benefit from pmdown delay */
+-};
++} __do_const;
+ 
+ /* SoC platform interface */
+ struct snd_soc_platform_driver {
+@@ -950,7 +950,7 @@ struct snd_soc_platform_driver {
+ 	const struct snd_compr_ops *compr_ops;
+ 
+ 	int (*bespoke_trigger)(struct snd_pcm_substream *, int);
+-};
++} __do_const;
+ 
+ struct snd_soc_dai_link_component {
+ 	const char *name;
+diff --git a/include/trace/events/fs.h b/include/trace/events/fs.h
+new file mode 100644
+index 0000000..fb634b7

@@ -1,0 +1,15 @@
+diff --git a/drivers/base/devres.c b/drivers/base/devres.c
+index 8fc654f..36e28e9 100644
+--- a/drivers/base/devres.c
++++ b/drivers/base/devres.c
+@@ -476,7 +476,9 @@ static int remove_nodes(struct device *dev,
+ 
+ static int release_nodes(struct device *dev, struct list_head *first,
+ 			 struct list_head *end, unsigned long flags)
+-	__releases(&dev->devres_lock)
++	__releases(&dev->devres_lock);
++static int release_nodes(struct device *dev, struct list_head *first,
++			 struct list_head *end, unsigned long flags)
+ {
+ 	LIST_HEAD(todo);
+ 	int cnt;

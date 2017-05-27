@@ -1,0 +1,13 @@
+diff --git a/drivers/net/ethernet/intel/fm10k/fm10k_pci.c b/drivers/net/ethernet/intel/fm10k/fm10k_pci.c
+index b1a2f84..d647328 100644
+--- a/drivers/net/ethernet/intel/fm10k/fm10k_pci.c
++++ b/drivers/net/ethernet/intel/fm10k/fm10k_pci.c
+@@ -2261,7 +2261,7 @@ static int fm10k_suspend(struct pci_dev *pdev,
+  * this device has been detected.
+  */
+ static pci_ers_result_t fm10k_io_error_detected(struct pci_dev *pdev,
+-						pci_channel_state_t state)
++						enum pci_channel_state state)
+ {
+ 	struct fm10k_intfc *interface = pci_get_drvdata(pdev);
+ 	struct net_device *netdev = interface->netdev;

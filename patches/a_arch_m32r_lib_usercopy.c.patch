@@ -1,0 +1,24 @@
+diff --git a/arch/m32r/lib/usercopy.c b/arch/m32r/lib/usercopy.c
+index 82abd15..d95ae5d 100644
+--- a/arch/m32r/lib/usercopy.c
++++ b/arch/m32r/lib/usercopy.c
+@@ -14,6 +14,9 @@
+ unsigned long
+ __generic_copy_to_user(void __user *to, const void *from, unsigned long n)
+ {
++	if ((long)n < 0)
++		return n;
++
+ 	prefetch(from);
+ 	if (access_ok(VERIFY_WRITE, to, n))
+ 		__copy_user(to,from,n);
+@@ -23,6 +26,9 @@ __generic_copy_to_user(void __user *to, const void *from, unsigned long n)
+ unsigned long
+ __generic_copy_from_user(void *to, const void __user *from, unsigned long n)
+ {
++	if ((long)n < 0)
++		return n;
++
+ 	prefetchw(to);
+ 	if (access_ok(VERIFY_READ, from, n))
+ 		__copy_user_zeroing(to,from,n);

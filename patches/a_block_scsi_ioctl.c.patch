@@ -1,0 +1,13 @@
+diff --git a/block/scsi_ioctl.c b/block/scsi_ioctl.c
+index c6fee74..49c7f8f 100644
+--- a/block/scsi_ioctl.c
++++ b/block/scsi_ioctl.c
+@@ -67,7 +67,7 @@ static int scsi_get_bus(struct request_queue *q, int __user *p)
+ 	return put_user(0, p);
+ }
+ 
+-static int sg_get_timeout(struct request_queue *q)
++static int __intentional_overflow(-1) sg_get_timeout(struct request_queue *q)
+ {
+ 	return jiffies_to_clock_t(q->sg_timeout);
+ }

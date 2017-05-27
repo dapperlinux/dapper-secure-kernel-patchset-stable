@@ -1,0 +1,13 @@
+diff --git a/arch/x86/oprofile/op_x86_model.h b/arch/x86/oprofile/op_x86_model.h
+index 71e8a67..6a313bb 100644
+--- a/arch/x86/oprofile/op_x86_model.h
++++ b/arch/x86/oprofile/op_x86_model.h
+@@ -52,7 +52,7 @@ struct op_x86_model_spec {
+ 	void		(*switch_ctrl)(struct op_x86_model_spec const *model,
+ 				       struct op_msrs const * const msrs);
+ #endif
+-};
++} __do_const;
+ 
+ struct op_counter_config;
+ 

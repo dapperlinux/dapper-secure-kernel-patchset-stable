@@ -1,0 +1,40 @@
+diff --git a/firmware/WHENCE b/firmware/WHENCE
+index de6f22e..51fbae7 100644
+--- a/firmware/WHENCE
++++ b/firmware/WHENCE
+@@ -653,21 +653,23 @@ Found in hex form in kernel source.
+ Driver: BNX2 - Broadcom NetXtremeII
+ 
+ File: bnx2/bnx2-mips-06-6.2.1.fw
++File: bnx2/bnx2-mips-06-6.2.3.fw
+ File: bnx2/bnx2-rv2p-06-6.0.15.fw
+ File: bnx2/bnx2-mips-09-6.2.1a.fw
++File: bnx2/bnx2-mips-09-6.2.1b.fw
+ File: bnx2/bnx2-rv2p-09-6.0.17.fw
+ File: bnx2/bnx2-rv2p-09ax-6.0.17.fw
+ 
+ Licence:
+-
+- This file contains firmware data derived from proprietary unpublished
+- source code, Copyright (c) 2004 - 2010 Broadcom Corporation.
+-
+- Permission is hereby granted for the distribution of this firmware data
+- in hexadecimal or equivalent format, provided this copyright notice is
+- accompanying it.
+-
+-Found in hex form in kernel source.
++ 
++ This file contains firmware data derived from proprietary unpublished 
++ source code, Copyright (c) 2004 - 2010 Broadcom Corporation. 
++ 
++ Permission is hereby granted for the distribution of this firmware data 
++ in hexadecimal or equivalent format, provided this copyright notice is 
++ accompanying it. 
++ 
++Found in hex form in kernel source. 
+ 
+ --------------------------------------------------------------------------
+ 
+diff --git a/firmware/bnx2/bnx2-mips-06-6.2.3.fw.ihex b/firmware/bnx2/bnx2-mips-06-6.2.3.fw.ihex
+new file mode 100644
+index 0000000..da72bf1

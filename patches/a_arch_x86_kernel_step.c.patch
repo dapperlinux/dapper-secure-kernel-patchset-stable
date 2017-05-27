@@ -1,0 +1,27 @@
+diff --git a/arch/x86/kernel/step.c b/arch/x86/kernel/step.c
+index a23ce84..88541d52 100644
+--- a/arch/x86/kernel/step.c
++++ b/arch/x86/kernel/step.c
+@@ -45,7 +45,8 @@ unsigned long convert_ip_to_linear(struct task_struct *child, struct pt_regs *re
+ 			addr += base;
+ 		}
+ 		mutex_unlock(&child->mm->context.lock);
+-	}
++	} else if (seg == __KERNEL_CS || seg == __KERNEXEC_KERNEL_CS)
++		addr = ktla_ktva(addr);
+ #endif
+ 
+ 	return addr;
+@@ -57,6 +58,9 @@ static int is_setting_trap_flag(struct task_struct *child, struct pt_regs *regs)
+ 	unsigned char opcode[15];
+ 	unsigned long addr = convert_ip_to_linear(child, regs);
+ 
++	if (addr == -1L)
++		return 0;
++
+ 	copied = access_process_vm(child, addr, opcode, sizeof(opcode),
+ 			FOLL_FORCE);
+ 	for (i = 0; i < copied; i++) {
+diff --git a/arch/x86/kernel/sys_i386_32.c b/arch/x86/kernel/sys_i386_32.c
+new file mode 100644
+index 0000000..920e413

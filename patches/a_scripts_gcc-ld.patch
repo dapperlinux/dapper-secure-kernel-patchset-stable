@@ -1,0 +1,13 @@
+diff --git a/scripts/gcc-ld b/scripts/gcc-ld
+index cadab9a..28153db 100755
+--- a/scripts/gcc-ld
++++ b/scripts/gcc-ld
+@@ -26,4 +26,4 @@ while [ "$1" != "" ] ; do
+ 	shift
+ done
+ 
+-exec $CC $ARGS
++exec /bin/sh -c "$CC $ARGS $SHELL_GCC_PLUGINS_CFLAGS"
+diff --git a/scripts/gcc-plugins/.gitignore b/scripts/gcc-plugins/.gitignore
+new file mode 100644
+index 0000000..de92ed9

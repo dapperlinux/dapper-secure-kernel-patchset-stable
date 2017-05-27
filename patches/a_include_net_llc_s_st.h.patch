@@ -1,0 +1,13 @@
+diff --git a/include/net/llc_s_st.h b/include/net/llc_s_st.h
+index c4359e2..76dbc4a 100644
+--- a/include/net/llc_s_st.h
++++ b/include/net/llc_s_st.h
+@@ -20,7 +20,7 @@ struct llc_sap_state_trans {
+ 	llc_sap_ev_t	  ev;
+ 	u8		  next_state;
+ 	const llc_sap_action_t *ev_actions;
+-};
++} __do_const;
+ 
+ struct llc_sap_state {
+ 	u8			   curr_state;

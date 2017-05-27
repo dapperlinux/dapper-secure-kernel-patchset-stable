@@ -1,0 +1,14 @@
+diff --git a/arch/x86/kernel/relocate_kernel_64.S b/arch/x86/kernel/relocate_kernel_64.S
+index 98111b3..73ca125 100644
+--- a/arch/x86/kernel/relocate_kernel_64.S
++++ b/arch/x86/kernel/relocate_kernel_64.S
+@@ -96,8 +96,7 @@ relocate_kernel:
+ 
+ 	/* jump to identity mapped page */
+ 	addq	$(identity_mapped - relocate_kernel), %r8
+-	pushq	%r8
+-	ret
++	jmp	*%r8
+ 
+ identity_mapped:
+ 	/* set return address to 0 if not preserving context */

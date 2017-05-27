@@ -1,0 +1,15 @@
+diff --git a/arch/sparc/include/asm/setup.h b/arch/sparc/include/asm/setup.h
+index 29d64b1..4272fe8 100644
+--- a/arch/sparc/include/asm/setup.h
++++ b/arch/sparc/include/asm/setup.h
+@@ -55,8 +55,8 @@ int handle_ldf_stq(u32 insn, struct pt_regs *regs);
+ void handle_ld_nf(u32 insn, struct pt_regs *regs);
+ 
+ /* init_64.c */
+-extern atomic_t dcpage_flushes;
+-extern atomic_t dcpage_flushes_xcall;
++extern atomic_unchecked_t dcpage_flushes;
++extern atomic_unchecked_t dcpage_flushes_xcall;
+ 
+ extern int sysctl_tsb_ratio;
+ #endif

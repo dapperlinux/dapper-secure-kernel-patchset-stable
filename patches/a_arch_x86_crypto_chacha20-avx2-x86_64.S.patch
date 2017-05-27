@@ -1,0 +1,19 @@
+diff --git a/arch/x86/crypto/chacha20-avx2-x86_64.S b/arch/x86/crypto/chacha20-avx2-x86_64.S
+index 16694e6..4675b5e 100644
+--- a/arch/x86/crypto/chacha20-avx2-x86_64.S
++++ b/arch/x86/crypto/chacha20-avx2-x86_64.S
+@@ -10,6 +10,7 @@
+  */
+ 
+ #include <linux/linkage.h>
++#include <asm/alternative-asm.h>
+ 
+ .data
+ .align 32
+@@ -439,5 +440,5 @@ ENTRY(chacha20_8block_xor_avx2)
+ 
+ 	vzeroupper
+ 	mov		%r8,%rsp
+-	ret
++	pax_ret chacha20_8block_xor_avx2
+ ENDPROC(chacha20_8block_xor_avx2)

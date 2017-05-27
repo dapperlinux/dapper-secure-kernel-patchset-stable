@@ -1,0 +1,12 @@
+diff --git a/kernel/events/hw_breakpoint.c b/kernel/events/hw_breakpoint.c
+index 3f8cb1e..83f0438 100644
+--- a/kernel/events/hw_breakpoint.c
++++ b/kernel/events/hw_breakpoint.c
+@@ -30,6 +30,7 @@
+  * This file contains the arch-independent routines.
+  */
+ 
++#include <linux/bug.h>
+ #include <linux/irqflags.h>
+ #include <linux/kallsyms.h>
+ #include <linux/notifier.h>

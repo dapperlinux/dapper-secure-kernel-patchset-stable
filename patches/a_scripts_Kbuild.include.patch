@@ -1,0 +1,13 @@
+diff --git a/scripts/Kbuild.include b/scripts/Kbuild.include
+index 1792198..2620ac6 100644
+--- a/scripts/Kbuild.include
++++ b/scripts/Kbuild.include
+@@ -151,7 +151,7 @@ cc-ifversion = $(shell [ $(cc-version) $(1) $(2) ] && echo $(3) || echo $(4))
+ # cc-ldoption
+ # Usage: ldflags += $(call cc-ldoption, -Wl$(comma)--hash-style=both)
+ cc-ldoption = $(call try-run,\
+-	$(CC) $(1) -nostdlib -x c /dev/null -o "$$TMP",$(1),$(2))
++	$(CC) $(1) -Wl,-r -nostdlib -x c /dev/null -o "$$TMP",$(1),$(2))
+ 
+ # ld-option
+ # Usage: LDFLAGS += $(call ld-option, -X)

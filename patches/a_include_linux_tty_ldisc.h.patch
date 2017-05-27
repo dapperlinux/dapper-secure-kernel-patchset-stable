@@ -1,0 +1,13 @@
+diff --git a/include/linux/tty_ldisc.h b/include/linux/tty_ldisc.h
+index 3971cf0..7704c48 100644
+--- a/include/linux/tty_ldisc.h
++++ b/include/linux/tty_ldisc.h
+@@ -202,7 +202,7 @@ struct tty_ldisc_ops {
+ 
+ 	struct  module *owner;
+ 
+-	int refcount;
++	atomic_t refcount;
+ };
+ 
+ struct tty_ldisc {

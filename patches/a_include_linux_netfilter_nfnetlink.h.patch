@@ -1,0 +1,16 @@
+diff --git a/include/linux/netfilter/nfnetlink.h b/include/linux/netfilter/nfnetlink.h
+index 1d82dd5..d6b384c 100644
+--- a/include/linux/netfilter/nfnetlink.h
++++ b/include/linux/netfilter/nfnetlink.h
+@@ -19,7 +19,7 @@ struct nfnl_callback {
+ 			  const struct nlattr * const cda[]);
+ 	const struct nla_policy *policy;	/* netlink attribute policy */
+ 	const u_int16_t attr_count;		/* number of nlattr's */
+-};
++} __do_const;
+ 
+ struct nfnetlink_subsystem {
+ 	const char *name;
+diff --git a/include/linux/netfilter/xt_gradm.h b/include/linux/netfilter/xt_gradm.h
+new file mode 100644
+index 0000000..33f4af8

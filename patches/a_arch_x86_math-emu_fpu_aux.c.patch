@@ -1,0 +1,13 @@
+diff --git a/arch/x86/math-emu/fpu_aux.c b/arch/x86/math-emu/fpu_aux.c
+index 024f6e9..308f1b0 100644
+--- a/arch/x86/math-emu/fpu_aux.c
++++ b/arch/x86/math-emu/fpu_aux.c
+@@ -52,7 +52,7 @@ void fpstate_init_soft(struct swregs_state *soft)
+ 
+ void finit(void)
+ {
+-	fpstate_init_soft(&current->thread.fpu.state.soft);
++	fpstate_init_soft(&current->thread.fpu.state->soft);
+ }
+ 
+ /*

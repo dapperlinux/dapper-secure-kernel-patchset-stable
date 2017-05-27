@@ -1,0 +1,22 @@
+diff --git a/drivers/net/ethernet/rocker/rocker_main.c b/drivers/net/ethernet/rocker/rocker_main.c
+index 24b7464..1a1cbdf 100644
+--- a/drivers/net/ethernet/rocker/rocker_main.c
++++ b/drivers/net/ethernet/rocker/rocker_main.c
+@@ -2890,7 +2890,7 @@ static int rocker_netdevice_event(struct notifier_block *unused,
+ 	return NOTIFY_DONE;
+ }
+ 
+-static struct notifier_block rocker_netdevice_nb __read_mostly = {
++static struct notifier_block rocker_netdevice_nb = {
+ 	.notifier_call = rocker_netdevice_event,
+ };
+ 
+@@ -2924,7 +2924,7 @@ static int rocker_netevent_event(struct notifier_block *unused,
+ 	return NOTIFY_DONE;
+ }
+ 
+-static struct notifier_block rocker_netevent_nb __read_mostly = {
++static struct notifier_block rocker_netevent_nb = {
+ 	.notifier_call = rocker_netevent_event,
+ };
+ 

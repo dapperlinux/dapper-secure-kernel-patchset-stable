@@ -1,0 +1,13 @@
+diff --git a/arch/arm/kernel/armksyms.c b/arch/arm/kernel/armksyms.c
+index 8e8d20c..fd4b52d 100644
+--- a/arch/arm/kernel/armksyms.c
++++ b/arch/arm/kernel/armksyms.c
+@@ -59,7 +59,7 @@ EXPORT_SYMBOL(arm_delay_ops);
+ 
+ 	/* networking */
+ EXPORT_SYMBOL(csum_partial);
+-EXPORT_SYMBOL(csum_partial_copy_from_user);
++EXPORT_SYMBOL(__csum_partial_copy_from_user);
+ EXPORT_SYMBOL(csum_partial_copy_nocheck);
+ EXPORT_SYMBOL(__csum_ipv6_magic);
+ 

@@ -1,0 +1,14 @@
+diff --git a/arch/x86/platform/intel-mid/intel_mid_weak_decls.h b/arch/x86/platform/intel-mid/intel_mid_weak_decls.h
+index 3c1c386..59a68ed 100644
+--- a/arch/x86/platform/intel-mid/intel_mid_weak_decls.h
++++ b/arch/x86/platform/intel-mid/intel_mid_weak_decls.h
+@@ -13,6 +13,6 @@
+ /* For every CPU addition a new get_<cpuname>_ops interface needs
+  * to be added.
+  */
+-extern void *get_penwell_ops(void);
+-extern void *get_cloverview_ops(void);
+-extern void *get_tangier_ops(void);
++extern const void *get_penwell_ops(void);
++extern const void *get_cloverview_ops(void);
++extern const void *get_tangier_ops(void);

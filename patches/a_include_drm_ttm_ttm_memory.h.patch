@@ -1,0 +1,13 @@
+diff --git a/include/drm/ttm/ttm_memory.h b/include/drm/ttm/ttm_memory.h
+index c452089..ca178e7 100644
+--- a/include/drm/ttm/ttm_memory.h
++++ b/include/drm/ttm/ttm_memory.h
+@@ -48,7 +48,7 @@
+ 
+ struct ttm_mem_shrink {
+ 	int (*do_shrink) (struct ttm_mem_shrink *);
+-};
++} __no_const;
+ 
+ /**
+  * struct ttm_mem_global - Global memory accounting structure.

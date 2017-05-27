@@ -1,0 +1,47 @@
+diff --git a/drivers/gpu/drm/nouveau/nouveau_drm.c b/drivers/gpu/drm/nouveau/nouveau_drm.c
+index 3100fd88..6d573f7 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_drm.c
++++ b/drivers/gpu/drm/nouveau/nouveau_drm.c
+@@ -80,9 +80,8 @@ MODULE_PARM_DESC(runpm, "disable (0), force enable (1), optimus only default (-1
+ int nouveau_runtime_pm = -1;
+ module_param_named(runpm, nouveau_runtime_pm, int, 0400);
+ 
+-static struct drm_driver driver_stub;
+ static struct drm_driver driver_pci;
+-static struct drm_driver driver_platform;
++static drm_driver_no_const driver_platform __read_only;
+ 
+ static u64
+ nouveau_pci_name(struct pci_dev *pdev)
+@@ -942,7 +941,7 @@ nouveau_driver_fops = {
+ };
+ 
+ static struct drm_driver
+-driver_stub = {
++driver_pci = {
+ 	.driver_features =
+ 		DRIVER_GEM | DRIVER_MODESET | DRIVER_PRIME | DRIVER_RENDER |
+ 		DRIVER_KMS_LEGACY_CONTEXT,
+@@ -954,6 +953,8 @@ driver_stub = {
+ 	.postclose = nouveau_drm_postclose,
+ 	.lastclose = nouveau_vga_lastclose,
+ 
++	.set_busid = drm_pci_set_busid,
++
+ #if defined(CONFIG_DEBUG_FS)
+ 	.debugfs_init = nouveau_drm_debugfs_init,
+ 	.debugfs_cleanup = nouveau_drm_debugfs_cleanup,
+@@ -1086,9 +1087,10 @@ nouveau_platform_device_create(const struct nvkm_device_tegra_func *func,
+ static int __init
+ nouveau_drm_init(void)
+ {
+-	driver_pci = driver_stub;
+-	driver_pci.set_busid = drm_pci_set_busid;
+-	driver_platform = driver_stub;
++	pax_open_kernel();
++	driver_platform = driver_pci;
++	driver_platform.set_busid = NULL;
++	pax_close_kernel();
+ 
+ 	nouveau_display_options();
+ 

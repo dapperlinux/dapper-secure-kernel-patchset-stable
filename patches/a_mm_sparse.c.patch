@@ -1,0 +1,13 @@
+diff --git a/mm/sparse.c b/mm/sparse.c
+index 1e168bf..2dc7328 100644
+--- a/mm/sparse.c
++++ b/mm/sparse.c
+@@ -749,7 +749,7 @@ static void clear_hwpoisoned_pages(struct page *memmap, int nr_pages)
+ 
+ 	for (i = 0; i < nr_pages; i++) {
+ 		if (PageHWPoison(&memmap[i])) {
+-			atomic_long_sub(1, &num_poisoned_pages);
++			atomic_long_sub_unchecked(1, &num_poisoned_pages);
+ 			ClearPageHWPoison(&memmap[i]);
+ 		}
+ 	}

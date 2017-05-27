@@ -1,0 +1,12 @@
+diff --git a/arch/arm/lib/copy_page.S b/arch/arm/lib/copy_page.S
+index 6ee2f67..d1cce76 100644
+--- a/arch/arm/lib/copy_page.S
++++ b/arch/arm/lib/copy_page.S
+@@ -10,6 +10,7 @@
+  *  ASM optimised string functions
+  */
+ #include <linux/linkage.h>
++#include <linux/const.h>
+ #include <asm/assembler.h>
+ #include <asm/asm-offsets.h>
+ #include <asm/cache.h>

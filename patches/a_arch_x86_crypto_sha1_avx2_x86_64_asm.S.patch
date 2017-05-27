@@ -1,0 +1,21 @@
+diff --git a/arch/x86/crypto/sha1_avx2_x86_64_asm.S b/arch/x86/crypto/sha1_avx2_x86_64_asm.S
+index 1cd792d..2236003 100644
+--- a/arch/x86/crypto/sha1_avx2_x86_64_asm.S
++++ b/arch/x86/crypto/sha1_avx2_x86_64_asm.S
+@@ -70,6 +70,7 @@
+  */
+ 
+ #include <linux/linkage.h>
++#include <asm/alternative-asm.h>
+ 
+ #define	CTX	%rdi	/* arg1 */
+ #define BUF	%rsi	/* arg2 */
+@@ -671,7 +672,7 @@ _loop3:
+ 	pop	%rbp
+ 	pop	%rbx
+ 
+-	ret
++	pax_ret \name
+ 
+ 	ENDPROC(\name)
+ .endm

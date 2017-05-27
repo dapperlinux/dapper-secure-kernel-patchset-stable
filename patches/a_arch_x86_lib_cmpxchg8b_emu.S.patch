@@ -1,0 +1,30 @@
+diff --git a/arch/x86/lib/cmpxchg8b_emu.S b/arch/x86/lib/cmpxchg8b_emu.S
+index 03a186f..6793bf2 100644
+--- a/arch/x86/lib/cmpxchg8b_emu.S
++++ b/arch/x86/lib/cmpxchg8b_emu.S
+@@ -8,6 +8,7 @@
+ 
+ #include <linux/linkage.h>
+ #include <asm/export.h>
++#include <asm/alternative-asm.h>
+ 
+ .text
+ 
+@@ -38,7 +39,7 @@ ENTRY(cmpxchg8b_emu)
+ 	movl %ecx, 4(%esi)
+ 
+ 	popfl
+-	ret
++	pax_ret cmpxchg8b_emu
+ 
+ .Lnot_same:
+ 	movl  (%esi), %eax
+@@ -46,7 +47,7 @@ ENTRY(cmpxchg8b_emu)
+ 	movl 4(%esi), %edx
+ 
+ 	popfl
+-	ret
++	pax_ret cmpxchg8b_emu
+ 
+ ENDPROC(cmpxchg8b_emu)
+ EXPORT_SYMBOL(cmpxchg8b_emu)

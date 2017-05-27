@@ -1,0 +1,13 @@
+diff --git a/fs/proc/nommu.c b/fs/proc/nommu.c
+index f8595e8..e0d13cbd 100644
+--- a/fs/proc/nommu.c
++++ b/fs/proc/nommu.c
+@@ -64,7 +64,7 @@ static int nommu_region_show(struct seq_file *m, struct vm_region *region)
+ 
+ 	if (file) {
+ 		seq_pad(m, ' ');
+-		seq_file_path(m, file, "");
++		seq_file_path(m, file, "\n\\");
+ 	}
+ 
+ 	seq_putc(m, '\n');

@@ -1,0 +1,10 @@
+diff --git a/drivers/gpu/drm/mga/mga_state.c b/drivers/gpu/drm/mga/mga_state.c
+index 792f924..aeb1334 100644
+--- a/drivers/gpu/drm/mga/mga_state.c
++++ b/drivers/gpu/drm/mga/mga_state.c
+@@ -1099,4 +1099,4 @@ const struct drm_ioctl_desc mga_ioctls[] = {
+ 	DRM_IOCTL_DEF_DRV(MGA_DMA_BOOTSTRAP, mga_dma_bootstrap, DRM_AUTH|DRM_MASTER|DRM_ROOT_ONLY),
+ };
+ 
+-int mga_max_ioctl = ARRAY_SIZE(mga_ioctls);
++const int mga_max_ioctl = ARRAY_SIZE(mga_ioctls);

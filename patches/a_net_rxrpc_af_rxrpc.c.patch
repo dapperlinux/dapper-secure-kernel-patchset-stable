@@ -1,0 +1,13 @@
+diff --git a/net/rxrpc/af_rxrpc.c b/net/rxrpc/af_rxrpc.c
+index 2d59c9b..fcd4ae0 100644
+--- a/net/rxrpc/af_rxrpc.c
++++ b/net/rxrpc/af_rxrpc.c
+@@ -42,7 +42,7 @@ static const struct proto_ops rxrpc_rpc_ops;
+ u32 rxrpc_epoch;
+ 
+ /* current debugging ID */
+-atomic_t rxrpc_debug_id;
++atomic_unchecked_t rxrpc_debug_id;
+ 
+ /* count of skbs currently in use */
+ atomic_t rxrpc_n_tx_skbs, rxrpc_n_rx_skbs;

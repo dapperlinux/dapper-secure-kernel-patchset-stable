@@ -1,0 +1,31 @@
+diff --git a/arch/x86/crypto/sha512-avx-asm.S b/arch/x86/crypto/sha512-avx-asm.S
+index 565274d..106c3dc 100644
+--- a/arch/x86/crypto/sha512-avx-asm.S
++++ b/arch/x86/crypto/sha512-avx-asm.S
+@@ -49,6 +49,7 @@
+ 
+ #ifdef CONFIG_AS_AVX
+ #include <linux/linkage.h>
++#include <asm/alternative-asm.h>
+ 
+ .text
+ 
+@@ -277,7 +278,8 @@ frame_size = frame_GPRSAVE + GPRSAVE_SIZE
+ # message blocks.
+ # L is the message length in SHA512 blocks
+ ########################################################################
+-ENTRY(sha512_transform_avx)
++ALIGN
++RAP_ENTRY(sha512_transform_avx)
+ 	cmp $0, msglen
+ 	je nowork
+ 
+@@ -364,7 +366,7 @@ updateblock:
+ 	mov	frame_RSPSAVE(%rsp), %rsp
+ 
+ nowork:
+-	ret
++	pax_ret sha512_transform_avx
+ ENDPROC(sha512_transform_avx)
+ 
+ ########################################################################

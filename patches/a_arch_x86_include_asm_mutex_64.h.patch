@@ -1,0 +1,22 @@
+diff --git a/arch/x86/include/asm/mutex_64.h b/arch/x86/include/asm/mutex_64.h
+index d985075..d2fc470 100644
+--- a/arch/x86/include/asm/mutex_64.h
++++ b/arch/x86/include/asm/mutex_64.h
+@@ -39,7 +39,7 @@ do {								\
+ 								\
+ 	asm volatile(LOCK_PREFIX "   decl (%%rdi)\n"		\
+ 		     "   jns 1f		\n"			\
+-		     "   call " #fail_fn "\n"			\
++		     PAX_DIRECT_CALL(#fail_fn)"\n"		\
+ 		     "1:"					\
+ 		     : "=D" (dummy)				\
+ 		     : "D" (v)					\
+@@ -94,7 +94,7 @@ do {								\
+ 								\
+ 	asm volatile(LOCK_PREFIX "   incl (%%rdi)\n"		\
+ 		     "   jg 1f\n"				\
+-		     "   call " #fail_fn "\n"			\
++		     PAX_DIRECT_CALL(#fail_fn)"\n"		\
+ 		     "1:"					\
+ 		     : "=D" (dummy)				\
+ 		     : "D" (v)					\

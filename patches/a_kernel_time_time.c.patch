@@ -1,0 +1,16 @@
+diff --git a/kernel/time/time.c b/kernel/time/time.c
+index bd62fb8..8b387ee 100644
+--- a/kernel/time/time.c
++++ b/kernel/time/time.c
+@@ -177,6 +177,11 @@ int do_sys_settimeofday64(const struct timespec64 *tv, const struct timezone *tz
+ 		if (tz->tz_minuteswest > 15*60 || tz->tz_minuteswest < -15*60)
+ 			return -EINVAL;
+ 
++		/* we log in do_settimeofday called below, so don't log twice
++		*/
++		if (!tv)
++			gr_log_timechange();
++
+ 		sys_tz = *tz;
+ 		update_vsyscall_tz();
+ 		if (firsttime) {

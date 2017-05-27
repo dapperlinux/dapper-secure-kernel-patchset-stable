@@ -1,0 +1,10 @@
+diff --git a/arch/x86/math-emu/polynom_Xsig.S b/arch/x86/math-emu/polynom_Xsig.S
+index 17315c8..b132abb 100644
+--- a/arch/x86/math-emu/polynom_Xsig.S
++++ b/arch/x86/math-emu/polynom_Xsig.S
+@@ -132,4 +132,4 @@ L_accum_done:
+ 	popl	%edi
+ 	popl	%esi
+ 	leave
+-	ret
++	pax_ret polynomial_Xsig

@@ -1,0 +1,12 @@
+diff --git a/arch/tile/Kconfig b/arch/tile/Kconfig
+index 4583c03..5e074bb 100644
+--- a/arch/tile/Kconfig
++++ b/arch/tile/Kconfig
+@@ -192,6 +192,7 @@ source "kernel/Kconfig.hz"
+ config KEXEC
+ 	bool "kexec system call"
+ 	select KEXEC_CORE
++	depends on !GRKERNSEC_KMEM
+ 	---help---
+ 	  kexec is a system call that implements the ability to shutdown your
+ 	  current kernel, and to start another kernel.  It is like a reboot

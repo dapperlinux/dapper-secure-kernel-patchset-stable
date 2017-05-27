@@ -1,0 +1,15 @@
+diff --git a/net/sunrpc/clnt.c b/net/sunrpc/clnt.c
+index b2ae4f1..b89288c 100644
+--- a/net/sunrpc/clnt.c
++++ b/net/sunrpc/clnt.c
+@@ -1547,7 +1547,9 @@ call_start(struct rpc_task *task)
+ 			(RPC_IS_ASYNC(task) ? "async" : "sync"));
+ 
+ 	/* Increment call count */
+-	task->tk_msg.rpc_proc->p_count++;
++	pax_open_kernel();
++	(*(unsigned int *)&task->tk_msg.rpc_proc->p_count)++;
++	pax_close_kernel();
+ 	clnt->cl_stats->rpccnt++;
+ 	task->tk_action = call_reserve;
+ }

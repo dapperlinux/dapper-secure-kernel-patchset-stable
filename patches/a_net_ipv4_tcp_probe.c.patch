@@ -1,0 +1,13 @@
+diff --git a/net/ipv4/tcp_probe.c b/net/ipv4/tcp_probe.c
+index f6c50af..1eb9aa5 100644
+--- a/net/ipv4/tcp_probe.c
++++ b/net/ipv4/tcp_probe.c
+@@ -236,7 +236,7 @@ static ssize_t tcpprobe_read(struct file *file, char __user *buf,
+ 		if (cnt + width >= len)
+ 			break;
+ 
+-		if (copy_to_user(buf + cnt, tbuf, width))
++		if (width > sizeof tbuf || copy_to_user(buf + cnt, tbuf, width))
+ 			return -EFAULT;
+ 		cnt += width;
+ 	}

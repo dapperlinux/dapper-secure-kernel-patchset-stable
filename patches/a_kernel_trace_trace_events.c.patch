@@ -1,0 +1,12 @@
+diff --git a/kernel/trace/trace_events.c b/kernel/trace/trace_events.c
+index 03c0a48..154163e 100644
+--- a/kernel/trace/trace_events.c
++++ b/kernel/trace/trace_events.c
+@@ -2274,7 +2274,6 @@ __trace_early_add_new_event(struct trace_event_call *call,
+ 	return 0;
+ }
+ 
+-struct ftrace_module_file_ops;
+ static void __add_event_to_tracers(struct trace_event_call *call);
+ 
+ /* Add an additional event_call dynamically */

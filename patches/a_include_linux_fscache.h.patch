@@ -1,0 +1,13 @@
+diff --git a/include/linux/fscache.h b/include/linux/fscache.h
+index 115bb81..e7b812b 100644
+--- a/include/linux/fscache.h
++++ b/include/linux/fscache.h
+@@ -152,7 +152,7 @@ struct fscache_cookie_def {
+ 	 * - this is mandatory for any object that may have data
+ 	 */
+ 	void (*now_uncached)(void *cookie_netfs_data);
+-};
++} __do_const;
+ 
+ /*
+  * fscache cached network filesystem type

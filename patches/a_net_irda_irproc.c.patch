@@ -1,0 +1,13 @@
+diff --git a/net/irda/irproc.c b/net/irda/irproc.c
+index b9ac598..f88cc56 100644
+--- a/net/irda/irproc.c
++++ b/net/irda/irproc.c
+@@ -66,7 +66,7 @@ void __init irda_proc_register(void)
+ {
+ 	int i;
+ 
+-	proc_irda = proc_mkdir("irda", init_net.proc_net);
++	proc_irda = proc_mkdir_restrict("irda", init_net.proc_net);
+ 	if (proc_irda == NULL)
+ 		return;
+ 

@@ -1,0 +1,15 @@
+diff --git a/arch/score/include/asm/cache.h b/arch/score/include/asm/cache.h
+index ae3d59f..f65f075 100644
+--- a/arch/score/include/asm/cache.h
++++ b/arch/score/include/asm/cache.h
+@@ -1,7 +1,9 @@
+ #ifndef _ASM_SCORE_CACHE_H
+ #define _ASM_SCORE_CACHE_H
+ 
++#include <linux/const.h>
++
+ #define L1_CACHE_SHIFT		4
+-#define L1_CACHE_BYTES		(1 << L1_CACHE_SHIFT)
++#define L1_CACHE_BYTES		(_AC(1,UL) << L1_CACHE_SHIFT)
+ 
+ #endif /* _ASM_SCORE_CACHE_H */

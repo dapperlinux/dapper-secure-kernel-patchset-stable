@@ -1,0 +1,13 @@
+diff --git a/arch/sparc/kernel/Makefile b/arch/sparc/kernel/Makefile
+index fa3c02d..c9a6309 100644
+--- a/arch/sparc/kernel/Makefile
++++ b/arch/sparc/kernel/Makefile
+@@ -4,7 +4,7 @@
+ #
+ 
+ asflags-y := -ansi
+-ccflags-y := -Werror
++#ccflags-y := -Werror
+ 
+ extra-y     := head_$(BITS).o
+ 

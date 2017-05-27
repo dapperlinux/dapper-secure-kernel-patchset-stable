@@ -1,0 +1,12 @@
+diff --git a/include/linux/cdrom.h b/include/linux/cdrom.h
+index 8609d57..86e4d79 100644
+--- a/include/linux/cdrom.h
++++ b/include/linux/cdrom.h
+@@ -87,7 +87,6 @@ struct cdrom_device_ops {
+ 
+ /* driver specifications */
+ 	const int capability;   /* capability flags */
+-	int n_minors;           /* number of active minor devices */
+ 	/* handle uniform packets for scsi type devices (scsi,atapi) */
+ 	int (*generic_packet) (struct cdrom_device_info *,
+ 			       struct packet_command *);

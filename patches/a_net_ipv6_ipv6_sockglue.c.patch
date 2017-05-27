@@ -1,0 +1,13 @@
+diff --git a/net/ipv6/ipv6_sockglue.c b/net/ipv6/ipv6_sockglue.c
+index 636ec56..03227c3 100644
+--- a/net/ipv6/ipv6_sockglue.c
++++ b/net/ipv6/ipv6_sockglue.c
+@@ -1027,7 +1027,7 @@ static int do_ipv6_getsockopt(struct sock *sk, int level, int optname,
+ 		if (sk->sk_type != SOCK_STREAM)
+ 			return -ENOPROTOOPT;
+ 
+-		msg.msg_control = optval;
++		msg.msg_control = (void __force_kernel *)optval;
+ 		msg.msg_controllen = len;
+ 		msg.msg_flags = flags;
+ 

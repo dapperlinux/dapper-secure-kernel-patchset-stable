@@ -1,0 +1,13 @@
+diff --git a/drivers/input/evdev.c b/drivers/input/evdev.c
+index e9ae3d5..96e4940 100644
+--- a/drivers/input/evdev.c
++++ b/drivers/input/evdev.c
+@@ -997,7 +997,7 @@ static int evdev_set_mask(struct evdev_client *client,
+ 	if (!cnt)
+ 		return 0;
+ 
+-	mask = kcalloc(sizeof(unsigned long), BITS_TO_LONGS(cnt), GFP_KERNEL);
++	mask = kcalloc(BITS_TO_LONGS(cnt), sizeof(unsigned long), GFP_KERNEL);
+ 	if (!mask)
+ 		return -ENOMEM;
+ 

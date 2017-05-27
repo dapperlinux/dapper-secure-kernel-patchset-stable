@@ -1,0 +1,26 @@
+diff --git a/fs/xfs/xfs_ioctl.c b/fs/xfs/xfs_ioctl.c
+index a391975..7474a84 100644
+--- a/fs/xfs/xfs_ioctl.c
++++ b/fs/xfs/xfs_ioctl.c
+@@ -121,7 +121,7 @@ xfs_find_handle(
+ 	}
+ 
+ 	error = -EFAULT;
+-	if (copy_to_user(hreq->ohandle, &handle, hsize) ||
++	if (hsize > sizeof handle || copy_to_user(hreq->ohandle, &handle, hsize) ||
+ 	    copy_to_user(hreq->ohandlen, &hsize, sizeof(__s32)))
+ 		goto out_put;
+ 
+@@ -1659,6 +1659,12 @@ xfs_ioc_swapext(
+ 		goto out_put_tmp_file;
+ 	}
+ 
++	if (f.file->f_op != &xfs_file_operations ||
++	    tmp.file->f_op != &xfs_file_operations) {
++		error = -EINVAL;
++		goto out_put_tmp_file;
++	}
++
+ 	ip = XFS_I(file_inode(f.file));
+ 	tip = XFS_I(file_inode(tmp.file));
+ 

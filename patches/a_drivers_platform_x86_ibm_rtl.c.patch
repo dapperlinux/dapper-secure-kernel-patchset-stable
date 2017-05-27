@@ -1,0 +1,13 @@
+diff --git a/drivers/platform/x86/ibm_rtl.c b/drivers/platform/x86/ibm_rtl.c
+index c62e5e1..854b418 100644
+--- a/drivers/platform/x86/ibm_rtl.c
++++ b/drivers/platform/x86/ibm_rtl.c
+@@ -227,7 +227,7 @@ static void rtl_teardown_sysfs(void) {
+ }
+ 
+ 
+-static struct dmi_system_id __initdata ibm_rtl_dmi_table[] = {
++static const struct dmi_system_id __initconst ibm_rtl_dmi_table[] = {
+ 	{                                                  \
+ 		.matches = {                               \
+ 			DMI_MATCH(DMI_SYS_VENDOR, "IBM"),  \

@@ -1,0 +1,13 @@
+diff --git a/drivers/gpu/drm/vmwgfx/vmwgfx_drv.h b/drivers/gpu/drm/vmwgfx/vmwgfx_drv.h
+index 59ff419..34b8477 100644
+--- a/drivers/gpu/drm/vmwgfx/vmwgfx_drv.h
++++ b/drivers/gpu/drm/vmwgfx/vmwgfx_drv.h
+@@ -439,7 +439,7 @@ struct vmw_private {
+ 	 * Fencing and IRQs.
+ 	 */
+ 
+-	atomic_t marker_seq;
++	atomic_unchecked_t marker_seq;
+ 	wait_queue_head_t fence_queue;
+ 	wait_queue_head_t fifo_queue;
+ 	spinlock_t waiter_lock;

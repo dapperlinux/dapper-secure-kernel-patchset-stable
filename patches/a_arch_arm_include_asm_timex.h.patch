@@ -1,0 +1,12 @@
+diff --git a/arch/arm/include/asm/timex.h b/arch/arm/include/asm/timex.h
+index f6fcc67..5895d62 100644
+--- a/arch/arm/include/asm/timex.h
++++ b/arch/arm/include/asm/timex.h
+@@ -13,6 +13,7 @@
+ #define _ASMARM_TIMEX_H
+ 
+ typedef unsigned long cycles_t;
++extern int read_current_timer(unsigned long *timer_val);
+ #define get_cycles()	({ cycles_t c; read_current_timer(&c) ? 0 : c; })
+ 
+ #endif

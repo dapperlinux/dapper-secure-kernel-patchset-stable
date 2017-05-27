@@ -1,0 +1,13 @@
+diff --git a/drivers/misc/lis3lv02d/lis3lv02d.h b/drivers/misc/lis3lv02d/lis3lv02d.h
+index c439c82..1f20f57 100644
+--- a/drivers/misc/lis3lv02d/lis3lv02d.h
++++ b/drivers/misc/lis3lv02d/lis3lv02d.h
+@@ -297,7 +297,7 @@ struct lis3lv02d {
+ 	struct input_polled_dev	*idev;     /* input device */
+ 	struct platform_device	*pdev;     /* platform device */
+ 	struct regulator_bulk_data regulators[2];
+-	atomic_t		count;     /* interrupt count after last read */
++	atomic_unchecked_t	count;     /* interrupt count after last read */
+ 	union axis_conversion	ac;        /* hw -> logical axis */
+ 	int			mapped_btns[3];
+ 

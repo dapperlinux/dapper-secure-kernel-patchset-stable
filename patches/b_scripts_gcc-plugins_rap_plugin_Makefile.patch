@@ -1,0 +1,12 @@
+--- /dev/null
++++ b/scripts/gcc-plugins/rap_plugin/Makefile
+@@ -0,0 +1,6 @@
++$(HOSTLIBS)-$(CONFIG_PAX_RAP) += rap_plugin.so
++always := $($(HOSTLIBS)-y)
++
++rap_plugin-objs := $(patsubst $(srctree)/$(src)/%.c,%.o,$(wildcard $(srctree)/$(src)/*.c))
++
++clean-files += *.so
+diff --git a/scripts/gcc-plugins/rap_plugin/rap.h b/scripts/gcc-plugins/rap_plugin/rap.h
+new file mode 100644
+index 0000000..f0e20ee

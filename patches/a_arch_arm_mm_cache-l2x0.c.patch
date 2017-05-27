@@ -1,0 +1,13 @@
+diff --git a/arch/arm/mm/cache-l2x0.c b/arch/arm/mm/cache-l2x0.c
+index d1870c7..36d500f 100644
+--- a/arch/arm/mm/cache-l2x0.c
++++ b/arch/arm/mm/cache-l2x0.c
+@@ -44,7 +44,7 @@ struct l2c_init_data {
+ 	void (*configure)(void __iomem *);
+ 	void (*unlock)(void __iomem *, unsigned);
+ 	struct outer_cache_fns outer_cache;
+-};
++} __do_const;
+ 
+ #define CACHE_LINE_SIZE		32
+ 

@@ -1,0 +1,13 @@
+diff --git a/arch/powerpc/include/asm/smp.h b/arch/powerpc/include/asm/smp.h
+index 0d02c11..33a8f08 100644
+--- a/arch/powerpc/include/asm/smp.h
++++ b/arch/powerpc/include/asm/smp.h
+@@ -51,7 +51,7 @@ struct smp_ops_t {
+ 	int   (*cpu_disable)(void);
+ 	void  (*cpu_die)(unsigned int nr);
+ 	int   (*cpu_bootable)(unsigned int nr);
+-};
++} __no_const;
+ 
+ extern void smp_send_debugger_break(void);
+ extern void start_secondary_resume(void);

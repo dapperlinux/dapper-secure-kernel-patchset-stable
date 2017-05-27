@@ -1,0 +1,12 @@
+diff --git a/arch/x86/include/asm/fpu/xstate.h b/arch/x86/include/asm/fpu/xstate.h
+index 430bacf..d0fbcf0 100644
+--- a/arch/x86/include/asm/fpu/xstate.h
++++ b/arch/x86/include/asm/fpu/xstate.h
+@@ -43,6 +43,7 @@
+ #define REX_PREFIX
+ #endif
+ 
++extern unsigned int xstate_size;
+ extern u64 xfeatures_mask;
+ extern u64 xstate_fx_sw_bytes[USER_XSTATE_FX_SW_WORDS];
+ 

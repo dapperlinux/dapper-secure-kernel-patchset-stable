@@ -1,0 +1,12 @@
+diff --git a/include/linux/i2c.h b/include/linux/i2c.h
+index 6422eef..9570baa 100644
+--- a/include/linux/i2c.h
++++ b/include/linux/i2c.h
+@@ -425,6 +425,7 @@ struct i2c_algorithm {
+ 	int (*unreg_slave)(struct i2c_client *client);
+ #endif
+ };
++typedef struct i2c_algorithm __no_const i2c_algorithm_no_const;
+ 
+ /**
+  * struct i2c_lock_operations - represent I2C locking operations

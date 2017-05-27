@@ -1,0 +1,13 @@
+diff --git a/drivers/net/ethernet/mellanox/mlx4/main.c b/drivers/net/ethernet/mellanox/mlx4/main.c
+index b2ca8a6..4f1c28e 100644
+--- a/drivers/net/ethernet/mellanox/mlx4/main.c
++++ b/drivers/net/ethernet/mellanox/mlx4/main.c
+@@ -4071,7 +4071,7 @@ static const struct pci_device_id mlx4_pci_table[] = {
+ MODULE_DEVICE_TABLE(pci, mlx4_pci_table);
+ 
+ static pci_ers_result_t mlx4_pci_err_detected(struct pci_dev *pdev,
+-					      pci_channel_state_t state)
++					      enum pci_channel_state state)
+ {
+ 	struct mlx4_dev_persistent *persist = pci_get_drvdata(pdev);
+ 

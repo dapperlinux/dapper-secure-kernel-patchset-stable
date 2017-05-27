@@ -1,0 +1,14 @@
+diff --git a/kernel/kexec.c b/kernel/kexec.c
+index 980936a..81408fd 100644
+--- a/kernel/kexec.c
++++ b/kernel/kexec.c
+@@ -236,7 +236,8 @@ COMPAT_SYSCALL_DEFINE4(kexec_load, compat_ulong_t, entry,
+ 		       compat_ulong_t, flags)
+ {
+ 	struct compat_kexec_segment in;
+-	struct kexec_segment out, __user *ksegments;
++	struct kexec_segment out;
++	struct kexec_segment __user *ksegments;
+ 	unsigned long i, result;
+ 
+ 	/* Don't allow clients that don't understand the native

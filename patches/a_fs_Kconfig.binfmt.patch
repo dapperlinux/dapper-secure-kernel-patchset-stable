@@ -1,0 +1,13 @@
+diff --git a/fs/Kconfig.binfmt b/fs/Kconfig.binfmt
+index 4c09d93..b051e3d 100644
+--- a/fs/Kconfig.binfmt
++++ b/fs/Kconfig.binfmt
+@@ -112,7 +112,7 @@ config HAVE_AOUT
+ 
+ config BINFMT_AOUT
+ 	tristate "Kernel support for a.out and ECOFF binaries"
+-	depends on HAVE_AOUT
++	depends on HAVE_AOUT && BROKEN
+ 	---help---
+ 	  A.out (Assembler.OUTput) is a set of formats for libraries and
+ 	  executables used in the earliest versions of UNIX.  Linux used

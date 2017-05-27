@@ -1,0 +1,20 @@
+diff --git a/arch/mn10300/proc-mn103e010/include/proc/cache.h b/arch/mn10300/proc-mn103e010/include/proc/cache.h
+index 967d144..db12197 100644
+--- a/arch/mn10300/proc-mn103e010/include/proc/cache.h
++++ b/arch/mn10300/proc-mn103e010/include/proc/cache.h
+@@ -11,12 +11,14 @@
+ #ifndef _ASM_PROC_CACHE_H
+ #define _ASM_PROC_CACHE_H
+ 
++#include <linux/const.h>
++
+ /* L1 cache */
+ 
+ #define L1_CACHE_NWAYS		4	/* number of ways in caches */
+ #define L1_CACHE_NENTRIES	256	/* number of entries in each way */
+-#define L1_CACHE_BYTES		16	/* bytes per entry */
+ #define L1_CACHE_SHIFT		4	/* shift for bytes per entry */
++#define L1_CACHE_BYTES		(_AC(1,UL) << L1_CACHE_SHIFT)	/* bytes per entry */
+ #define L1_CACHE_WAYDISP	0x1000	/* displacement of one way from the next */
+ 
+ #define L1_CACHE_TAG_VALID	0x00000001	/* cache tag valid bit */

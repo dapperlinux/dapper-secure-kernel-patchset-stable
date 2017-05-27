@@ -1,0 +1,13 @@
+diff --git a/drivers/staging/rtl8188eu/include/odm_precomp.h b/drivers/staging/rtl8188eu/include/odm_precomp.h
+index 9e5fe17..bdb77bb 100644
+--- a/drivers/staging/rtl8188eu/include/odm_precomp.h
++++ b/drivers/staging/rtl8188eu/include/odm_precomp.h
+@@ -70,7 +70,7 @@ void odm_RSSIMonitorCheckCE(struct odm_dm_struct *pDM_Odm);
+ void odm_TXPowerTrackingThermalMeterInit(struct odm_dm_struct *pDM_Odm);
+ void odm_EdcaTurboCheckCE(struct odm_dm_struct *pDM_Odm);
+ void odm_TXPowerTrackingCheckCE(struct odm_dm_struct *pDM_Odm);
+-void odm_SwAntDivChkAntSwitchCallback(void *FunctionContext);
++void odm_SwAntDivChkAntSwitchCallback(unsigned long FunctionContext);
+ void odm_InitHybridAntDiv(struct odm_dm_struct *pDM_Odm);
+ void odm_HwAntDiv(struct odm_dm_struct *pDM_Odm);
+ 

@@ -1,0 +1,12 @@
+diff --git a/scripts/gcc-plugins/gcc-generate-ipa-pass.h b/scripts/gcc-plugins/gcc-generate-ipa-pass.h
+index 9bd926e..93d8743 100644
+--- a/scripts/gcc-plugins/gcc-generate-ipa-pass.h
++++ b/scripts/gcc-plugins/gcc-generate-ipa-pass.h
+@@ -225,6 +225,7 @@ opt_pass *_MAKE_PASS_NAME_PASS(void)
+ 	return new _PASS_NAME_PASS();
+ }
+ #else
++struct opt_pass *_MAKE_PASS_NAME_PASS(void);
+ struct opt_pass *_MAKE_PASS_NAME_PASS(void)
+ {
+ 	return &_PASS_NAME_PASS.pass;

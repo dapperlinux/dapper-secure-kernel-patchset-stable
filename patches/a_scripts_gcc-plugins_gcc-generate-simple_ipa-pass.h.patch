@@ -1,0 +1,15 @@
+diff --git a/scripts/gcc-plugins/gcc-generate-simple_ipa-pass.h b/scripts/gcc-plugins/gcc-generate-simple_ipa-pass.h
+index a27e2b3..d5ed4e2 100644
+--- a/scripts/gcc-plugins/gcc-generate-simple_ipa-pass.h
++++ b/scripts/gcc-plugins/gcc-generate-simple_ipa-pass.h
+@@ -136,6 +136,7 @@ opt_pass *_MAKE_PASS_NAME_PASS(void)
+ 	return new _PASS_NAME_PASS();
+ }
+ #else
++struct opt_pass *_MAKE_PASS_NAME_PASS(void);
+ struct opt_pass *_MAKE_PASS_NAME_PASS(void)
+ {
+ 	return &_PASS_NAME_PASS.pass;
+diff --git a/scripts/gcc-plugins/gen-random-seed.sh b/scripts/gcc-plugins/gen-random-seed.sh
+new file mode 100644
+index 0000000..7514850

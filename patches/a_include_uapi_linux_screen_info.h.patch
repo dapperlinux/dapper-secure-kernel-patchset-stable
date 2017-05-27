@@ -1,0 +1,13 @@
+diff --git a/include/uapi/linux/screen_info.h b/include/uapi/linux/screen_info.h
+index 8b8d39d..1ca6c07 100644
+--- a/include/uapi/linux/screen_info.h
++++ b/include/uapi/linux/screen_info.h
+@@ -44,7 +44,7 @@ struct screen_info {
+ 	__u16 vesa_attributes;	/* 0x34 */
+ 	__u32 capabilities;     /* 0x36 */
+ 	__u32 ext_lfb_base;	/* 0x3a */
+-	__u8  _reserved[2];	/* 0x3e */
++	__u16 vesapm_size;	/* 0x3e */
+ } __attribute__((packed));
+ 
+ #define VIDEO_TYPE_MDA		0x10	/* Monochrome Text Display	*/

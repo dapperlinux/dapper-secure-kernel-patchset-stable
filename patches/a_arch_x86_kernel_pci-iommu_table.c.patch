@@ -1,0 +1,13 @@
+diff --git a/arch/x86/kernel/pci-iommu_table.c b/arch/x86/kernel/pci-iommu_table.c
+index f712dfd..0172a75 100644
+--- a/arch/x86/kernel/pci-iommu_table.c
++++ b/arch/x86/kernel/pci-iommu_table.c
+@@ -2,7 +2,7 @@
+ #include <asm/iommu_table.h>
+ #include <linux/string.h>
+ #include <linux/kallsyms.h>
+-
++#include <linux/sched.h>
+ 
+ #define DEBUG 1
+ 

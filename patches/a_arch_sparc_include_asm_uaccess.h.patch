@@ -1,0 +1,11 @@
+diff --git a/arch/sparc/include/asm/uaccess.h b/arch/sparc/include/asm/uaccess.h
+index bd56c28..4b63d83 100644
+--- a/arch/sparc/include/asm/uaccess.h
++++ b/arch/sparc/include/asm/uaccess.h
+@@ -1,5 +1,6 @@
+ #ifndef ___ASM_SPARC_UACCESS_H
+ #define ___ASM_SPARC_UACCESS_H
++
+ #if defined(__sparc__) && defined(__arch64__)
+ #include <asm/uaccess_64.h>
+ #else

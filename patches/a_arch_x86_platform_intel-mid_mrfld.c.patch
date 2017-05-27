@@ -1,0 +1,13 @@
+diff --git a/arch/x86/platform/intel-mid/mrfld.c b/arch/x86/platform/intel-mid/mrfld.c
+index 59253db..81bb534 100644
+--- a/arch/x86/platform/intel-mid/mrfld.c
++++ b/arch/x86/platform/intel-mid/mrfld.c
+@@ -94,7 +94,7 @@ static struct intel_mid_ops tangier_ops = {
+ 	.arch_setup = tangier_arch_setup,
+ };
+ 
+-void *get_tangier_ops(void)
++const void *get_tangier_ops(void)
+ {
+ 	return &tangier_ops;
+ }

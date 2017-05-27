@@ -1,0 +1,13 @@
+diff --git a/drivers/edac/edac_device_sysfs.c b/drivers/edac/edac_device_sysfs.c
+index 93da1a4..5e2c149 100644
+--- a/drivers/edac/edac_device_sysfs.c
++++ b/drivers/edac/edac_device_sysfs.c
+@@ -749,7 +749,7 @@ static int edac_device_add_main_sysfs_attributes(
+ 		 */
+ 		while (sysfs_attrib->attr.name != NULL) {
+ 			err = sysfs_create_file(&edac_dev->kobj,
+-				(struct attribute*) sysfs_attrib);
++				&sysfs_attrib->attr);
+ 			if (err)
+ 				goto err_out;
+ 

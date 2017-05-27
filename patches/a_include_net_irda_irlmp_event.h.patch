@@ -1,0 +1,17 @@
+diff --git a/include/net/irda/irlmp_event.h b/include/net/irda/irlmp_event.h
+index 9e4ec17..c3247bb 100644
+--- a/include/net/irda/irlmp_event.h
++++ b/include/net/irda/irlmp_event.h
+@@ -82,9 +82,9 @@ typedef enum {
+ extern const char *const irlmp_state[];
+ extern const char *const irlsap_state[];
+ 
+-void irlmp_watchdog_timer_expired(void *data);
+-void irlmp_discovery_timer_expired(void *data);
+-void irlmp_idle_timer_expired(void *data);
++void irlmp_watchdog_timer_expired(unsigned long data);
++void irlmp_discovery_timer_expired(unsigned long data);
++void irlmp_idle_timer_expired(unsigned long data);
+ 
+ void irlmp_do_lap_event(struct lap_cb *self, IRLMP_EVENT event, 
+ 			struct sk_buff *skb);

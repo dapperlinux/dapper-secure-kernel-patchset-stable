@@ -1,0 +1,13 @@
+diff --git a/drivers/gpu/drm/bridge/tc358767.c b/drivers/gpu/drm/bridge/tc358767.c
+index 44d476e..3dd649f 100644
+--- a/drivers/gpu/drm/bridge/tc358767.c
++++ b/drivers/gpu/drm/bridge/tc358767.c
+@@ -1102,7 +1102,7 @@ static bool tc_bridge_mode_fixup(struct drm_bridge *bridge,
+ 	return true;
+ }
+ 
+-static int tc_connector_mode_valid(struct drm_connector *connector,
++static enum drm_mode_status tc_connector_mode_valid(struct drm_connector *connector,
+ 				   struct drm_display_mode *mode)
+ {
+ 	/* Accept any mode */

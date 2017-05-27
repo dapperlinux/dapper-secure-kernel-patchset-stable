@@ -1,0 +1,13 @@
+diff --git a/drivers/net/ethernet/amd/7990.c b/drivers/net/ethernet/amd/7990.c
+index dc57f27..4f8eae5 100644
+--- a/drivers/net/ethernet/amd/7990.c
++++ b/drivers/net/ethernet/amd/7990.c
+@@ -535,7 +535,7 @@ void lance_tx_timeout(struct net_device *dev)
+ }
+ EXPORT_SYMBOL_GPL(lance_tx_timeout);
+ 
+-int lance_start_xmit(struct sk_buff *skb, struct net_device *dev)
++netdev_tx_t lance_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct lance_private *lp = netdev_priv(dev);
+ 	volatile struct lance_init_block *ib = lp->init_block;

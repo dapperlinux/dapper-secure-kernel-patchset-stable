@@ -1,0 +1,12 @@
+diff --git a/scripts/gcc-plugins/gcc-generate-rtl-pass.h b/scripts/gcc-plugins/gcc-generate-rtl-pass.h
+index 1dc67a5..e858d67 100644
+--- a/scripts/gcc-plugins/gcc-generate-rtl-pass.h
++++ b/scripts/gcc-plugins/gcc-generate-rtl-pass.h
+@@ -136,6 +136,7 @@ opt_pass *_MAKE_PASS_NAME_PASS(void)
+ 	return new _PASS_NAME_PASS();
+ }
+ #else
++struct opt_pass *_MAKE_PASS_NAME_PASS(void);
+ struct opt_pass *_MAKE_PASS_NAME_PASS(void)
+ {
+ 	return &_PASS_NAME_PASS.pass;

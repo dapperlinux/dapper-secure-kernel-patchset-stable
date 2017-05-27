@@ -1,0 +1,13 @@
+diff --git a/arch/x86/include/asm/hypervisor.h b/arch/x86/include/asm/hypervisor.h
+index 67942b6..176a8b4 100644
+--- a/arch/x86/include/asm/hypervisor.h
++++ b/arch/x86/include/asm/hypervisor.h
+@@ -46,7 +46,7 @@ struct hypervisor_x86 {
+ 
+ 	/* pin current vcpu to specified physical cpu (run rarely) */
+ 	void		(*pin_vcpu)(int);
+-};
++} __do_const;
+ 
+ extern const struct hypervisor_x86 *x86_hyper;
+ 

@@ -1,0 +1,12 @@
+diff --git a/arch/frv/include/asm/kmap_types.h b/arch/frv/include/asm/kmap_types.h
+index 43901f2..0d8b865 100644
+--- a/arch/frv/include/asm/kmap_types.h
++++ b/arch/frv/include/asm/kmap_types.h
+@@ -2,6 +2,6 @@
+ #ifndef _ASM_KMAP_TYPES_H
+ #define _ASM_KMAP_TYPES_H
+ 
+-#define KM_TYPE_NR 17
++#define KM_TYPE_NR 18
+ 
+ #endif

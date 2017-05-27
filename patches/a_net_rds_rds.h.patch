@@ -1,0 +1,13 @@
+diff --git a/net/rds/rds.h b/net/rds/rds.h
+index 67ba67c..e20950c 100644
+--- a/net/rds/rds.h
++++ b/net/rds/rds.h
+@@ -500,7 +500,7 @@ struct rds_transport {
+ 	void (*sync_mr)(void *trans_private, int direction);
+ 	void (*free_mr)(void *trans_private, int invalidate);
+ 	void (*flush_mrs)(void);
+-};
++} __do_const;
+ 
+ struct rds_sock {
+ 	struct sock		rs_sk;

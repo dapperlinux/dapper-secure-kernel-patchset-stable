@@ -1,0 +1,13 @@
+diff --git a/drivers/staging/rtl8192e/rtllib_softmac_wx.c b/drivers/staging/rtl8192e/rtllib_softmac_wx.c
+index 5f1412f..70d1ceb 100644
+--- a/drivers/staging/rtl8192e/rtllib_softmac_wx.c
++++ b/drivers/staging/rtl8192e/rtllib_softmac_wx.c
+@@ -327,7 +327,7 @@ int rtllib_wx_set_mode(struct rtllib_device *ieee, struct iw_request_info *a,
+ }
+ EXPORT_SYMBOL(rtllib_wx_set_mode);
+ 
+-void rtllib_wx_sync_scan_wq(void *data)
++void rtllib_wx_sync_scan_wq(struct work_struct *data)
+ {
+ 	struct rtllib_device *ieee = container_of_work_rsl(data,
+ 				     struct rtllib_device, wx_sync_scan_wq);

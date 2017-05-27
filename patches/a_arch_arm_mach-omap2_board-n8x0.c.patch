@@ -1,0 +1,13 @@
+diff --git a/arch/arm/mach-omap2/board-n8x0.c b/arch/arm/mach-omap2/board-n8x0.c
+index 6b6fda6..232df1e 100644
+--- a/arch/arm/mach-omap2/board-n8x0.c
++++ b/arch/arm/mach-omap2/board-n8x0.c
+@@ -568,7 +568,7 @@ static int n8x0_menelaus_late_init(struct device *dev)
+ }
+ #endif
+ 
+-struct menelaus_platform_data n8x0_menelaus_platform_data __initdata = {
++struct menelaus_platform_data n8x0_menelaus_platform_data __initconst = {
+ 	.late_init = n8x0_menelaus_late_init,
+ };
+ 

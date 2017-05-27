@@ -1,0 +1,13 @@
+diff --git a/drivers/gpu/drm/exynos/exynos_hdmi.c b/drivers/gpu/drm/exynos/exynos_hdmi.c
+index 38eaa63..3e42c7c 100644
+--- a/drivers/gpu/drm/exynos/exynos_hdmi.c
++++ b/drivers/gpu/drm/exynos/exynos_hdmi.c
+@@ -919,7 +919,7 @@ static int hdmi_find_phy_conf(struct hdmi_context *hdata, u32 pixel_clock)
+ 	return -EINVAL;
+ }
+ 
+-static int hdmi_mode_valid(struct drm_connector *connector,
++static enum drm_mode_status hdmi_mode_valid(struct drm_connector *connector,
+ 			struct drm_display_mode *mode)
+ {
+ 	struct hdmi_context *hdata = connector_to_hdmi(connector);

@@ -1,0 +1,12 @@
+diff --git a/drivers/usb/gadget/function/u_uac1.c b/drivers/usb/gadget/function/u_uac1.c
+index c78c841..48fd281 100644
+--- a/drivers/usb/gadget/function/u_uac1.c
++++ b/drivers/usb/gadget/function/u_uac1.c
+@@ -17,6 +17,7 @@
+ #include <linux/ctype.h>
+ #include <linux/random.h>
+ #include <linux/syscalls.h>
++#include <linux/module.h>
+ 
+ #include "u_uac1.h"
+ 

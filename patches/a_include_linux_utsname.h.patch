@@ -1,0 +1,13 @@
+diff --git a/include/linux/utsname.h b/include/linux/utsname.h
+index 60f0bb8..da826ed 100644
+--- a/include/linux/utsname.h
++++ b/include/linux/utsname.h
+@@ -26,7 +26,7 @@ struct uts_namespace {
+ 	struct user_namespace *user_ns;
+ 	struct ucounts *ucounts;
+ 	struct ns_common ns;
+-};
++} __randomize_layout;
+ extern struct uts_namespace init_uts_ns;
+ 
+ #ifdef CONFIG_UTS_NS

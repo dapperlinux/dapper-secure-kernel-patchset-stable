@@ -1,0 +1,13 @@
+diff --git a/arch/x86/kernel/ksysfs.c b/arch/x86/kernel/ksysfs.c
+index 4afc67f..f00d132 100644
+--- a/arch/x86/kernel/ksysfs.c
++++ b/arch/x86/kernel/ksysfs.c
+@@ -184,7 +184,7 @@ static ssize_t setup_data_data_read(struct file *fp,
+ 
+ static struct kobj_attribute type_attr = __ATTR_RO(type);
+ 
+-static struct bin_attribute data_attr __ro_after_init = {
++static bin_attribute_no_const data_attr __ro_after_init = {
+ 	.attr = {
+ 		.name = "data",
+ 		.mode = S_IRUGO,

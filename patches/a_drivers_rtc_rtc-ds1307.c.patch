@@ -1,0 +1,13 @@
+diff --git a/drivers/rtc/rtc-ds1307.c b/drivers/rtc/rtc-ds1307.c
+index 4e31036..4cfe2af 100644
+--- a/drivers/rtc/rtc-ds1307.c
++++ b/drivers/rtc/rtc-ds1307.c
+@@ -111,7 +111,7 @@ struct ds1307 {
+ 	u8			offset; /* register's offset */
+ 	u8			regs[11];
+ 	u16			nvram_offset;
+-	struct bin_attribute	*nvram;
++	bin_attribute_no_const	*nvram;
+ 	enum ds_type		type;
+ 	unsigned long		flags;
+ #define HAS_NVRAM	0		/* bit 0 == sysfs file active */

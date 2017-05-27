@@ -1,0 +1,12 @@
+diff --git a/drivers/net/ethernet/broadcom/tg3.h b/drivers/net/ethernet/broadcom/tg3.h
+index 3b5e98e..52b3916 100644
+--- a/drivers/net/ethernet/broadcom/tg3.h
++++ b/drivers/net/ethernet/broadcom/tg3.h
+@@ -150,6 +150,7 @@
+ #define  CHIPREV_ID_5750_A0		 0x4000
+ #define  CHIPREV_ID_5750_A1		 0x4001
+ #define  CHIPREV_ID_5750_A3		 0x4003
++#define  CHIPREV_ID_5750_C1		 0x4201
+ #define  CHIPREV_ID_5750_C2		 0x4202
+ #define  CHIPREV_ID_5752_A0_HW		 0x5000
+ #define  CHIPREV_ID_5752_A0		 0x6000

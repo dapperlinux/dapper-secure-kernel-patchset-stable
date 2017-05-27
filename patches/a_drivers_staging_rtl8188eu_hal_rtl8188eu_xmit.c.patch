@@ -1,0 +1,13 @@
+diff --git a/drivers/staging/rtl8188eu/hal/rtl8188eu_xmit.c b/drivers/staging/rtl8188eu/hal/rtl8188eu_xmit.c
+index 85650b2..d4511d1 100644
+--- a/drivers/staging/rtl8188eu/hal/rtl8188eu_xmit.c
++++ b/drivers/staging/rtl8188eu/hal/rtl8188eu_xmit.c
+@@ -26,7 +26,7 @@ s32 rtw_hal_init_xmit_priv(struct adapter *adapt)
+ 	struct xmit_priv	*pxmitpriv = &adapt->xmitpriv;
+ 
+ 	tasklet_init(&pxmitpriv->xmit_tasklet,
+-		     (void(*)(unsigned long))rtl8188eu_xmit_tasklet,
++		     rtl8188eu_xmit_tasklet,
+ 		     (unsigned long)adapt);
+ 	return _SUCCESS;
+ }

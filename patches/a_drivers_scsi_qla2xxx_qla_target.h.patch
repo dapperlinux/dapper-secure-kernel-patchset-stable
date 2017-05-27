@@ -1,0 +1,13 @@
+diff --git a/drivers/scsi/qla2xxx/qla_target.h b/drivers/scsi/qla2xxx/qla_target.h
+index f26c5f6..e88e9c5 100644
+--- a/drivers/scsi/qla2xxx/qla_target.h
++++ b/drivers/scsi/qla2xxx/qla_target.h
+@@ -876,7 +876,7 @@ struct qla_tgt {
+ 	struct list_head srr_imm_list;
+ 	struct work_struct srr_work;
+ 
+-	atomic_t tgt_global_resets_count;
++	atomic_unchecked_t tgt_global_resets_count;
+ 
+ 	struct list_head tgt_list_entry;
+ };

@@ -1,0 +1,13 @@
+diff --git a/drivers/media/usb/pvrusb2/pvrusb2-std.c b/drivers/media/usb/pvrusb2/pvrusb2-std.c
+index 9a596a3..38de071 100644
+--- a/drivers/media/usb/pvrusb2/pvrusb2-std.c
++++ b/drivers/media/usb/pvrusb2/pvrusb2-std.c
+@@ -216,7 +216,7 @@ unsigned int pvr2_std_id_to_str(char *bufPtr, unsigned int bufSize,
+ 			bufSize -= c2;
+ 			bufPtr += c2;
+ 			c2 = scnprintf(bufPtr,bufSize,
+-				       ip->name);
++				       "%s", ip->name);
+ 			c1 += c2;
+ 			bufSize -= c2;
+ 			bufPtr += c2;

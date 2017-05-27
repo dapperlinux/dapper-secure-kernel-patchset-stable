@@ -1,0 +1,13 @@
+diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
+index 08528af..45b9b69 100644
+--- a/include/linux/dma-mapping.h
++++ b/include/linux/dma-mapping.h
+@@ -125,7 +125,7 @@ struct dma_map_ops {
+ 	u64 (*get_required_mask)(struct device *dev);
+ #endif
+ 	int is_phys;
+-};
++} __do_const;
+ 
+ extern struct dma_map_ops dma_noop_ops;
+ 

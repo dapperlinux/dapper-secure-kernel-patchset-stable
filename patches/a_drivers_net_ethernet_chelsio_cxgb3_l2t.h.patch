@@ -1,0 +1,13 @@
+diff --git a/drivers/net/ethernet/chelsio/cxgb3/l2t.h b/drivers/net/ethernet/chelsio/cxgb3/l2t.h
+index 8cffcdf..aadf043 100644
+--- a/drivers/net/ethernet/chelsio/cxgb3/l2t.h
++++ b/drivers/net/ethernet/chelsio/cxgb3/l2t.h
+@@ -87,7 +87,7 @@ typedef void (*arp_failure_handler_func)(struct t3cdev * dev,
+  */
+ struct l2t_skb_cb {
+ 	arp_failure_handler_func arp_failure_handler;
+-};
++} __no_const;
+ 
+ #define L2T_SKB_CB(skb) ((struct l2t_skb_cb *)(skb)->cb)
+ 

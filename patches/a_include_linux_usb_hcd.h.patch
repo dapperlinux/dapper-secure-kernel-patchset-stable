@@ -1,0 +1,12 @@
+diff --git a/include/linux/usb/hcd.h b/include/linux/usb/hcd.h
+index 66fc137..9602956 100644
+--- a/include/linux/usb/hcd.h
++++ b/include/linux/usb/hcd.h
+@@ -24,6 +24,7 @@
+ #include <linux/rwsem.h>
+ #include <linux/interrupt.h>
+ #include <linux/idr.h>
++#include <scsi/scsi_host.h>
+ 
+ #define MAX_TOPO_LEVEL		6
+ 

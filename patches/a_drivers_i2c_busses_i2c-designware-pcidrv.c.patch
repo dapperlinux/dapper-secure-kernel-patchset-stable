@@ -1,0 +1,13 @@
+diff --git a/drivers/i2c/busses/i2c-designware-pcidrv.c b/drivers/i2c/busses/i2c-designware-pcidrv.c
+index 96f8230..73d7616 100644
+--- a/drivers/i2c/busses/i2c-designware-pcidrv.c
++++ b/drivers/i2c/busses/i2c-designware-pcidrv.c
+@@ -57,7 +57,7 @@ struct dw_scl_sda_cfg {
+ };
+ 
+ struct dw_pci_controller {
+-	u32 bus_num;
++	int bus_num;
+ 	u32 bus_cfg;
+ 	u32 tx_fifo_depth;
+ 	u32 rx_fifo_depth;

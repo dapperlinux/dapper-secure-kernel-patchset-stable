@@ -1,0 +1,30 @@
+diff --git a/drivers/gpu/drm/gma500/mdfld_dsi_dpi.c b/drivers/gpu/drm/gma500/mdfld_dsi_dpi.c
+index a05c0206..01bfdad 100644
+--- a/drivers/gpu/drm/gma500/mdfld_dsi_dpi.c
++++ b/drivers/gpu/drm/gma500/mdfld_dsi_dpi.c
+@@ -120,9 +120,14 @@ static void dsi_set_pipe_plane_enable_state(struct drm_device *dev,
+ 	u32 pipeconf_reg = PIPEACONF;
+ 	u32 dspcntr_reg = DSPACNTR;
+ 
+-	u32 dspcntr = dev_priv->dspcntr[pipe];
++	u32 dspcntr;
+ 	u32 mipi = MIPI_PORT_EN | PASS_FROM_SPHY_TO_AFE | SEL_FLOPPED_HSTX;
+ 
++	if (pipe == -1)
++		return;
++
++	dspcntr = dev_priv->dspcntr[pipe];
++
+ 	if (pipe) {
+ 		pipeconf_reg = PIPECCONF;
+ 		dspcntr_reg = DSPCCNTR;
+@@ -645,6 +650,9 @@ static void mdfld_dsi_dpi_set_power(struct drm_encoder *encoder, bool on)
+ 	if (!gma_power_begin(dev, true))
+ 		return;
+ 
++	if (pipe == -1)
++		return;
++
+ 	if (on) {
+ 		if (mdfld_get_panel_type(dev, pipe) == TMD_VID)
+ 			mdfld_dsi_dpi_turn_on(dpi_output, pipe);

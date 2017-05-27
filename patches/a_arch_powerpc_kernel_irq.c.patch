@@ -1,0 +1,21 @@
+diff --git a/arch/powerpc/kernel/irq.c b/arch/powerpc/kernel/irq.c
+index 3c05c31..a8e6888 100644
+--- a/arch/powerpc/kernel/irq.c
++++ b/arch/powerpc/kernel/irq.c
+@@ -482,6 +482,8 @@ void migrate_irqs(void)
+ }
+ #endif
+ 
++extern void gr_handle_kernel_exploit(void);
++
+ static inline void check_stack_overflow(void)
+ {
+ #ifdef CONFIG_DEBUG_STACKOVERFLOW
+@@ -494,6 +496,7 @@ static inline void check_stack_overflow(void)
+ 		pr_err("do_IRQ: stack overflow: %ld\n",
+ 			sp - sizeof(struct thread_info));
+ 		dump_stack();
++		gr_handle_kernel_exploit();
+ 	}
+ #endif
+ }

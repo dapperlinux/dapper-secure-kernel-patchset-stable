@@ -1,0 +1,10 @@
+diff --git a/drivers/gpu/drm/via/via_dma.c b/drivers/gpu/drm/via/via_dma.c
+index d17d8f2..67e8e48b 100644
+--- a/drivers/gpu/drm/via/via_dma.c
++++ b/drivers/gpu/drm/via/via_dma.c
+@@ -737,4 +737,4 @@ const struct drm_ioctl_desc via_ioctls[] = {
+ 	DRM_IOCTL_DEF_DRV(VIA_BLIT_SYNC, via_dma_blit_sync, DRM_AUTH)
+ };
+ 
+-int via_max_ioctl = ARRAY_SIZE(via_ioctls);
++const int via_max_ioctl = ARRAY_SIZE(via_ioctls);

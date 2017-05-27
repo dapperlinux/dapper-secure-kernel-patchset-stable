@@ -1,0 +1,15 @@
+diff --git a/drivers/tty/serial/kgdb_nmi.c b/drivers/tty/serial/kgdb_nmi.c
+index 117df15..8f7486f 100644
+--- a/drivers/tty/serial/kgdb_nmi.c
++++ b/drivers/tty/serial/kgdb_nmi.c
+@@ -53,7 +53,9 @@ static int kgdb_nmi_console_setup(struct console *co, char *options)
+ 	 * I/O utilities that messages sent to the console will automatically
+ 	 * be displayed on the dbg_io.
+ 	 */
+-	dbg_io_ops->is_console = true;
++	pax_open_kernel();
++	const_cast(dbg_io_ops->is_console) = true;
++	pax_close_kernel();
+ 
+ 	return 0;
+ }

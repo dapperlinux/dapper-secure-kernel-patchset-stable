@@ -1,0 +1,46 @@
+diff --git a/drivers/thermal/devfreq_cooling.c b/drivers/thermal/devfreq_cooling.c
+index 81631b1..b10aa5e 100644
+--- a/drivers/thermal/devfreq_cooling.c
++++ b/drivers/thermal/devfreq_cooling.c
+@@ -363,6 +363,15 @@ static struct thermal_cooling_device_ops devfreq_cooling_ops = {
+ 	.set_cur_state = devfreq_cooling_set_cur_state,
+ };
+ 
++static struct thermal_cooling_device_ops devfreq_cooling_power_ops = {
++	.get_max_state = devfreq_cooling_get_max_state,
++	.get_cur_state = devfreq_cooling_get_cur_state,
++	.set_cur_state = devfreq_cooling_set_cur_state,
++	.get_requested_power = devfreq_cooling_get_requested_power,
++	.state2power = devfreq_cooling_state2power,
++	.power2state = devfreq_cooling_power2state,
++};
++
+ /**
+  * devfreq_cooling_gen_tables() - Generate power and freq tables.
+  * @dfc: Pointer to devfreq cooling device.
+@@ -482,15 +491,9 @@ of_devfreq_cooling_register_power(struct device_node *np, struct devfreq *df,
+ 
+ 	dfc->devfreq = df;
+ 
+-	if (dfc_power) {
++	if (dfc_power)
+ 		dfc->power_ops = dfc_power;
+ 
+-		devfreq_cooling_ops.get_requested_power =
+-			devfreq_cooling_get_requested_power;
+-		devfreq_cooling_ops.state2power = devfreq_cooling_state2power;
+-		devfreq_cooling_ops.power2state = devfreq_cooling_power2state;
+-	}
+-
+ 	err = devfreq_cooling_gen_tables(dfc);
+ 	if (err)
+ 		goto free_dfc;
+@@ -502,7 +505,7 @@ of_devfreq_cooling_register_power(struct device_node *np, struct devfreq *df,
+ 	snprintf(dev_name, sizeof(dev_name), "thermal-devfreq-%d", dfc->id);
+ 
+ 	cdev = thermal_of_cooling_device_register(np, dev_name, dfc,
+-						  &devfreq_cooling_ops);
++						  dfc_power ? &devfreq_cooling_power_ops : &devfreq_cooling_ops);
+ 	if (IS_ERR(cdev)) {
+ 		err = PTR_ERR(cdev);
+ 		dev_err(df->dev.parent,

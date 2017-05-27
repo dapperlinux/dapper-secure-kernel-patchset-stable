@@ -1,0 +1,22 @@
+diff --git a/drivers/pci/pci.h b/drivers/pci/pci.h
+index a5d37f6..8c7494b 100644
+--- a/drivers/pci/pci.h
++++ b/drivers/pci/pci.h
+@@ -116,7 +116,7 @@ struct pci_vpd_ops {
+ 
+ struct pci_vpd {
+ 	const struct pci_vpd_ops *ops;
+-	struct bin_attribute *attr; /* descriptor for sysfs VPD entry */
++	bin_attribute_no_const *attr; /* descriptor for sysfs VPD entry */
+ 	struct mutex	lock;
+ 	unsigned int	len;
+ 	u16		flag;
+@@ -312,7 +312,7 @@ static inline int pci_iov_bus_range(struct pci_bus *bus)
+ 
+ #endif /* CONFIG_PCI_IOV */
+ 
+-unsigned long pci_cardbus_resource_alignment(struct resource *);
++unsigned long pci_cardbus_resource_alignment(const struct resource *);
+ 
+ static inline resource_size_t pci_resource_alignment(struct pci_dev *dev,
+ 						     struct resource *res)

@@ -1,0 +1,12 @@
+diff --git a/include/uapi/linux/personality.h b/include/uapi/linux/personality.h
+index aa169c4..6a2771d 100644
+--- a/include/uapi/linux/personality.h
++++ b/include/uapi/linux/personality.h
+@@ -30,6 +30,7 @@ enum {
+ #define PER_CLEAR_ON_SETID (READ_IMPLIES_EXEC  | \
+ 			    ADDR_NO_RANDOMIZE  | \
+ 			    ADDR_COMPAT_LAYOUT | \
++			    ADDR_LIMIT_3GB     | \
+ 			    MMAP_PAGE_ZERO)
+ 
+ /*

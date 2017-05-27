@@ -1,0 +1,13 @@
+diff --git a/arch/arm/include/asm/cacheflush.h b/arch/arm/include/asm/cacheflush.h
+index bdd283b..e66fb83 100644
+--- a/arch/arm/include/asm/cacheflush.h
++++ b/arch/arm/include/asm/cacheflush.h
+@@ -116,7 +116,7 @@ struct cpu_cache_fns {
+ 	void (*dma_unmap_area)(const void *, size_t, int);
+ 
+ 	void (*dma_flush_range)(const void *, const void *);
+-};
++} __no_const __no_randomize_layout;
+ 
+ /*
+  * Select the calling method

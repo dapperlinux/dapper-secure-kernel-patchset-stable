@@ -1,0 +1,15 @@
+diff --git a/drivers/hwmon/hwmon.c b/drivers/hwmon/hwmon.c
+index a74c075..a6eb87f 100644
+--- a/drivers/hwmon/hwmon.c
++++ b/drivers/hwmon/hwmon.c
+@@ -214,8 +214,8 @@ static struct attribute *hwmon_genattr(struct device *dev,
+ 				       const struct hwmon_ops *ops)
+ {
+ 	struct hwmon_device_attribute *hattr;
+-	struct device_attribute *dattr;
+-	struct attribute *a;
++	device_attribute_no_const *dattr;
++	attribute_no_const *a;
+ 	umode_t mode;
+ 	char *name;
+ 

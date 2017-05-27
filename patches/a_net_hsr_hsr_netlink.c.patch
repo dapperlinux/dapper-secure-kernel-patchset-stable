@@ -1,0 +1,13 @@
+diff --git a/net/hsr/hsr_netlink.c b/net/hsr/hsr_netlink.c
+index d4d1617..06282b4 100644
+--- a/net/hsr/hsr_netlink.c
++++ b/net/hsr/hsr_netlink.c
+@@ -108,7 +108,7 @@ static int hsr_fill_info(struct sk_buff *skb, const struct net_device *dev)
+ 	return -EMSGSIZE;
+ }
+ 
+-static struct rtnl_link_ops hsr_link_ops __read_mostly = {
++static struct rtnl_link_ops hsr_link_ops = {
+ 	.kind		= "hsr",
+ 	.maxtype	= IFLA_HSR_MAX,
+ 	.policy		= hsr_policy,

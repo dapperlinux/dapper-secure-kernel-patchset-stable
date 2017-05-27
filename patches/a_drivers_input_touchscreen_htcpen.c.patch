@@ -1,0 +1,13 @@
+diff --git a/drivers/input/touchscreen/htcpen.c b/drivers/input/touchscreen/htcpen.c
+index 92e2243..8fd9092 100644
+--- a/drivers/input/touchscreen/htcpen.c
++++ b/drivers/input/touchscreen/htcpen.c
+@@ -219,7 +219,7 @@ static struct isa_driver htcpen_isa_driver = {
+ 	}
+ };
+ 
+-static struct dmi_system_id htcshift_dmi_table[] __initdata = {
++static const struct dmi_system_id htcshift_dmi_table[] __initconst = {
+ 	{
+ 		.ident = "Shift",
+ 		.matches = {

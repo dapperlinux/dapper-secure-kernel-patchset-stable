@@ -1,0 +1,13 @@
+diff --git a/drivers/tty/serial/jsm/jsm_driver.c b/drivers/tty/serial/jsm/jsm_driver.c
+index a119f11..120444e 100644
+--- a/drivers/tty/serial/jsm/jsm_driver.c
++++ b/drivers/tty/serial/jsm/jsm_driver.c
+@@ -336,7 +336,7 @@ static struct pci_driver jsm_driver = {
+ };
+ 
+ static pci_ers_result_t jsm_io_error_detected(struct pci_dev *pdev,
+-					pci_channel_state_t state)
++					enum pci_channel_state state)
+ {
+ 	struct jsm_board *brd = pci_get_drvdata(pdev);
+ 

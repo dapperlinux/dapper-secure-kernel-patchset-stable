@@ -1,0 +1,21 @@
+diff --git a/drivers/video/fbdev/aty/atyfb_base.c b/drivers/video/fbdev/aty/atyfb_base.c
+index 11026e7..2b7e1bb 100644
+--- a/drivers/video/fbdev/aty/atyfb_base.c
++++ b/drivers/video/fbdev/aty/atyfb_base.c
+@@ -1335,10 +1335,14 @@ static int atyfb_set_par(struct fb_info *info)
+ 	par->accel_flags = var->accel_flags; /* hack */
+ 
+ 	if (var->accel_flags) {
+-		info->fbops->fb_sync = atyfb_sync;
++		pax_open_kernel();
++		const_cast(info->fbops->fb_sync) = atyfb_sync;
++		pax_close_kernel();
+ 		info->flags &= ~FBINFO_HWACCEL_DISABLED;
+ 	} else {
+-		info->fbops->fb_sync = NULL;
++		pax_open_kernel();
++		const_cast(info->fbops->fb_sync) = NULL;
++		pax_close_kernel();
+ 		info->flags |= FBINFO_HWACCEL_DISABLED;
+ 	}
+ 

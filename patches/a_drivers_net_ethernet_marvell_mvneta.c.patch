@@ -1,0 +1,13 @@
+diff --git a/drivers/net/ethernet/marvell/mvneta.c b/drivers/net/ethernet/marvell/mvneta.c
+index 707bc46..14bf9a5 100644
+--- a/drivers/net/ethernet/marvell/mvneta.c
++++ b/drivers/net/ethernet/marvell/mvneta.c
+@@ -2292,7 +2292,7 @@ static int mvneta_tx_frag_process(struct mvneta_port *pp, struct sk_buff *skb,
+ }
+ 
+ /* Main tx processing */
+-static int mvneta_tx(struct sk_buff *skb, struct net_device *dev)
++static netdev_tx_t mvneta_tx(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct mvneta_port *pp = netdev_priv(dev);
+ 	u16 txq_id = skb_get_queue_mapping(skb);

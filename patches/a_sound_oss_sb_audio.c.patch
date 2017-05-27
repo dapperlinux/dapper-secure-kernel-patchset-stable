@@ -1,0 +1,13 @@
+diff --git a/sound/oss/sb_audio.c b/sound/oss/sb_audio.c
+index dc91072..d85a10a 100644
+--- a/sound/oss/sb_audio.c
++++ b/sound/oss/sb_audio.c
+@@ -900,7 +900,7 @@ sb16_copy_from_user(int dev,
+ 		buf16 = (signed short *)(localbuf + localoffs);
+ 		while (c)
+ 		{
+-			locallen = (c >= LBUFCOPYSIZE ? LBUFCOPYSIZE : c);
++			locallen = ((unsigned)c >= LBUFCOPYSIZE ? LBUFCOPYSIZE : c);
+ 			if (copy_from_user(lbuf8,
+ 					   userbuf+useroffs + p,
+ 					   locallen))

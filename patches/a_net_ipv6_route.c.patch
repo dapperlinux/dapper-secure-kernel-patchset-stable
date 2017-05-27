@@ -1,0 +1,13 @@
+diff --git a/net/ipv6/route.c b/net/ipv6/route.c
+index 8d6c09f..685bdcf 100644
+--- a/net/ipv6/route.c
++++ b/net/ipv6/route.c
+@@ -3627,7 +3627,7 @@ struct ctl_table ipv6_route_table_template[] = {
+ 
+ struct ctl_table * __net_init ipv6_route_sysctl_init(struct net *net)
+ {
+-	struct ctl_table *table;
++	ctl_table_no_const *table;
+ 
+ 	table = kmemdup(ipv6_route_table_template,
+ 			sizeof(ipv6_route_table_template),

@@ -1,0 +1,13 @@
+diff --git a/drivers/gpu/drm/radeon/radeon_device.c b/drivers/gpu/drm/radeon/radeon_device.c
+index 621af06..1508b3fc 100644
+--- a/drivers/gpu/drm/radeon/radeon_device.c
++++ b/drivers/gpu/drm/radeon/radeon_device.c
+@@ -1289,7 +1289,7 @@ static bool radeon_switcheroo_can_switch(struct pci_dev *pdev)
+ 	 * locking inversion with the driver load path. And the access here is
+ 	 * completely racy anyway. So don't bother with locking for now.
+ 	 */
+-	return dev->open_count == 0;
++	return local_read(&dev->open_count) == 0;
+ }
+ 
+ static const struct vga_switcheroo_client_ops radeon_switcheroo_ops = {
