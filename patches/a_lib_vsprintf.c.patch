@@ -168,6 +168,3 @@ index 0967771..2871684 100644
  			break;
  		}
  
-diff --git a/localversion-grsec b/localversion-grsec
-new file mode 100644
-index 0000000..7cd6065

@@ -66,7 +66,7 @@ index dba2ff8..9ac9eba 100644
  	unsigned int len;
  	int v;
  	u32 max_blocksize = svc_max_payload(rqstp);
-@@ -353,9 +359,10 @@ nfs3svc_decode_readargs(struct svc_rqst *rqstp, __be32 *p,
+@@ -353,9 +353,10 @@ nfs3svc_decode_readargs(struct svc_rqst *rqstp, __be32 *p,
  }
  
  int
@@ -78,7 +78,7 @@ index dba2ff8..9ac9eba 100644
 +	struct nfsd3_writeargs *args = _args;
  	unsigned int len, v, hdr, dlen;
  	u32 max_blocksize = svc_max_payload(rqstp);
- 
+ 	struct kvec *head = rqstp->rq_arg.head;
 @@ -410,9 +417,11 @@ nfs3svc_decode_writeargs(struct svc_rqst *rqstp, __be32 *p,
  }
  

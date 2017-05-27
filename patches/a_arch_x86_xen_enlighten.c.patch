@@ -9,8 +9,8 @@ index bdd8556..4c0b9c7 100644
 -void *xen_initial_gdt;
 -
  RESERVE_BRK(shared_info_page_brk, PAGE_SIZE);
- 
- static int xen_cpu_up_prepare(unsigned int cpu);
+ __read_mostly int xen_have_vector_callback;
+ EXPORT_SYMBOL_GPL(xen_have_vector_callback);
 @@ -596,8 +594,7 @@ static void xen_load_gdt(const struct desc_ptr *dtr)
  {
  	unsigned long va = dtr->address;

@@ -41,9 +41,9 @@ index 217fd2e..f665bfe 100644
  				  bool multi_instance)
  {
  	/* (Un)Install the callbacks for further cpu hotplug operations */
-@@ -1443,17 +1435,17 @@ static void cpuhp_store_callbacks(enum cpuhp_state state,
+@@ -1442,16 +1442,16 @@ static void cpuhp_store_callbacks(enum cpuhp_state state,
+ 	struct cpuhp_step *sp;
  
- 	mutex_lock(&cpuhp_state_mutex);
  	sp = cpuhp_get_step(state);
 -	sp->startup.single = startup;
 -	sp->teardown.single = teardown;
@@ -52,7 +52,6 @@ index 217fd2e..f665bfe 100644
  	sp->name = name;
  	sp->multi_instance = multi_instance;
  	INIT_HLIST_HEAD(&sp->list);
- 	mutex_unlock(&cpuhp_state_mutex);
  }
  
 -static void *cpuhp_get_teardown_cb(enum cpuhp_state state)
@@ -98,10 +97,10 @@ index 217fd2e..f665bfe 100644
  			goto out;
  		}
  	}
-@@ -1655,7 +1650,7 @@ int __cpuhp_state_remove_instance(enum cpuhp_state state,
- 		return -EINVAL;
- 
+@@ -1655,7 +1655,7 @@ int __cpuhp_state_remove_instance(enum cpuhp_state state,
  	get_online_cpus();
+ 	mutex_lock(&cpuhp_state_mutex);
+ 
 -	if (!invoke || !cpuhp_get_teardown_cb(state))
 +	if (!invoke || !cpuhp_get_teardown_cb(state).single)
  		goto remove;
@@ -125,12 +124,12 @@ index 217fd2e..f665bfe 100644
  		goto remove;
  
  	/*
-@@ -1720,7 +1717,7 @@ void __cpuhp_remove_state(enum cpuhp_state state, bool invoke)
+@@ -1720,7 +1720,7 @@ void __cpuhp_remove_state(enum cpuhp_state state, bool invoke)
  			cpuhp_issue_call(cpu, state, false, NULL);
  	}
  remove:
 -	cpuhp_store_callbacks(state, NULL, NULL, NULL, false);
 +	cpuhp_store_callbacks(state, NULL, startup, teardown, false);
+ 	mutex_unlock(&cpuhp_state_mutex);
  	put_online_cpus();
  }
- EXPORT_SYMBOL(__cpuhp_remove_state);

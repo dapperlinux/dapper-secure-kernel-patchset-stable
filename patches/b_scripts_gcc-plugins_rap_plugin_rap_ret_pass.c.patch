@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/rap_plugin/rap_ret_pass.c b/scripts/gcc-plugins/rap_plugin/rap_ret_pass.c
+new file mode 100644
+index 0000000..690f8d3
 --- /dev/null
 +++ b/scripts/gcc-plugins/rap_plugin/rap_ret_pass.c
 @@ -0,0 +1,343 @@
@@ -344,6 +347,3 @@
 +#define NO_GATE
 +#define TODO_FLAGS_FINISH TODO_dump_func | TODO_verify_rtl_sharing
 +#include "gcc-generate-rtl-pass.h"
-diff --git a/scripts/gcc-plugins/rap_plugin/sip.c b/scripts/gcc-plugins/rap_plugin/sip.c
-new file mode 100644
-index 0000000..65bc1cd

@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/rap_plugin/sip.c b/scripts/gcc-plugins/rap_plugin/sip.c
+new file mode 100644
+index 0000000..65bc1cd
 --- /dev/null
 +++ b/scripts/gcc-plugins/rap_plugin/sip.c
 @@ -0,0 +1,96 @@

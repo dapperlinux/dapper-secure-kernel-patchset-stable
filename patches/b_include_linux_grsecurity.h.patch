@@ -1,3 +1,6 @@
+diff --git a/include/linux/grsecurity.h b/include/linux/grsecurity.h
+new file mode 100644
+index 0000000..749b915
 --- /dev/null
 +++ b/include/linux/grsecurity.h
 @@ -0,0 +1,259 @@
@@ -260,6 +263,3 @@
 +#endif
 +
 +#endif
-diff --git a/include/linux/grsock.h b/include/linux/grsock.h
-new file mode 100644
-index 0000000..e7ffaaf

@@ -1,3 +1,6 @@
+diff --git a/grsecurity/Kconfig b/grsecurity/Kconfig
+new file mode 100644
+index 0000000..f1c1ee2
 --- /dev/null
 +++ b/grsecurity/Kconfig
 @@ -0,0 +1,1206 @@
@@ -1207,6 +1210,3 @@
 +	  any rate limiting on grsecurity log messages.
 +
 +endmenu
-diff --git a/grsecurity/Makefile b/grsecurity/Makefile
-new file mode 100644
-index 0000000..e136e5f

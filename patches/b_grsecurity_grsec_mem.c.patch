@@ -1,3 +1,6 @@
+diff --git a/grsecurity/grsec_mem.c b/grsecurity/grsec_mem.c
+new file mode 100644
+index 0000000..0e39d8c
 --- /dev/null
 +++ b/grsecurity/grsec_mem.c
 @@ -0,0 +1,48 @@
@@ -49,6 +52,3 @@
 +	gr_log_str(GR_DONT_AUDIT, GR_BADPROCPID_MSG, entry);
 +	return;
 +}
-diff --git a/grsecurity/grsec_mount.c b/grsecurity/grsec_mount.c
-new file mode 100644
-index 0000000..fe02bf4

@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/size_overflow_transform.c b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_transform.c
+new file mode 100644
+index 0000000..e2cfd20
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_transform.c
 @@ -0,0 +1,772 @@
@@ -773,6 +776,3 @@
 +#endif
 +	return TODO_dump_func | TODO_verify_stmts | TODO_remove_unused_locals | TODO_update_ssa_no_phi | TODO_ggc_collect | TODO_verify_flow;
 +}
-diff --git a/scripts/gcc-plugins/size_overflow_plugin/size_overflow_transform_core.c b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_transform_core.c
-new file mode 100644
-index 0000000..7b24aea

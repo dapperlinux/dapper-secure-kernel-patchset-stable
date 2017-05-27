@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/e_fields.data b/scripts/gcc-plugins/size_overflow_plugin/e_fields.data
+new file mode 100644
+index 0000000..88df810
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/e_fields.data
 @@ -0,0 +1,16329 @@
@@ -16330,6 +16333,3 @@
 +_recv_fndecl_65526_fields _recv fndecl 3 65526 NULL
 +write_page_nocow_fndecl_65527_fields write_page_nocow fndecl 2 65527 NULL
 +size_mei_msg_data_65529_fields size mei_msg_data 0 65529 NULL
-diff --git a/scripts/gcc-plugins/size_overflow_plugin/e_fns.data b/scripts/gcc-plugins/size_overflow_plugin/e_fns.data
-new file mode 100644
-index 0000000..077b433

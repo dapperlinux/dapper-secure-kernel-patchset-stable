@@ -1,3 +1,6 @@
+diff --git a/grsecurity/grsec_mount.c b/grsecurity/grsec_mount.c
+new file mode 100644
+index 0000000..fe02bf4
 --- /dev/null
 +++ b/grsecurity/grsec_mount.c
 @@ -0,0 +1,65 @@
@@ -66,6 +69,3 @@
 +#endif
 +	return 0;
 +}
-diff --git a/grsecurity/grsec_pax.c b/grsecurity/grsec_pax.c
-new file mode 100644
-index 0000000..2ad7b96

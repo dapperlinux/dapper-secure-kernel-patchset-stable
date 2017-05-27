@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/checker_plugin.c b/scripts/gcc-plugins/checker_plugin.c
+new file mode 100644
+index 0000000..33f4af8
 --- /dev/null
 +++ b/scripts/gcc-plugins/checker_plugin.c
 @@ -0,0 +1,491 @@
@@ -492,6 +495,3 @@
 +
 +	return 0;
 +}
-diff --git a/scripts/gcc-plugins/colorize_plugin.c b/scripts/gcc-plugins/colorize_plugin.c
-new file mode 100644
-index 0000000..c8c62e9

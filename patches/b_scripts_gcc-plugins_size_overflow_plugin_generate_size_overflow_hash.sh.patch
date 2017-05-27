@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/generate_size_overflow_hash.sh b/scripts/gcc-plugins/size_overflow_plugin/generate_size_overflow_hash.sh
+new file mode 100644
+index 0000000..be9724d
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/generate_size_overflow_hash.sh
 @@ -0,0 +1,103 @@
@@ -104,6 +107,3 @@
 +create_array_elements
 +
 +exit 0
-diff --git a/scripts/gcc-plugins/size_overflow_plugin/insert_size_overflow_asm.c b/scripts/gcc-plugins/size_overflow_plugin/insert_size_overflow_asm.c
-new file mode 100644
-index 0000000..d459e5f

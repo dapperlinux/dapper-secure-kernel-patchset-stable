@@ -10,7 +10,7 @@ index a7fdf45..87c1a31 100644
  
  #include "mce-internal.h"
  
-@@ -210,8 +211,7 @@ static struct notifier_block mce_srao_nb;
+@@ -210,8 +210,7 @@ static struct notifier_block mce_srao_nb;
  void mce_register_decode_chain(struct notifier_block *nb)
  {
  	/* Ensure SRAO notifier has the highest priority in the decode chain. */
@@ -18,7 +18,7 @@ index a7fdf45..87c1a31 100644
 -		nb->priority -= 1;
 +	BUG_ON(nb != &mce_srao_nb && nb->priority == INT_MAX);
  
- 	atomic_notifier_chain_register(&x86_mce_decoder_chain, nb);
+ 	blocking_notifier_chain_register(&x86_mce_decoder_chain, nb);
  }
 @@ -263,7 +263,7 @@ static inline u32 smca_misc_reg(int bank)
  	return MSR_AMD64_SMCA_MCx_MISC(bank);

@@ -16,12 +16,12 @@ index d9d8d16..139e5a0 100644
  }
  
  /* Insert a jump instruction at address 'from', which jumps to address 'to'.*/
-@@ -171,7 +174,7 @@ int can_boost(kprobe_opcode_t *opcodes)
+@@ -171,7 +171,7 @@ int can_boost(kprobe_opcode_t *opcodes, void *addr)
  	kprobe_opcode_t opcode;
  	kprobe_opcode_t *orig_opcodes = opcodes;
  
--	if (search_exception_tables((unsigned long)opcodes))
-+	if (search_exception_tables(ktva_ktla((unsigned long)opcodes)))
+-	if (search_exception_tables((unsigned long)addr))
++	if (search_exception_tables(ktva_ktla((unsigned long)addr)))
  		return 0;	/* Page fault may occur on this address. */
  
  retry:

@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/size_overflow_transform_core.c b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_transform_core.c
+new file mode 100644
+index 0000000..7b24aea
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_transform_core.c
 @@ -0,0 +1,1013 @@
@@ -1014,6 +1017,3 @@
 +		gcc_unreachable();
 +	}
 +}
-diff --git a/scripts/gcc-plugins/stackleak_plugin.c b/scripts/gcc-plugins/stackleak_plugin.c
-new file mode 100644
-index 0000000..f0fdd5e

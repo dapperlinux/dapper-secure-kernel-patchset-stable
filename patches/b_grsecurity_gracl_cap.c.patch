@@ -1,3 +1,6 @@
+diff --git a/grsecurity/gracl_cap.c b/grsecurity/gracl_cap.c
+new file mode 100644
+index 0000000..8747091
 --- /dev/null
 +++ b/grsecurity/gracl_cap.c
 @@ -0,0 +1,96 @@
@@ -97,6 +100,3 @@
 +	return gr_task_acl_is_capable(current, current_cred(), cap, false);
 +}
 +
-diff --git a/grsecurity/gracl_compat.c b/grsecurity/gracl_compat.c
-new file mode 100644
-index 0000000..a43dd06

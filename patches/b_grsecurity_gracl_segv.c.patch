@@ -1,9 +1,12 @@
+diff --git a/grsecurity/gracl_segv.c b/grsecurity/gracl_segv.c
+new file mode 100644
+index 0000000..02c5a2b
 --- /dev/null
 +++ b/grsecurity/gracl_segv.c
 @@ -0,0 +1,306 @@
 +#include <linux/kernel.h>
 +#include <linux/mm.h>
-+#include <asm/uaccess.h>
++#include <linux/uaccess.h>
 +#include <asm/errno.h>
 +#include <asm/mman.h>
 +#include <net/sock.h>
@@ -307,6 +310,3 @@
 +
 +	return;
 +}
-diff --git a/grsecurity/gracl_shm.c b/grsecurity/gracl_shm.c
-new file mode 100644
-index 0000000..6b0c9cc

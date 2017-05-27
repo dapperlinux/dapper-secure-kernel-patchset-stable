@@ -113,19 +113,6 @@ index faf3687..7624c7a 100644
  	switch (sizeof(*(ptr))) {				\
  	case 1:							\
  		__put_user_x(1, __pu_val, ptr, __ret_pu);	\
-@@ -315,10 +334,9 @@ do {									\
- #define __get_user_asm_u64(x, ptr, retval, errret)			\
- ({									\
- 	__typeof__(ptr) __ptr = (ptr);					\
--	asm volatile(ASM_STAC "\n"					\
--		     "1:	movl %2,%%eax\n"			\
-+	asm volatile("1:	movl %2,%%eax\n"			\
- 		     "2:	movl %3,%%edx\n"			\
--		     "3: " ASM_CLAC "\n"				\
-+		     "3:\n"						\
- 		     ".section .fixup,\"ax\"\n"				\
- 		     "4:	mov %4,%0\n"				\
- 		     "	xorl %%eax,%%eax\n"				\
 @@ -346,10 +364,10 @@ do {									\
  	__chk_user_ptr(ptr);						\
  	switch (size) {							\

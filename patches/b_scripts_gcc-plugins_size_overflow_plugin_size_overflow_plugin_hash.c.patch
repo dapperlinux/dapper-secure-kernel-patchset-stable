@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/size_overflow_plugin_hash.c b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_plugin_hash.c
+new file mode 100644
+index 0000000..eb94acf
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_plugin_hash.c
 @@ -0,0 +1,469 @@
@@ -470,6 +473,3 @@
 +	fprintf(stderr, "Function %s is missing from the e_%s hash table +%s+%s+%u+%u+\n", raw_data.orig_decl_str, based_decl, raw_data.orig_decl_str, raw_data.context, raw_data.orig_num, raw_data.hash);
 +}
 +
-diff --git a/scripts/gcc-plugins/size_overflow_plugin/size_overflow_transform.c b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_transform.c
-new file mode 100644
-index 0000000..e2cfd20

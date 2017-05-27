@@ -1,3 +1,6 @@
+diff --git a/include/linux/gralloc.h b/include/linux/gralloc.h
+new file mode 100644
+index 0000000..323ecf2
 --- /dev/null
 +++ b/include/linux/gralloc.h
 @@ -0,0 +1,9 @@
@@ -10,6 +13,3 @@
 +void *acl_alloc_num(unsigned long num, unsigned long len);
 +
 +#endif
-diff --git a/include/linux/grdefs.h b/include/linux/grdefs.h
-new file mode 100644
-index 0000000..be66033

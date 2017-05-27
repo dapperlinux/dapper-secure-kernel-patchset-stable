@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/size_overflow_ipa.c b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_ipa.c
+new file mode 100644
+index 0000000..fc24833
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_ipa.c
 @@ -0,0 +1,1333 @@
@@ -1334,6 +1337,3 @@
 +#define NO_GATE
 +
 +#include "gcc-generate-ipa-pass.h"
-diff --git a/scripts/gcc-plugins/size_overflow_plugin/size_overflow_misc.c b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_misc.c
-new file mode 100644
-index 0000000..28a8356

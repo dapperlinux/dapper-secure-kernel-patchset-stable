@@ -41,6 +41,3 @@ index daf45da..615f970 100644
  	if (timer)
  		expires = timer->timer.expires;
  
-diff --git a/net/netfilter/xt_gradm.c b/net/netfilter/xt_gradm.c
-new file mode 100644
-index 0000000..a7cb915

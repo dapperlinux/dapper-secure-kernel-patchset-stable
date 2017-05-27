@@ -1012,7 +1012,7 @@ index c2d2895..76324ed 100644
  	struct xdr_stream *xdr = &resp->xdr;
  	struct nfsd4_test_stateid_id *stateid, *next;
  	__be32 *p;
-@@ -4077,9 +4158,9 @@ nfsd4_encode_test_stateid(struct nfsd4_compoundres *resp, __be32 nfserr,
+@@ -4077,9 +4077,9 @@ nfsd4_encode_test_stateid(struct nfsd4_compoundres *resp, __be32 nfserr,
  
  #ifdef CONFIG_NFSD_PNFS
  static __be32
@@ -1022,9 +1022,9 @@ index c2d2895..76324ed 100644
  {
 +	struct nfsd4_getdeviceinfo *gdev = _gdev;
  	struct xdr_stream *xdr = &resp->xdr;
- 	const struct nfsd4_layout_ops *ops =
- 		nfsd4_layout_ops[gdev->gd_layout_type];
-@@ -4147,9 +4228,9 @@ nfsd4_encode_getdeviceinfo(struct nfsd4_compoundres *resp, __be32 nfserr,
+ 	const struct nfsd4_layout_ops *ops;
+ 	u32 starting_len = xdr->buf->len, needed_len;
+@@ -4147,9 +4147,9 @@ nfsd4_encode_getdeviceinfo(struct nfsd4_compoundres *resp, __be32 nfserr,
  }
  
  static __be32
@@ -1034,8 +1034,8 @@ index c2d2895..76324ed 100644
  {
 +	struct nfsd4_layoutget *lgp = _lgp;
  	struct xdr_stream *xdr = &resp->xdr;
- 	const struct nfsd4_layout_ops *ops =
- 		nfsd4_layout_ops[lgp->lg_layout_type];
+ 	const struct nfsd4_layout_ops *ops;
+ 	__be32 *p;
 @@ -4182,9 +4263,9 @@ nfsd4_encode_layoutget(struct nfsd4_compoundres *resp, __be32 nfserr,
  }
  

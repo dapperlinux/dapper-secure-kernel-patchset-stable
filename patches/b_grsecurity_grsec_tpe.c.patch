@@ -1,3 +1,6 @@
+diff --git a/grsecurity/grsec_tpe.c b/grsecurity/grsec_tpe.c
+new file mode 100644
+index 0000000..cbd2776
 --- /dev/null
 +++ b/grsecurity/grsec_tpe.c
 @@ -0,0 +1,78 @@
@@ -79,6 +82,3 @@
 +#endif
 +	return 1;
 +}
-diff --git a/grsecurity/grsec_tty.c b/grsecurity/grsec_tty.c
-new file mode 100644
-index 0000000..ad8b9c5

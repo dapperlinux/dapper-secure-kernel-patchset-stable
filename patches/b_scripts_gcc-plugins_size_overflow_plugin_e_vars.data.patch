@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/e_vars.data b/scripts/gcc-plugins/size_overflow_plugin/e_vars.data
+new file mode 100644
+index 0000000..8f86ad7
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/e_vars.data
 @@ -0,0 +1,140 @@
@@ -141,6 +144,3 @@
 +dev_number_vardecl_rio_cm_c_64286_vars dev_number vardecl_rio_cm.c 0 64286 NULL
 +wear_eb_count_vardecl_nandsim_c_65291_vars wear_eb_count vardecl_nandsim.c 0 65291 NULL
 +fpu_user_xstate_size_vardecl_65370_vars fpu_user_xstate_size vardecl 0 65370 NULL
-diff --git a/scripts/gcc-plugins/size_overflow_plugin/generate_size_overflow_hash.sh b/scripts/gcc-plugins/size_overflow_plugin/generate_size_overflow_hash.sh
-new file mode 100644
-index 0000000..be9724d

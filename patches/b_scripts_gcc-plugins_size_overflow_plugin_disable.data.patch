@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/disable.data b/scripts/gcc-plugins/size_overflow_plugin/disable.data
+new file mode 100644
+index 0000000..a7a7f73
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/disable.data
 @@ -0,0 +1,12474 @@
@@ -12475,6 +12478,3 @@
 +qdisc_tree_reduce_backlog_fndecl_3865_fields qdisc_tree_reduce_backlog fndecl 2 3865 NULL
 +user_buffer_offset_binder_proc_17508_fields user_buffer_offset binder_proc 0 17508 NULL
 +min_priority_binder_node_54207_fields min_priority binder_node 0 54207 NULL
-diff --git a/scripts/gcc-plugins/size_overflow_plugin/e_aux.data b/scripts/gcc-plugins/size_overflow_plugin/e_aux.data
-new file mode 100644
-index 0000000..74e91b2

@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/e_fptrs.data b/scripts/gcc-plugins/size_overflow_plugin/e_fptrs.data
+new file mode 100644
+index 0000000..ed95ec1
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/e_fptrs.data
 @@ -0,0 +1,94 @@
@@ -95,6 +98,3 @@
 +compat_write_data_parport_operations_64123_fptrs compat_write_data parport_operations 0 64123 NULL
 +test_walk_mm_walk_64132_fptrs test_walk mm_walk 0 64132 NULL
 +get_regs_len_ethtool_ops_65213_fptrs get_regs_len ethtool_ops 0 65213 NULL
-diff --git a/scripts/gcc-plugins/size_overflow_plugin/e_vars.data b/scripts/gcc-plugins/size_overflow_plugin/e_vars.data
-new file mode 100644
-index 0000000..8f86ad7

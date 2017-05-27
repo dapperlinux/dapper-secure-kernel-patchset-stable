@@ -1,3 +1,6 @@
+diff --git a/include/linux/grinternal.h b/include/linux/grinternal.h
+new file mode 100644
+index 0000000..1dbf9c8
 --- /dev/null
 +++ b/include/linux/grinternal.h
 @@ -0,0 +1,231 @@
@@ -232,6 +235,3 @@
 +#endif
 +
 +#endif
-diff --git a/include/linux/grmsg.h b/include/linux/grmsg.h
-new file mode 100644
-index 0000000..f1d3605

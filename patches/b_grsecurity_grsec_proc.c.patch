@@ -1,3 +1,6 @@
+diff --git a/grsecurity/grsec_proc.c b/grsecurity/grsec_proc.c
+new file mode 100644
+index 0000000..2005a3a
 --- /dev/null
 +++ b/grsecurity/grsec_proc.c
 @@ -0,0 +1,20 @@
@@ -21,6 +24,3 @@
 +#endif
 +	return 0;
 +}
-diff --git a/grsecurity/grsec_ptrace.c b/grsecurity/grsec_ptrace.c
-new file mode 100644
-index 0000000..304c518

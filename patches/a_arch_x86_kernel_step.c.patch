@@ -22,6 +22,3 @@ index a23ce84..88541d52 100644
  	copied = access_process_vm(child, addr, opcode, sizeof(opcode),
  			FOLL_FORCE);
  	for (i = 0; i < copied; i++) {
-diff --git a/arch/x86/kernel/sys_i386_32.c b/arch/x86/kernel/sys_i386_32.c
-new file mode 100644
-index 0000000..920e413

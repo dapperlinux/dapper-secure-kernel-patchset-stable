@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/kernexec_plugin.c b/scripts/gcc-plugins/kernexec_plugin.c
+new file mode 100644
+index 0000000..0085726
 --- /dev/null
 +++ b/scripts/gcc-plugins/kernexec_plugin.c
 @@ -0,0 +1,401 @@

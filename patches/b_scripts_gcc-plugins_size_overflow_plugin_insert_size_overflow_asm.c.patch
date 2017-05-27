@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/insert_size_overflow_asm.c b/scripts/gcc-plugins/size_overflow_plugin/insert_size_overflow_asm.c
+new file mode 100644
+index 0000000..d459e5f
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/insert_size_overflow_asm.c
 @@ -0,0 +1,374 @@
@@ -375,6 +378,3 @@
 +#define TODO_FLAGS_FINISH TODO_dump_func | TODO_verify_ssa | TODO_verify_stmts | TODO_remove_unused_locals | TODO_update_ssa_no_phi | TODO_cleanup_cfg | TODO_ggc_collect | TODO_verify_flow
 +
 +#include "gcc-generate-gimple-pass.h"
-diff --git a/scripts/gcc-plugins/size_overflow_plugin/intentional_overflow.c b/scripts/gcc-plugins/size_overflow_plugin/intentional_overflow.c
-new file mode 100644
-index 0000000..26899bd

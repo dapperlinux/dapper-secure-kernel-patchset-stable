@@ -1,3 +1,6 @@
+diff --git a/grsecurity/gracl_alloc.c b/grsecurity/gracl_alloc.c
+new file mode 100644
+index 0000000..9adc75c
 --- /dev/null
 +++ b/grsecurity/gracl_alloc.c
 @@ -0,0 +1,105 @@
@@ -106,6 +109,3 @@
 +	else
 +		return 1;
 +}
-diff --git a/grsecurity/gracl_cap.c b/grsecurity/gracl_cap.c
-new file mode 100644
-index 0000000..8747091

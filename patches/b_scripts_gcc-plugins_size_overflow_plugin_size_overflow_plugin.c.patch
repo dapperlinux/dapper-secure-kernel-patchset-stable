@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/size_overflow_plugin.c b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_plugin.c
+new file mode 100644
+index 0000000..f2571bf
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_plugin.c
 @@ -0,0 +1,299 @@
@@ -300,6 +303,3 @@
 +
 +	return 0;
 +}
-diff --git a/scripts/gcc-plugins/size_overflow_plugin/size_overflow_plugin_hash.c b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_plugin_hash.c
-new file mode 100644
-index 0000000..eb94acf

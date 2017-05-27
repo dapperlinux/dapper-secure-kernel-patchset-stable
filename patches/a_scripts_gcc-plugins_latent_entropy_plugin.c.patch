@@ -544,6 +544,3 @@ index dff390f..1de194b 100644
  
  	return 0;
  }
-diff --git a/scripts/gcc-plugins/randomize_layout_plugin.c b/scripts/gcc-plugins/randomize_layout_plugin.c
-new file mode 100644
-index 0000000..71911c82

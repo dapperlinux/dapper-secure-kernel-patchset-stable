@@ -8,6 +8,3 @@ index cadab9a..28153db 100755
  
 -exec $CC $ARGS
 +exec /bin/sh -c "$CC $ARGS $SHELL_GCC_PLUGINS_CFLAGS"
-diff --git a/scripts/gcc-plugins/.gitignore b/scripts/gcc-plugins/.gitignore
-new file mode 100644
-index 0000000..de92ed9

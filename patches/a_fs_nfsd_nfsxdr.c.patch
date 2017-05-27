@@ -60,7 +60,7 @@ index 41b468a..44e3e32 100644
  	unsigned int len;
  	int v;
  	p = decode_fh(p, &args->fh);
-@@ -276,9 +281,10 @@ nfssvc_decode_readargs(struct svc_rqst *rqstp, __be32 *p,
+@@ -276,9 +276,10 @@ nfssvc_decode_readargs(struct svc_rqst *rqstp, __be32 *p,
  }
  
  int
@@ -71,8 +71,8 @@ index 41b468a..44e3e32 100644
 +	struct svc_rqst *rqstp = _rqstp;
 +	struct nfsd_writeargs *args = _args;
  	unsigned int len, hdr, dlen;
+ 	struct kvec *head = rqstp->rq_arg.head;
  	int v;
- 
 @@ -330,9 +336,10 @@ nfssvc_decode_writeargs(struct svc_rqst *rqstp, __be32 *p,
  }
  

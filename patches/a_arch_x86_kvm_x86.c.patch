@@ -49,9 +49,9 @@ index e5bc139..5a1766b 100644
  			sizeof(struct fxregs_state));
  		*(u64 *)&guest_xsave->region[XSAVE_HDR_OFFSET / sizeof(u32)] =
  			XFEATURE_MASK_FPSSE;
-@@ -3243,7 +3245,7 @@ static int kvm_vcpu_ioctl_x86_set_xsave(struct kvm_vcpu *vcpu,
- 	} else {
- 		if (xstate_bv & ~XFEATURE_MASK_FPSSE)
+@@ -3262,7 +3262,7 @@ static int kvm_vcpu_ioctl_x86_set_xsave(struct kvm_vcpu *vcpu,
+ 		if (xstate_bv & ~XFEATURE_MASK_FPSSE ||
+ 			mxcsr & ~mxcsr_feature_mask)
  			return -EINVAL;
 -		memcpy(&vcpu->arch.guest_fpu.state.fxsave,
 +		memcpy(&vcpu->arch.guest_fpu.state->fxsave,

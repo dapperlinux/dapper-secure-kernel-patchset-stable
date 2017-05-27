@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/.gitignore b/scripts/gcc-plugins/.gitignore
+new file mode 100644
+index 0000000..de92ed9
 --- /dev/null
 +++ b/scripts/gcc-plugins/.gitignore
 @@ -0,0 +1 @@

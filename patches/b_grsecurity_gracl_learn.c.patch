@@ -1,3 +1,6 @@
+diff --git a/grsecurity/gracl_learn.c b/grsecurity/gracl_learn.c
+new file mode 100644
+index 0000000..c5abda5
 --- /dev/null
 +++ b/grsecurity/gracl_learn.c
 @@ -0,0 +1,209 @@
@@ -210,6 +213,3 @@
 +	.release	= close_learn,
 +	.poll		= poll_learn,
 +};
-diff --git a/grsecurity/gracl_policy.c b/grsecurity/gracl_policy.c
-new file mode 100644
-index 0000000..7c42102

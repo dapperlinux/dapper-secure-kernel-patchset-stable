@@ -1,3 +1,6 @@
+diff --git a/firmware/bnx2/bnx2-mips-06-6.2.3.fw.ihex b/firmware/bnx2/bnx2-mips-06-6.2.3.fw.ihex
+new file mode 100644
+index 0000000..da72bf1
 --- /dev/null
 +++ b/firmware/bnx2/bnx2-mips-06-6.2.3.fw.ihex
 @@ -0,0 +1,5804 @@
@@ -5805,6 +5808,3 @@
 +:106A80003C010800AC233D683C010800AC223D609D
 +:086A900003E000080000000013
 +:00000001FF
-diff --git a/firmware/bnx2/bnx2-mips-09-6.2.1b.fw.ihex b/firmware/bnx2/bnx2-mips-09-6.2.1b.fw.ihex
-new file mode 100644
-index 0000000..43d7c4f

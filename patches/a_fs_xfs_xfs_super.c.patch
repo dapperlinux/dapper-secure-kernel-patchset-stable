@@ -17,6 +17,3 @@ index dbbd3f1..767cb22 100644
  	if (!xfs_inode_zone)
  		goto out_destroy_efi_zone;
  
-diff --git a/grsecurity/Kconfig b/grsecurity/Kconfig
-new file mode 100644
-index 0000000..f1c1ee2

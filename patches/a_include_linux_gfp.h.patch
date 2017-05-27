@@ -59,6 +59,3 @@ index f8041f9de..593a07b 100644
  
  void page_alloc_init_late(void);
  
-diff --git a/include/linux/gracl.h b/include/linux/gracl.h
-new file mode 100644
-index 0000000..a3c4df7

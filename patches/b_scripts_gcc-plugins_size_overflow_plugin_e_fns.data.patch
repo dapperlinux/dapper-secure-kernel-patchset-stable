@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/e_fns.data b/scripts/gcc-plugins/size_overflow_plugin/e_fns.data
+new file mode 100644
+index 0000000..077b433
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/e_fns.data
 @@ -0,0 +1,5127 @@
@@ -5128,6 +5131,3 @@
 +sys_pwritev_fndecl_65513_fns sys_pwritev fndecl 3 65513 NULL
 +bcm2835_dma_prep_dma_memcpy_fndecl_65534_fns bcm2835_dma_prep_dma_memcpy fndecl 4 65534 NULL nohasharray
 +connector_write_fndecl_65534_fns connector_write fndecl 3 65534 &bcm2835_dma_prep_dma_memcpy_fndecl_65534_fns
-diff --git a/scripts/gcc-plugins/size_overflow_plugin/e_fptrs.data b/scripts/gcc-plugins/size_overflow_plugin/e_fptrs.data
-new file mode 100644
-index 0000000..ed95ec1

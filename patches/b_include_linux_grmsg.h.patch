@@ -1,3 +1,6 @@
+diff --git a/include/linux/grmsg.h b/include/linux/grmsg.h
+new file mode 100644
+index 0000000..f1d3605
 --- /dev/null
 +++ b/include/linux/grmsg.h
 @@ -0,0 +1,121 @@
@@ -122,6 +125,3 @@
 +#define GR_IPC_DENIED_MSG "denied %s of overly-permissive IPC object with creator uid %u by "
 +#define GR_TIOCSTI_MSG "denied unprivileged use of TIOCSTI by "
 +#define GR_MSRWRITE_MSG "denied write to CPU MSR by "
-diff --git a/include/linux/grsecurity.h b/include/linux/grsecurity.h
-new file mode 100644
-index 0000000..749b915

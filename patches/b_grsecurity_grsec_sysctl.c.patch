@@ -1,3 +1,6 @@
+diff --git a/grsecurity/grsec_sysctl.c b/grsecurity/grsec_sysctl.c
+new file mode 100644
+index 0000000..4f673f8
 --- /dev/null
 +++ b/grsecurity/grsec_sysctl.c
 @@ -0,0 +1,497 @@
@@ -498,6 +501,3 @@
 +	{ }
 +};
 +#endif
-diff --git a/grsecurity/grsec_time.c b/grsecurity/grsec_time.c
-new file mode 100644
-index 0000000..61b514e

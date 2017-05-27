@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/e_aux.data b/scripts/gcc-plugins/size_overflow_plugin/e_aux.data
+new file mode 100644
+index 0000000..74e91b2
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/e_aux.data
 @@ -0,0 +1,97 @@
@@ -98,6 +101,3 @@
 +enable_so_proc_copyin_string_fndecl_62019 proc_copyin_string fndecl 4 62019 NULL
 +enable_so_random_get_pseudo_bytes_fndecl_64611 random_get_pseudo_bytes fndecl 2 64611 NULL
 +enable_so_zpios_read_fndecl_64734 zpios_read fndecl 3 64734 NULL
-diff --git a/scripts/gcc-plugins/size_overflow_plugin/e_fields.data b/scripts/gcc-plugins/size_overflow_plugin/e_fields.data
-new file mode 100644
-index 0000000..88df810

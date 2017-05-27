@@ -1,3 +1,6 @@
+diff --git a/grsecurity/grsec_chdir.c b/grsecurity/grsec_chdir.c
+new file mode 100644
+index 0000000..bc0be01
 --- /dev/null
 +++ b/grsecurity/grsec_chdir.c
 @@ -0,0 +1,19 @@
@@ -20,6 +23,3 @@
 +#endif
 +	return;
 +}
-diff --git a/grsecurity/grsec_chroot.c b/grsecurity/grsec_chroot.c
-new file mode 100644
-index 0000000..1964ab1c

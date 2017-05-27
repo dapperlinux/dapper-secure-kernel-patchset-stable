@@ -173,6 +173,3 @@ index a7655f6..0cab8dd 100644
  }
  
  #ifdef CONFIG_SMP
-diff --git a/arch/x86/mm/uderef_64.c b/arch/x86/mm/uderef_64.c
-new file mode 100644
-index 0000000..cc849dd

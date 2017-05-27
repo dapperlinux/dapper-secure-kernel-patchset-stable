@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/rap_plugin/rap_plugin.c b/scripts/gcc-plugins/rap_plugin/rap_plugin.c
+new file mode 100644
+index 0000000..3a3ac17
 --- /dev/null
 +++ b/scripts/gcc-plugins/rap_plugin/rap_plugin.c
 @@ -0,0 +1,778 @@
@@ -779,6 +782,3 @@
 +
 +	return 0;
 +}
-diff --git a/scripts/gcc-plugins/rap_plugin/rap_ret_pass.c b/scripts/gcc-plugins/rap_plugin/rap_ret_pass.c
-new file mode 100644
-index 0000000..690f8d3

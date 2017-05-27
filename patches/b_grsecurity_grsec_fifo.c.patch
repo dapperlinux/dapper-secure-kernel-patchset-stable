@@ -1,3 +1,6 @@
+diff --git a/grsecurity/grsec_fifo.c b/grsecurity/grsec_fifo.c
+new file mode 100644
+index 0000000..cdec49b
 --- /dev/null
 +++ b/grsecurity/grsec_fifo.c
 @@ -0,0 +1,26 @@
@@ -27,6 +30,3 @@
 +#endif
 +	return 0;
 +}
-diff --git a/grsecurity/grsec_fork.c b/grsecurity/grsec_fork.c
-new file mode 100644
-index 0000000..8ca18bf

@@ -2,10 +2,10 @@ diff --git a/net/core/neighbour.c b/net/core/neighbour.c
 index 9901e5b..0b38f5b 100644
 --- a/net/core/neighbour.c
 +++ b/net/core/neighbour.c
-@@ -860,7 +860,7 @@ static void neigh_probe(struct neighbour *neigh)
- 		skb = skb_clone(skb, GFP_ATOMIC);
+@@ -861,7 +861,7 @@ static void neigh_probe(struct neighbour *neigh)
  	write_unlock(&neigh->lock);
- 	neigh->ops->solicit(neigh, skb);
+ 	if (neigh->ops->solicit)
+ 		neigh->ops->solicit(neigh, skb);
 -	atomic_inc(&neigh->probes);
 +	atomic_inc_unchecked(&neigh->probes);
  	kfree_skb(skb);

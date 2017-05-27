@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/size_overflow_debug.c b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_debug.c
+new file mode 100644
+index 0000000..bae3ee7
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_debug.c
 @@ -0,0 +1,201 @@
@@ -202,6 +205,3 @@
 +	debug_tree(data->decl);
 +	fprintf(stderr, "marked: %s, based_decl: %s\norig_decl_str: %s, orig_num: %u\n", print_so_mark_name(data->marked), get_based_decl_str(data->based_decl), data->orig_decl_str? data->orig_decl_str : "NULL", data->orig_num);
 +}
-diff --git a/scripts/gcc-plugins/size_overflow_plugin/size_overflow_ipa.c b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_ipa.c
-new file mode 100644
-index 0000000..fc24833

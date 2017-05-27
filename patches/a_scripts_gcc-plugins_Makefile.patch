@@ -44,6 +44,3 @@ index 8b29dc1..ec1516e 100644
  subdir-y := $(GCC_PLUGIN_SUBDIR)
  subdir-  += $(GCC_PLUGIN_SUBDIR)
  
-diff --git a/scripts/gcc-plugins/checker_plugin.c b/scripts/gcc-plugins/checker_plugin.c
-new file mode 100644
-index 0000000..c16753c

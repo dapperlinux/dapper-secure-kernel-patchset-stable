@@ -1,3 +1,6 @@
+diff --git a/include/linux/grsock.h b/include/linux/grsock.h
+new file mode 100644
+index 0000000..e7ffaaf
 --- /dev/null
 +++ b/include/linux/grsock.h
 @@ -0,0 +1,19 @@

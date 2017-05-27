@@ -1,3 +1,6 @@
+diff --git a/grsecurity/Makefile b/grsecurity/Makefile
+new file mode 100644
+index 0000000..e136e5f
 --- /dev/null
 +++ b/grsecurity/Makefile
 @@ -0,0 +1,54 @@
@@ -55,6 +58,3 @@
 +	@-chmod -f 700 $(objtree)
 +	@echo '  grsec: protected kernel image paths'
 +endif
-diff --git a/grsecurity/gracl.c b/grsecurity/gracl.c
-new file mode 100644
-index 0000000..fa03095

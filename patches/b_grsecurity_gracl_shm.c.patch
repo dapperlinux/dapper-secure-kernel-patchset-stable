@@ -1,3 +1,6 @@
+diff --git a/grsecurity/gracl_shm.c b/grsecurity/gracl_shm.c
+new file mode 100644
+index 0000000..6b0c9cc
 --- /dev/null
 +++ b/grsecurity/gracl_shm.c
 @@ -0,0 +1,40 @@
@@ -41,6 +44,3 @@
 +
 +	return 1;
 +}
-diff --git a/grsecurity/grsec_chdir.c b/grsecurity/grsec_chdir.c
-new file mode 100644
-index 0000000..bc0be01

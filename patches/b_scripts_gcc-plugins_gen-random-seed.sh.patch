@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/gen-random-seed.sh b/scripts/gcc-plugins/gen-random-seed.sh
+new file mode 100644
+index 0000000..7514850
 --- /dev/null
 +++ b/scripts/gcc-plugins/gen-random-seed.sh
 @@ -0,0 +1,8 @@
@@ -9,6 +12,3 @@
 +	HASH=`echo -n "$SEED" | sha256sum | cut -d" " -f1 | tr -d ' \n'`
 +	echo "#define RANDSTRUCT_HASHED_SEED \"$HASH\"" > "$2"
 +fi
-diff --git a/scripts/gcc-plugins/initify_plugin.c b/scripts/gcc-plugins/initify_plugin.c
-new file mode 100644
-index 0000000..1c8d204

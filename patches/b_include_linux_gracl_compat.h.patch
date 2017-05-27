@@ -1,3 +1,6 @@
+diff --git a/include/linux/gracl_compat.h b/include/linux/gracl_compat.h
+new file mode 100644
+index 0000000..af64092
 --- /dev/null
 +++ b/include/linux/gracl_compat.h
 @@ -0,0 +1,156 @@
@@ -157,6 +160,3 @@
 +};
 +
 +#endif
-diff --git a/include/linux/gralloc.h b/include/linux/gralloc.h
-new file mode 100644
-index 0000000..323ecf2

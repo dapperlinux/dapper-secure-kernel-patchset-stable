@@ -1,3 +1,6 @@
+diff --git a/scripts/gcc-plugins/size_overflow_plugin/intentional_overflow.c b/scripts/gcc-plugins/size_overflow_plugin/intentional_overflow.c
+new file mode 100644
+index 0000000..26899bd
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/intentional_overflow.c
 @@ -0,0 +1,1171 @@
@@ -1172,6 +1175,3 @@
 +	// _36 = (signed short) _35;
 +	return def_def_stmt && gimple_assign_cast_p(def_def_stmt);
 +}
-diff --git a/scripts/gcc-plugins/size_overflow_plugin/remove_unnecessary_dup.c b/scripts/gcc-plugins/size_overflow_plugin/remove_unnecessary_dup.c
-new file mode 100644
-index 0000000..5c26862

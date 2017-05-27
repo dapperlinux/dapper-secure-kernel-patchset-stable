@@ -1,3 +1,6 @@
+diff --git a/grsecurity/grsec_sock.c b/grsecurity/grsec_sock.c
+new file mode 100644
+index 0000000..3cdd946
 --- /dev/null
 +++ b/grsecurity/grsec_sock.c
 @@ -0,0 +1,244 @@
@@ -245,6 +248,3 @@
 +#endif
 +	return 0;
 +}
-diff --git a/grsecurity/grsec_sysctl.c b/grsecurity/grsec_sysctl.c
-new file mode 100644
-index 0000000..4f673f8

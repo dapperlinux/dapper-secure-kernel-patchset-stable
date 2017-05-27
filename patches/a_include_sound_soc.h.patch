@@ -20,6 +20,3 @@ index 4f1c784..ae5c48b 100644
  
  struct snd_soc_dai_link_component {
  	const char *name;
-diff --git a/include/trace/events/fs.h b/include/trace/events/fs.h
-new file mode 100644
-index 0000000..fb634b7

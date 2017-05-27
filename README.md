@@ -1,4 +1,4 @@
-# Dapper Secure Kernel Patchset
+# Dapper Secure Kernel Patchset Stable
 
 ## Introduction
 The Dapper Secure Kernel Patchset is an effort to forward port the now discontinued Grsecurity test patchset to newer Linux kernels. While it may not contain the latest and greatest security advancements as provided by the subscriber only Grsecurity beta patchset, the features provided by the final Grsecurity 4.9.24 patch are well worth maintaining into the future.
