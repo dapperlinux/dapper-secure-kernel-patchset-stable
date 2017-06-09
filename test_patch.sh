@@ -23,7 +23,7 @@ echo "Patching Dapper Secure Kernel Patches..."
 patch -F 0 -p1 < ../../dapper-secure-kernel-patchset-test.patch >> ../../test.log
 
 echo "Showing failures..."
-grep "hunks FAILED" ../../test.log
+grep "FAILED --" ../../test.log
 
 echo "Number of files failed..."
-grep "hunks FAILED" ../../test.log | wc -l
+grep "FAILED --" ../../test.log | wc -l
