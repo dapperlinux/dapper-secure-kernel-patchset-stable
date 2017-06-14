@@ -47,6 +47,9 @@ git format-patch master
 echo "Moving and renaming patch..."
 mv 000* ../../dapper-secure-kernel-patchset-$KERNEL_VERSION-$DATE.patch
 
+echo "Tidying up.."
+rm ../../kernel/patch-$KERNEL_VERSION
+
 cd ../..
 
 echo "Removing release directory..."

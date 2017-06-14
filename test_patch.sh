@@ -27,3 +27,6 @@ grep "FAILED --" ../../test.log
 
 echo "Number of files failed..."
 grep "FAILED --" ../../test.log | wc -l
+
+echo "Tidying up.."
+rm ../../kernel/patch-$KERNEL_VERSION

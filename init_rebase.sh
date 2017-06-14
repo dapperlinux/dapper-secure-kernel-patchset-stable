@@ -28,3 +28,6 @@ patch -F 0 -p1 < ../../kernel/patch-$KERNEL_VERSION >> ../../rebase.log
 echo "Committing minor kernel changes..."
 git add *
 git commit -m "update" >> ../../rebase.log
+
+echo "Tidying up.."
+rm ../../kernel/patch-$KERNEL_VERSION
