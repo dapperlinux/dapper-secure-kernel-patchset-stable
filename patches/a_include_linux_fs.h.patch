@@ -36,7 +36,7 @@ index dc0478c..473e4cd 100644
 -};
 +} __randomize_layout;
  
- static inline int inode_unhashed(struct inode *inode)
+ static inline unsigned int i_blocksize(const struct inode *node)
  {
 @@ -913,7 +913,7 @@ struct file {
  	struct list_head	f_tfile_llink;
