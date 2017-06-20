@@ -24,13 +24,7 @@ index 4094a51..4a360da 100644
  		sprintf(buffer, "Kernel bad sw trap %lx", lvl);
  		die_if_kernel(buffer, regs);
  	}
-@@ -117,11 +123,16 @@ void bad_trap(struct pt_regs *regs, long lvl)
- void bad_trap_tl1(struct pt_regs *regs, long lvl)
- {
- 	char buffer[32];
--	
-+
- 	if (notify_die(DIE_TRAP_TL1, "bad trap tl1", regs,
+@@ -122,6 +122,11 @@ void bad_trap_tl1(struct pt_regs *regs, long lvl)
  		       0, lvl, SIGTRAP) == NOTIFY_STOP)
  		return;
  

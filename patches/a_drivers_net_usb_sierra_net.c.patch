@@ -11,7 +11,7 @@ index a2515887..6d13233 100644
  
  /*
   * SYNC Timer Delay definition used to set the expiry time
-@@ -697,7 +697,7 @@ static int sierra_net_bind(struct usbnet *dev, struct usb_interface *intf)
+@@ -728,7 +728,7 @@ static int sierra_net_bind(struct usbnet *dev, struct usb_interface *intf)
  	dev->net->netdev_ops = &sierra_net_device_ops;
  
  	/* change MAC addr to include, ifacenum, and to be unique */
@@ -19,4 +19,4 @@ index a2515887..6d13233 100644
 +	dev->net->dev_addr[ETH_ALEN-2] = atomic_inc_return_unchecked(&iface_counter);
  	dev->net->dev_addr[ETH_ALEN-1] = ifacenum;
  
- 	/* we will have to manufacture ethernet headers, prepare template */
+ 	/* prepare shutdown message template */
