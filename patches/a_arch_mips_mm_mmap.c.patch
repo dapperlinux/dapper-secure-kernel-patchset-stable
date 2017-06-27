@@ -22,12 +22,12 @@ index d08ea3f..66bb13d 100644
  	if (addr) {
  		if (do_color_align)
  			addr = COLOUR_ALIGN(addr, pgoff);
-@@ -91,14 +97,14 @@ static unsigned long arch_get_unmapped_area_common(struct file *filp,
+@@ -91,14 +91,14 @@ static unsigned long arch_get_unmapped_area_common(struct file *filp,
  			addr = PAGE_ALIGN(addr);
  
  		vma = find_vma(mm, addr);
 -		if (TASK_SIZE - len >= addr &&
--		    (!vma || addr + len <= vma->vm_start))
+-		    (!vma || addr + len <= vm_start_gap(vma)))
 +		if (TASK_SIZE - len >= addr && check_heap_stack_gap(vma, addr, len, offset))
  			return addr;
  	}

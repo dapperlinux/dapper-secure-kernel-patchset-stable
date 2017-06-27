@@ -21,12 +21,12 @@ index 6777177..d44b592 100644
  	if (addr) {
  		if (do_colour_align)
  			addr = COLOUR_ALIGN(addr, pgoff);
-@@ -62,14 +67,13 @@ unsigned long arch_get_unmapped_area(struct file *filp, unsigned long addr,
+@@ -62,14 +62,13 @@ unsigned long arch_get_unmapped_area(struct file *filp, unsigned long addr,
  			addr = PAGE_ALIGN(addr);
  
  		vma = find_vma(mm, addr);
 -		if (TASK_SIZE - len >= addr &&
--		    (!vma || addr + len <= vma->vm_start))
+-		    (!vma || addr + len <= vm_start_gap(vma)))
 +		if (TASK_SIZE - len >= addr && check_heap_stack_gap(vma, addr, len, offset))
  			return addr;
  	}
@@ -68,12 +68,12 @@ index 6777177..d44b592 100644
  	/* requesting a specific address */
  	if (addr) {
  		if (do_colour_align)
-@@ -112,8 +121,7 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
+@@ -112,8 +111,7 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
  			addr = PAGE_ALIGN(addr);
  
  		vma = find_vma(mm, addr);
 -		if (TASK_SIZE - len >= addr &&
--		    (!vma || addr + len <= vma->vm_start))
+-		    (!vma || addr + len <= vm_start_gap(vma)))
 +		if (TASK_SIZE - len >= addr && check_heap_stack_gap(vma, addr, len, offset))
  			return addr;
  	}

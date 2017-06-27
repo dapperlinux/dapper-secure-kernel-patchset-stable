@@ -45,7 +45,7 @@ index a55ed63..665be0a 100644
  		addr = PAGE_ALIGN(addr);
  		vma = find_vma(mm, addr);
 -		if (end - len >= addr &&
--		    (!vma || addr + len <= vma->vm_start))
+-		    (!vma || addr + len <= vm_start_gap(vma)))
 +		if (end - len >= addr && check_heap_stack_gap(vma, addr, len, offset))
  			return addr;
  	}
@@ -74,7 +74,7 @@ index a55ed63..665be0a 100644
  
  	/* requested length too big for entire address space */
  	if (len > TASK_SIZE)
-@@ -178,12 +184,15 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
+@@ -178,12 +182,15 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
  	if (!test_thread_flag(TIF_ADDR32) && (flags & MAP_32BIT))
  		goto bottomup;
  
@@ -87,7 +87,7 @@ index a55ed63..665be0a 100644
  		addr = PAGE_ALIGN(addr);
  		vma = find_vma(mm, addr);
 -		if (TASK_SIZE - len >= addr &&
--				(!vma || addr + len <= vma->vm_start))
+-				(!vma || addr + len <= vm_start_gap(vma)))
 +		if (TASK_SIZE - len >= addr && check_heap_stack_gap(vma, addr, len, offset))
  			return addr;
  	}

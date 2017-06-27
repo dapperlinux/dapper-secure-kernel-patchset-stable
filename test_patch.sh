@@ -1,6 +1,6 @@
 DATE=`date +%Y-%m-%d`
 KERNEL_MAJOR_VERSION=4.9
-KERNEL_VERSION=4.9.33
+KERNEL_VERSION=4.9.34
 
 echo "Removing old kernels..."
 rm -rf test
@@ -23,10 +23,10 @@ echo "Patching Dapper Secure Kernel Patches..."
 patch -F 0 -p1 < ../../dapper-secure-kernel-patchset-test.patch >> ../../test.log
 
 echo "Showing failures..."
-grep "FAILED --" ../../test.log
+grep "saving rejects" ../../test.log
 
 echo "Number of files failed..."
-grep "FAILED --" ../../test.log | wc -l
+grep "saving rejects" ../../test.log | wc -l
 
 echo "Tidying up.."
 rm ../../kernel/patch-$KERNEL_VERSION

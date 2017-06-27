@@ -73,7 +73,7 @@ index 2ae8584..e8f8f29 100644
  		return -ENOMEM;
  
  	if (flags & MAP_FIXED) {
-@@ -140,19 +158,22 @@ hugetlb_get_unmapped_area(struct file *file, unsigned long addr,
+@@ -140,19 +140,22 @@ hugetlb_get_unmapped_area(struct file *file, unsigned long addr,
  		return addr;
  	}
  
@@ -85,7 +85,7 @@ index 2ae8584..e8f8f29 100644
  		addr = ALIGN(addr, huge_page_size(h));
  		vma = find_vma(mm, addr);
 -		if (TASK_SIZE - len >= addr &&
--		    (!vma || addr + len <= vma->vm_start))
+-		    (!vma || addr + len <= vm_start_gap(vma)))
 +		if (pax_task_size - len >= addr && check_heap_stack_gap(vma, addr, len, offset))
  			return addr;
  	}

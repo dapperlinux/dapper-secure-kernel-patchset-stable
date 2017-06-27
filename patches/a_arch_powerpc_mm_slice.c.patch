@@ -6,7 +6,7 @@ index 2b27458..7c7c59b 100644
  	if ((mm->task_size - len) < addr)
  		return 0;
  	vma = find_vma(mm, addr);
--	return (!vma || (addr + len) <= vma->vm_start);
+-	return (!vma || (addr + len) <= vm_start_gap(vma));
 +	return check_heap_stack_gap(vma, addr, len, 0);
  }
  

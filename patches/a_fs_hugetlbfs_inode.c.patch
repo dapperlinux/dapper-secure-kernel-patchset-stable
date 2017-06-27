@@ -10,7 +10,7 @@ index 4fb7b10..eaf1178 100644
  	struct vm_unmapped_area_info info;
  
  	if (len & ~huge_page_mask(h))
-@@ -187,17 +188,26 @@ hugetlb_get_unmapped_area(struct file *file, unsigned long addr,
+@@ -187,17 +187,26 @@ hugetlb_get_unmapped_area(struct file *file, unsigned long addr,
  		return addr;
  	}
  
@@ -22,7 +22,7 @@ index 4fb7b10..eaf1178 100644
  		addr = ALIGN(addr, huge_page_size(h));
  		vma = find_vma(mm, addr);
 -		if (TASK_SIZE - len >= addr &&
--		    (!vma || addr + len <= vma->vm_start))
+-		    (!vma || addr + len <= vm_start_gap(vma)))
 +		if (TASK_SIZE - len >= addr && check_heap_stack_gap(vma, addr, len, offset))
  			return addr;
  	}
