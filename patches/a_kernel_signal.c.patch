@@ -45,14 +45,14 @@ index 0b14157..3a99520 100644
  	if (is_global_init(tsk))
  		return 1;
  	if (handler != SIG_IGN && handler != SIG_DFL)
-@@ -556,6 +559,7 @@ static int __dequeue_signal(struct sigpending *pending, sigset_t *mask,
+@@ -563,6 +563,7 @@ static int __dequeue_signal(struct sigpending *pending, sigset_t *mask,
   *
   * All callers have to hold the siglock.
   */
 +int dequeue_signal(struct task_struct *tsk, sigset_t *mask, siginfo_t *info) __must_hold(&tsk->sighand->siglock);
  int dequeue_signal(struct task_struct *tsk, sigset_t *mask, siginfo_t *info)
  {
- 	int signr;
+ 	bool resched_timer = false;
 @@ -742,6 +746,13 @@ static int check_kill_permission(int sig, struct siginfo *info,
  		}
  	}
