@@ -160,19 +160,20 @@ index f2481cb..333cf43 100644
  	return is_vmalloc_addr(x);
  }
  
-@@ -246,8 +323,14 @@ struct page *vmalloc_to_page(const void *vmalloc_addr)
- 
+@@ -255,9 +255,15 @@ struct page *vmalloc_to_page(const void *vmalloc_addr)
  	if (!pgd_none(*pgd)) {
  		pud_t *pud = pud_offset(pgd, addr);
+ 		WARN_ON_ONCE(pud_bad(*pud));
 +#ifdef CONFIG_X86
 +		if (!pud_large(*pud))
 +#endif
- 		if (!pud_none(*pud)) {
+ 		if (!pud_none(*pud) && !pud_bad(*pud)) {
  			pmd_t *pmd = pmd_offset(pud, addr);
+ 			WARN_ON_ONCE(pmd_bad(*pmd));
 +#ifdef CONFIG_X86
 +			if (!pmd_large(*pmd))
 +#endif
- 			if (!pmd_none(*pmd)) {
+ 			if (!pmd_none(*pmd) && !pmd_bad(*pmd)) {
  				pte_t *ptep, pte;
  
 @@ -350,7 +433,7 @@ static BLOCKING_NOTIFIER_HEAD(vmap_notify_list);

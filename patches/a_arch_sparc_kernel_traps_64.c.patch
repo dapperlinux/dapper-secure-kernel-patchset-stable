@@ -94,7 +94,7 @@ index 4094a51..4a360da 100644
  		wmb();
  		printk("%s: Queue overflowed %d times.\n",
  		       pfx, cnt);
-@@ -2048,7 +2059,7 @@ void sun4v_resum_error(struct pt_regs *regs, unsigned long offset)
+@@ -2048,7 +2048,7 @@ void sun4v_resum_error(struct pt_regs *regs, unsigned long offset)
   */
  void sun4v_resum_overflow(struct pt_regs *regs)
  {
@@ -102,7 +102,7 @@ index 4094a51..4a360da 100644
 +	atomic_inc_unchecked(&sun4v_resum_oflow_cnt);
  }
  
- /* We run with %pil set to PIL_NORMAL_MAX and PSTATE_IE enabled in %pstate.
+ /* Given a set of registers, get the virtual addressi that was being accessed
 @@ -2101,7 +2112,7 @@ void sun4v_nonresum_overflow(struct pt_regs *regs)
  	/* XXX Actually even this can make not that much sense.  Perhaps
  	 * XXX we should just pull the plug and panic directly from here?

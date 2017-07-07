@@ -20,8 +20,8 @@ index e0437a7..05fba66 100644
  
  	/* After previous checking, family can either be AF_INET or AF_INET6 */
  	if (policy->family == AF_INET)
-@@ -1928,7 +1928,7 @@ xfrm_resolve_and_create_bundle(struct xfrm_policy **pols, int num_pols,
- 
+@@ -1881,7 +1881,7 @@ xfrm_resolve_and_create_bundle(struct xfrm_policy **pols, int num_pols,
+ 	xdst->num_xfrms = err;
  	xdst->num_pols = num_pols;
  	memcpy(xdst->pols, pols, sizeof(struct xfrm_policy *) * num_pols);
 -	xdst->policy_genid = atomic_read(&pols[0]->genid);

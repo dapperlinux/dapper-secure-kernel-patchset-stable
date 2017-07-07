@@ -55,7 +55,7 @@ index b3c5a5f0..596115e 100644
  			break;
  		default: /* Ignore other PT_* */ break;
  		}
-@@ -337,7 +344,11 @@ asmlinkage __visible void *extract_kernel(void *rmode, memptr heap,
+@@ -337,8 +337,12 @@ asmlinkage __visible void *extract_kernel(void *rmode, memptr heap,
  				  unsigned char *output,
  				  unsigned long output_len)
  {
@@ -63,16 +63,22 @@ index b3c5a5f0..596115e 100644
 +	const unsigned long kernel_total_size = VO__end - VO__text - __PAGE_OFFSET - ____LOAD_PHYSICAL_ADDR;
 +#else
  	const unsigned long kernel_total_size = VO__end - VO__text;
+-	unsigned long virt_addr = LOAD_PHYSICAL_ADDR;
 +#endif
- 	unsigned long virt_addr = (unsigned long)output;
++	unsigned long virt_addr = ____LOAD_PHYSICAL_ADDR;
  
  	/* Retain x86 boot parameters pointer passed from startup_32/64. */
-@@ -395,7 +406,7 @@ asmlinkage __visible void *extract_kernel(void *rmode, memptr heap,
+ 	boot_params = rmode;
+@@ -395,9 +399,9 @@ asmlinkage __visible void *extract_kernel(void *rmode, memptr heap,
  		error("Destination address too large");
  #endif
  #ifndef CONFIG_RELOCATABLE
 -	if ((unsigned long)output != LOAD_PHYSICAL_ADDR)
+-		error("Destination address does not match LOAD_PHYSICAL_ADDR");
+-	if (virt_addr != LOAD_PHYSICAL_ADDR)
 +	if ((unsigned long)output != ____LOAD_PHYSICAL_ADDR)
- 		error("Destination address does not match LOAD_PHYSICAL_ADDR");
- 	if ((unsigned long)output != virt_addr)
++		error("Destination address does not match ____LOAD_PHYSICAL_ADDR");
++	if (virt_addr != ____LOAD_PHYSICAL_ADDR)
  		error("Destination virtual address changed when not relocatable");
+ #endif
+ 

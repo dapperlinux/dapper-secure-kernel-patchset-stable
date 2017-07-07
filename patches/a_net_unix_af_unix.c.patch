@@ -49,7 +49,7 @@ index 2d03d5b..0905d71 100644
  	done_path_create(&path, dentry);
  	return err;
  }
-@@ -995,7 +1015,7 @@ static int unix_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
+@@ -995,7 +995,7 @@ static int unix_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
  	unsigned int hash;
  	struct unix_address *addr;
  	struct hlist_head *list;
@@ -57,7 +57,7 @@ index 2d03d5b..0905d71 100644
 +	struct path path = { };
  
  	err = -EINVAL;
- 	if (sunaddr->sun_family != AF_UNIX)
+ 	if (addr_len < offsetofend(struct sockaddr_un, sun_family) ||
 @@ -2794,9 +2814,13 @@ static int unix_seq_show(struct seq_file *seq, void *v)
  		seq_puts(seq, "Num       RefCount Protocol Flags    Type St "
  			 "Inode Path\n");
