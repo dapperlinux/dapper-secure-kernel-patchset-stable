@@ -531,8 +531,8 @@ index 0000000..71911c82
 +
 +	DECL_SIZE(decl) = 0;
 +	DECL_SIZE_UNIT(decl) = 0;
-+	DECL_ALIGN(decl) = 0;
-+	DECL_MODE (decl) = VOIDmode;
++	SET_DECL_ALIGN(decl, 0);
++	SET_DECL_MODE(decl, VOIDmode);
 +	SET_DECL_RTL(decl, 0);
 +	update_decl_size(decl);
 +	layout_decl(decl, 0);
