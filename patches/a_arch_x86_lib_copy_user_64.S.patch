@@ -140,13 +140,15 @@ index d376e4b..8e52373 100644
  	jmp copy_user_handle_tail
  	.previous
  
-@@ -220,16 +207,19 @@ EXPORT_SYMBOL(copy_user_generic_string)
+@@ -221,18 +221,21 @@ EXPORT_SYMBOL(copy_user_generic_string)
   * eax uncopied bytes or 0 if successful.
   */
  ENTRY(copy_user_enhanced_fast_string)
 -	ASM_STAC
 +	FRAME_BEGIN
 +	ASM_USER_ACCESS_BEGIN
+ 	cmpl $64,%edx
+ 	jb .L_copy_short_string	/* less then 64 bytes, avoid the costly 'rep' */
  	movl %edx,%ecx
  1:	rep
  	movsb
