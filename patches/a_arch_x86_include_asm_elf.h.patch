@@ -12,14 +12,16 @@ index 94aad63..7d9c5cc 100644
  #if defined(CONFIG_X86_32) || defined(CONFIG_IA32_EMULATION)
  extern unsigned int vdso32_enabled;
  #endif
-@@ -250,7 +247,25 @@ extern int force_personality32;
-    the loader.  We need to make sure that it is out of the way of the program
-    that it will "exec", and that there is sufficient room for the brk.  */
- 
+@@ -250,8 +250,27 @@ extern int force_personality32;
+  * 64-bit, this is raised to 4GB to leave the entire 32-bit address
+  * space open for things that want to use the area for 32-bit pointers.
+  */
++
 +#ifdef CONFIG_PAX_SEGMEXEC
 +#define ELF_ET_DYN_BASE		((current->mm->pax_flags & MF_PAX_SEGMEXEC) ? SEGMEXEC_TASK_SIZE/3*2 : TASK_SIZE/3*2)
 +#else
- #define ELF_ET_DYN_BASE		(TASK_SIZE / 3 * 2)
+ #define ELF_ET_DYN_BASE		(mmap_is_ia32() ? 0x000400000UL : \
+ 						  0x100000000UL)
 +#endif
 +
 +#ifdef CONFIG_PAX_ASLR

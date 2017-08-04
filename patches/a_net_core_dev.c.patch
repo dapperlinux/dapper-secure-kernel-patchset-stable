@@ -59,16 +59,16 @@ index 2e04fd1..723a3c6 100644
  {
  	struct softnet_data *sd = this_cpu_ptr(&softnet_data);
  	unsigned long time_limit = jiffies + 2;
-@@ -7562,9 +7562,9 @@ struct rtnl_link_stats64 *dev_get_stats(struct net_device *dev,
+@@ -7573,9 +7573,9 @@ struct rtnl_link_stats64 *dev_get_stats(struct net_device *dev,
  	} else {
  		netdev_stats_to_stats64(storage, &dev->stats);
  	}
--	storage->rx_dropped += atomic_long_read(&dev->rx_dropped);
--	storage->tx_dropped += atomic_long_read(&dev->tx_dropped);
--	storage->rx_nohandler += atomic_long_read(&dev->rx_nohandler);
-+	storage->rx_dropped += atomic_long_read_unchecked(&dev->rx_dropped);
-+	storage->tx_dropped += atomic_long_read_unchecked(&dev->tx_dropped);
-+	storage->rx_nohandler += atomic_long_read_unchecked(&dev->rx_nohandler);
+-	storage->rx_dropped += (unsigned long)atomic_long_read(&dev->rx_dropped);
+-	storage->tx_dropped += (unsigned long)atomic_long_read(&dev->tx_dropped);
+-	storage->rx_nohandler += (unsigned long)atomic_long_read(&dev->rx_nohandler);
++	storage->rx_dropped += (unsigned long)atomic_long_read_unchecked(&dev->rx_dropped);
++	storage->tx_dropped += (unsigned long)atomic_long_read_unchecked(&dev->tx_dropped);
++	storage->rx_nohandler += (unsigned long)atomic_long_read_unchecked(&dev->rx_nohandler);
  	return storage;
  }
  EXPORT_SYMBOL(dev_get_stats);

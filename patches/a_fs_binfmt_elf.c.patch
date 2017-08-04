@@ -577,13 +577,12 @@ index 2472af2..e3bff2f 100644
  	if (elf_read_implies_exec(loc->elf_ex, executable_stack))
  		current->personality |= READ_IMPLIES_EXEC;
  
-@@ -922,8 +1356,21 @@ static int load_elf_binary(struct linux_binprm *bprm)
- 			if (current->flags & PF_RANDOMIZE)
- 				load_bias += arch_mmap_rnd();
- 			load_bias = ELF_PAGESTART(load_bias);
+@@ -965,8 +965,20 @@ static int load_elf_binary(struct linux_binprm *bprm)
+ 			 */
+ 			load_bias = ELF_PAGESTART(load_bias - vaddr);
+ 
 -			total_size = total_mapping_size(elf_phdata,
 -							loc->elf_ex.e_phnum);
-+
 +#ifdef CONFIG_PAX_RANDMMAP
 +			/* PaX: randomize base address at the default exe base if requested */
 +			if ((current->mm->pax_flags & MF_PAX_RANDMMAP) && elf_interpreter) {

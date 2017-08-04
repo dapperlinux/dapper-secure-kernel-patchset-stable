@@ -1,8 +1,8 @@
 diff --git a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-index 78d9966..2808cb5 100644
+index 1d4352e1ac81..8e7e6f0a7763 100644
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -5229,6 +5229,50 @@ static struct cfg80211_ops brcmf_cfg80211_ops = {
+@@ -5234,6 +5234,50 @@ static struct cfg80211_ops brcmf_cfg80211_ops = {
  	.tdls_oper = brcmf_cfg80211_tdls_oper,
  };
  
@@ -53,7 +53,7 @@ index 78d9966..2808cb5 100644
  struct brcmf_cfg80211_vif *brcmf_alloc_vif(struct brcmf_cfg80211_info *cfg,
  					   enum nl80211_iftype type)
  {
-@@ -6845,7 +6889,7 @@ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
+@@ -6852,7 +6896,7 @@ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
  	struct net_device *ndev = brcmf_get_ifp(drvr, 0)->ndev;
  	struct brcmf_cfg80211_info *cfg;
  	struct wiphy *wiphy;
@@ -62,7 +62,7 @@ index 78d9966..2808cb5 100644
  	struct brcmf_cfg80211_vif *vif;
  	struct brcmf_if *ifp;
  	s32 err = 0;
-@@ -6857,14 +6901,10 @@ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
+@@ -6864,19 +6908,15 @@ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
  		return NULL;
  	}
  
@@ -78,15 +78,22 @@ index 78d9966..2808cb5 100644
  #endif
  	wiphy = wiphy_new(ops, sizeof(struct brcmf_cfg80211_info));
  	if (!wiphy) {
-@@ -7003,7 +7043,6 @@ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
+ 		brcmf_err("Could not allocate wiphy device\n");
+-		goto ops_out;
++		return NULL;
+ 	}
+ 	memcpy(wiphy->perm_addr, drvr->mac, ETH_ALEN);
+ 	set_wiphy_dev(wiphy, busdev);
+@@ -7010,8 +7050,6 @@ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
  	ifp->vif = NULL;
  wiphy_out:
  	brcmf_free_wiphy(wiphy);
+-ops_out:
 -	kfree(ops);
  	return NULL;
  }
  
-@@ -7014,7 +7053,6 @@ void brcmf_cfg80211_detach(struct brcmf_cfg80211_info *cfg)
+@@ -7022,7 +7060,6 @@ void brcmf_cfg80211_detach(struct brcmf_cfg80211_info *cfg)
  
  	brcmf_btcoex_detach(cfg);
  	wiphy_unregister(cfg->wiphy);

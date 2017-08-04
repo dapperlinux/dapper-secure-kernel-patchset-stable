@@ -100,7 +100,7 @@ index 67e8657..4368e21 100644
  		return NULL;
  
  	if (write) {
-@@ -226,6 +246,17 @@ static struct page *get_arg_page(struct linux_binprm *bprm, unsigned long pos,
+@@ -243,6 +243,17 @@ static struct page *get_arg_page(struct linux_binprm *bprm, unsigned long pos,
  		if (size <= ARG_MAX)
  			return page;
  
@@ -116,8 +116,8 @@ index 67e8657..4368e21 100644
 +#endif
 +
  		/*
- 		 * Limit to 1/4-th the stack size for the argv+env strings.
- 		 * This ensures that:
+ 		 * Limit to 1/4 of the max stack size or 3/4 of _STK_LIM
+ 		 * (whichever is smaller) for the argv+env strings.
 @@ -284,6 +315,11 @@ static int __bprm_mm_init(struct linux_binprm *bprm)
  	vma->vm_end = STACK_TOP_MAX;
  	vma->vm_start = vma->vm_end - PAGE_SIZE;

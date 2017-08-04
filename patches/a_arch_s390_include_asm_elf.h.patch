@@ -2,9 +2,9 @@ diff --git a/arch/s390/include/asm/elf.h b/arch/s390/include/asm/elf.h
 index 1736c7d..261351c 100644
 --- a/arch/s390/include/asm/elf.h
 +++ b/arch/s390/include/asm/elf.h
-@@ -167,6 +167,13 @@ extern unsigned int vdso_enabled;
- 				(STACK_TOP / 3 * 2) : \
- 				(STACK_TOP / 3 * 2) & ~((1UL << 32) - 1))
+@@ -166,6 +166,13 @@ extern unsigned int vdso_enabled;
+ #define ELF_ET_DYN_BASE		(is_compat_task() ? 0x000400000UL : \
+ 						    0x100000000UL)
  
 +#ifdef CONFIG_PAX_ASLR
 +#define PAX_ELF_ET_DYN_BASE	(test_thread_flag(TIF_31BIT) ? 0x10000UL : 0x80000000UL)
