@@ -1071,15 +1071,6 @@ index ef766a3..d3f0e59 100644
  
  /* Runs on exception stack */
  ENTRY(nmi)
-@@ -1215,6 +1734,8 @@ ENTRY(nmi)
- 	 * other IST entries.
- 	 */
- 
-+	ASM_CLAC
-+
- 	/* Use %rdx as our temp variable throughout */
- 	pushq	%rdx
- 
 @@ -1258,6 +1779,12 @@ ENTRY(nmi)
  	pushq	%r14		/* pt_regs->r14 */
  	pushq	%r15		/* pt_regs->r15 */

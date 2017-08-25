@@ -13,7 +13,7 @@ index 94aad63..7d9c5cc 100644
  extern unsigned int vdso32_enabled;
  #endif
 @@ -250,8 +250,27 @@ extern int force_personality32;
-  * 64-bit, this is raised to 4GB to leave the entire 32-bit address
+  * 64-bit, this is above 4GB to leave the entire 32-bit address
   * space open for things that want to use the area for 32-bit pointers.
   */
 +
@@ -21,7 +21,7 @@ index 94aad63..7d9c5cc 100644
 +#define ELF_ET_DYN_BASE		((current->mm->pax_flags & MF_PAX_SEGMEXEC) ? SEGMEXEC_TASK_SIZE/3*2 : TASK_SIZE/3*2)
 +#else
  #define ELF_ET_DYN_BASE		(mmap_is_ia32() ? 0x000400000UL : \
- 						  0x100000000UL)
+ 						  (TASK_SIZE / 3 * 2))
 +#endif
 +
 +#ifdef CONFIG_PAX_ASLR
