@@ -10,9 +10,9 @@ index 31e1d63..2f85b26 100644
  		*(__vermagic)		/* Kernel version magic */	\
  		. = ALIGN(8);						\
  		VMLINUX_SYMBOL(__start___tracepoints_ptrs) = .;		\
-@@ -447,9 +448,20 @@
+@@ -461,9 +461,20 @@
  		ALIGN_FUNCTION();					\
- 		*(.text.hot .text .text.fixup .text.unlikely)		\
+ 		*(.text.hot TEXT_MAIN .text.fixup .text.unlikely)	\
  		*(.ref.text)						\
 +		REFCOUNT_TEXT						\
  	MEM_KEEP(init.text)						\
