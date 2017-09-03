@@ -6,7 +6,7 @@ The Dapper Secure Kernel Patchset is an effort to forward port the now discontin
 ## Currently Released Patch:
 | Linux Version | Dapper Secure Kernel Patch | Status                |
 | ------------- | -------------------------- | --------------------- |
-| 4.9.46        | 4.9.46-2017-09-03          | Fully working.        |
+| 4.9.47        | 4.9.47-2017-09-03          | Fully working.        |
 
 ## Features
 
@@ -16,7 +16,7 @@ The Dapper Secure Kernel Patchset is an effort to forward port the now discontin
 | Task                                             | Status    |
 | -------------------------------------------------| --------- |
 | Resolve Merge Conflicts to Linux 4.9             | Completed |
-| Resolve Merge Conflicts to Minor Release (4.9.46)| Completed |
+| Resolve Merge Conflicts to Minor Release (4.9.47)| Completed |
 | Resolve Merge Conflicts with Patch Fuzz Disabled | Completed |
 | Fix Compiler Errors and Resolve Merge Mistakes   | Completed |
 | Run and Test Kernel, Ensuring PaX Test Passes    | Completed |
