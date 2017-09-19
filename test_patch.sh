@@ -28,5 +28,8 @@ grep "saving rejects" ../../test.log
 echo "Number of files failed..."
 grep "saving rejects" ../../test.log | wc -l
 
+echo "Number of hunks failed..."
+grep "saving rejects" ../../test.log | cut -f1 -d' ' | paste -sd+ | bc
+
 echo "Tidying up.."
 rm ../../kernel/patch-$KERNEL_VERSION
