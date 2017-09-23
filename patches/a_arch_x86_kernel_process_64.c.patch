@@ -43,16 +43,16 @@ index b3760b3..cb95ed8 100644
  		return 0;
  	}
  	frame->bx = 0;
-@@ -263,7 +267,7 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
+@@ -389,7 +389,7 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
  	struct fpu *prev_fpu = &prev->fpu;
  	struct fpu *next_fpu = &next->fpu;
  	int cpu = smp_processor_id();
 -	struct tss_struct *tss = &per_cpu(cpu_tss, cpu);
 +	struct tss_struct *tss = cpu_tss + cpu;
- 	unsigned prev_fsindex, prev_gsindex;
  	fpu_switch_t fpu_switch;
  
-@@ -314,6 +318,10 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
+ 	fpu_switch = switch_fpu_prepare(prev_fpu, next_fpu, cpu);
+@@ -438,6 +438,10 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
  	if (unlikely(next->ds | prev->ds))
  		loadsegment(ds, next->ds);
  
@@ -60,9 +60,9 @@ index b3760b3..cb95ed8 100644
 +	if (unlikely(next->ss != prev->ss))
 +		loadsegment(ss, next->ss);
 +
- 	/*
- 	 * Switch FS and GS.
- 	 *
+ 	load_seg_legacy(prev->fsindex, prev->fsbase,
+ 			next->fsindex, next->fsbase, FS);
+ 	load_seg_legacy(prev->gsindex, prev->gsbase,
 @@ -427,6 +435,8 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
  	/* Reload esp0 and ss1.  This changes current_thread_info(). */
  	load_sp0(tss, next);
