@@ -2,10 +2,10 @@ diff --git a/fs/proc/array.c b/fs/proc/array.c
 index 81818ad..aa67630 100644
 --- a/fs/proc/array.c
 +++ b/fs/proc/array.c
-@@ -60,6 +60,7 @@
- #include <linux/tty.h>
+@@ -61,6 +61,7 @@
  #include <linux/string.h>
  #include <linux/mman.h>
+ #include <linux/sched.h>
 +#include <linux/grsecurity.h>
  #include <linux/proc_fs.h>
  #include <linux/ioport.h>
