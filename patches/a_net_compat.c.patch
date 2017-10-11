@@ -107,12 +107,3 @@ index 1cd2ec0..2650ce6 100644
  	struct group_filter __user *kgf;
  	int __user	*koptlen;
  	u32 interface, fmode, numsrc;
-@@ -787,7 +787,7 @@ COMPAT_SYSCALL_DEFINE2(socketcall, int, call, u32 __user *, args)
- 
- 	if (call < SYS_SOCKET || call > SYS_SENDMMSG)
- 		return -EINVAL;
--	if (copy_from_user(a, args, nas[call]))
-+	if (nas[call] > sizeof a || copy_from_user(a, args, nas[call]))
- 		return -EFAULT;
- 	a0 = a[0];
- 	a1 = a[1];

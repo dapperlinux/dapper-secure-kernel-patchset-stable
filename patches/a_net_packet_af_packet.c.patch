@@ -54,10 +54,10 @@ index 8ab0974..a8d3c92 100644
  	spin_unlock(&sk->sk_receive_queue.lock);
  
  drop_n_restore:
-@@ -3871,7 +3871,7 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
- 	case PACKET_HDRLEN:
- 		if (len > sizeof(int))
+@@ -3886,7 +3886,7 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
  			len = sizeof(int);
+ 		if (len < sizeof(int))
+ 			return -EINVAL;
 -		if (copy_from_user(&val, optval, len))
 +		if (len > sizeof(val) || copy_from_user(&val, optval, len))
  			return -EFAULT;

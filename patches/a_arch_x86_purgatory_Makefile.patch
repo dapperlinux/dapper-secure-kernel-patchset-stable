@@ -2,8 +2,8 @@ diff --git a/arch/x86/purgatory/Makefile b/arch/x86/purgatory/Makefile
 index 555b9fa..3ae31c3 100644
 --- a/arch/x86/purgatory/Makefile
 +++ b/arch/x86/purgatory/Makefile
-@@ -10,6 +10,8 @@ targets += purgatory.ro
- 
+@@ -11,6 +11,8 @@ targets += purgatory.ro
+ KASAN_SANITIZE	:= n
  KCOV_INSTRUMENT := n
  
 +GCC_PLUGINS := n
