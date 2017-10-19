@@ -1,6 +1,6 @@
 DATE=`date +%Y-%m-%d`
 KERNEL_MAJOR_VERSION=4.9
-KERNEL_VERSION=4.9.56
+KERNEL_VERSION=4.9.57
 
 echo "Setting up release directory..."
 mkdir release
@@ -38,7 +38,6 @@ patch -F 0 -p1 < ../../dapper-secure-kernel-patchset-test.patch >> ../../release
 
 echo "Committing Dapper Secure Kernel Patches..."
 git add *
-git add -f Makefile.orig
 git commit -m "Dapper Secure Kernel Patchset $KERNEL_VERSION" >> ../../release.log
 
 echo "Running format-patch..."
