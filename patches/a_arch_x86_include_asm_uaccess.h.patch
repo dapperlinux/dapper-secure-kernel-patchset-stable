@@ -24,18 +24,24 @@ index faf3687..7624c7a 100644
  
  #define segment_eq(a, b)	((a).seg == (b).seg)
  
-@@ -88,8 +95,10 @@ static inline bool __chk_range_not_ok(unsigned long addr, unsigned long size, un
+@@ -94,10 +94,16 @@ static inline bool __chk_range_not_ok(unsigned long addr, unsigned long size, un
   * checks that the pointer is in the user space range - after calling
   * this function, memory access functions may still return -EFAULT.
   */
 +#define access_ok_noprefault(type, addr, size) \
-+	likely(!__range_not_ok((addr), (size), user_addr_max()))
- #define access_ok(type, addr, size) \
--	likely(!__range_not_ok(addr, size, user_addr_max()))
-+	__access_ok(type, (unsigned long)(addr), (size_t)(size))
++({									\
++	WARN_ON_IN_IRQ();						\
++	likely(!__range_not_ok((addr), (size), user_addr_max()));		\
++})
++
+ #define access_ok(type, addr, size)					\
+ ({									\
+ 	WARN_ON_IN_IRQ();						\
+-	likely(!__range_not_ok(addr, size, user_addr_max()));		\
++	__access_ok(type, (unsigned long)(addr), (size_t)(size));		\
+ })
  
  /*
-  * These are the main single-value transfer routines.  They automatically
 @@ -112,15 +121,27 @@ extern int __get_user_4(void);
  extern int __get_user_8(void);
  extern int __get_user_bad(void);
