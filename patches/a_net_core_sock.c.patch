@@ -134,7 +134,7 @@ index 470a204..f5adedf 100644
  		newsk->sk_send_head	= NULL;
  		newsk->sk_userlocks	= sk->sk_userlocks & ~SOCK_BINDPORT_LOCK;
  
-@@ -1558,7 +1561,7 @@ struct sock *sk_clone_lock(const struct sock *sk, const gfp_t priority)
+@@ -1558,7 +1558,7 @@ struct sock *sk_clone_lock(const struct sock *sk, const gfp_t priority)
  		newsk->sk_err_soft = 0;
  		newsk->sk_priority = 0;
  		newsk->sk_incoming_cpu = raw_smp_processor_id();
@@ -142,7 +142,7 @@ index 470a204..f5adedf 100644
 +		atomic64_set_unchecked(&newsk->sk_cookie, 0);
  
  		mem_cgroup_sk_alloc(newsk);
- 		cgroup_sk_alloc(&newsk->sk_cgrp_data);
+ 		/*
 @@ -2488,7 +2491,7 @@ void sock_init_data(struct socket *sock, struct sock *sk)
  	 */
  	smp_wmb();

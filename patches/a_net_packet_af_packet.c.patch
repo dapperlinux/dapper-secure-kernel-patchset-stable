@@ -63,19 +63,19 @@ index 8ab0974..a8d3c92 100644
  			return -EFAULT;
  		switch (val) {
  		case TPACKET_V1:
-@@ -3906,9 +3906,9 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
- 	case PACKET_ROLLOVER_STATS:
- 		if (!po->rollover)
- 			return -EINVAL;
--		rstats.tp_all = atomic_long_read(&po->rollover->num);
--		rstats.tp_huge = atomic_long_read(&po->rollover->num_huge);
--		rstats.tp_failed = atomic_long_read(&po->rollover->num_failed);
-+		rstats.tp_all = atomic_long_read_unchecked(&po->rollover->num);
-+		rstats.tp_huge = atomic_long_read_unchecked(&po->rollover->num_huge);
-+		rstats.tp_failed = atomic_long_read_unchecked(&po->rollover->num_failed);
- 		data = &rstats;
- 		lv = sizeof(rstats);
- 		break;
+@@ -3935,9 +3935,9 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
+ 		rcu_read_lock();
+ 		rollover = rcu_dereference(po->rollover);
+ 		if (rollover) {
+-			rstats.tp_all = atomic_long_read(&rollover->num);
+-			rstats.tp_huge = atomic_long_read(&rollover->num_huge);
+-			rstats.tp_failed = atomic_long_read(&rollover->num_failed);
++			rstats.tp_all = atomic_long_read_unchecked(&rollover->num);
++			rstats.tp_huge = atomic_long_read_unchecked(&rollover->num_huge);
++			rstats.tp_failed = atomic_long_read_unchecked(&rollover->num_failed);
+ 			data = &rstats;
+ 			lv = sizeof(rstats);
+ 		}
 @@ -3926,7 +3926,7 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
  		len = lv;
  	if (put_user(len, optlen))
