@@ -12,7 +12,7 @@ index ef766a3..d3f0e59 100644
  
  /* Avoid __ASSEMBLER__'ifying <linux/audit.h> just for this.  */
  #include <linux/elf-em.h>
-@@ -54,6 +57,392 @@ ENTRY(native_usergs_sysret64)
+@@ -54,6 +54,392 @@ ENTRY(native_usergs_sysret64)
  ENDPROC(native_usergs_sysret64)
  #endif /* CONFIG_PARAVIRT */
  
@@ -402,9 +402,9 @@ index ef766a3..d3f0e59 100644
 +ENDPROC(pax_erase_kstack)
 +#endif
 +
- .macro TRACE_IRQS_IRETQ
+ .macro TRACE_IRQS_FLAGS flags:req
  #ifdef CONFIG_TRACE_IRQFLAGS
- 	bt	$9, EFLAGS(%rsp)		/* interrupts off? */
+ 	bt	$9, \flags		/* interrupts off? */
 @@ -77,19 +466,19 @@ ENDPROC(native_usergs_sysret64)
  #if defined(CONFIG_DYNAMIC_FTRACE) && defined(CONFIG_TRACE_IRQFLAGS)
  
@@ -842,9 +842,9 @@ index ef766a3..d3f0e59 100644
  
  	/*
  	 * Reload gs selector with exception handling
-@@ -874,8 +1350,8 @@ ENTRY(native_load_gs_index)
- 2:	ALTERNATIVE "", "mfence", X86_BUG_SWAPGS_FENCE
+@@ -880,8 +1266,8 @@ ENTRY(native_load_gs_index)
  	SWAPGS
+ 	TRACE_IRQS_FLAGS (%rsp)
  	popfq
 -	ret
 -END(native_load_gs_index)
