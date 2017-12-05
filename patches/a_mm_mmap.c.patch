@@ -768,7 +768,7 @@ index 1af87c1..72d400b 100644
  		vma_rb_erase(vma, &mm->mm_rb);
  		mm->map_count--;
  		tail_vma = vma;
-@@ -2504,14 +2852,33 @@ static int __split_vma(struct mm_struct *mm, struct vm_area_struct *vma,
+@@ -2538,16 +2538,35 @@ static int __split_vma(struct mm_struct *mm, struct vm_area_struct *vma,
  	struct vm_area_struct *new;
  	int err;
  
@@ -777,9 +777,11 @@ index 1af87c1..72d400b 100644
 +	unsigned long addr_m = addr + SEGMEXEC_TASK_SIZE;
 +#endif
 +
- 	if (is_vm_hugetlb_page(vma) && (addr &
- 					~(huge_page_mask(hstate_vma(vma)))))
- 		return -EINVAL;
+ 	if (vma->vm_ops && vma->vm_ops->split) {
+ 		err = vma->vm_ops->split(vma, addr);
+ 		if (err)
+ 			return err;
+ 	}
  
 +#ifdef CONFIG_PAX_SEGMEXEC
 +	vma_m = pax_find_mirror_vma(vma);
