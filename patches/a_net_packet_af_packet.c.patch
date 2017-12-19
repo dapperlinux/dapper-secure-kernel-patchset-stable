@@ -32,7 +32,7 @@ index 8ab0974..a8d3c92 100644
  	return idx;
  }
  
-@@ -1662,9 +1662,9 @@ static int fanout_add(struct sock *sk, u16 id, u16 type_flags)
+@@ -1658,9 +1658,9 @@ static int fanout_add(struct sock *sk, u16 id, u16 type_flags)
  		rollover = kzalloc(sizeof(*rollover), GFP_KERNEL);
  		if (!rollover)
  			goto out;
@@ -42,9 +42,9 @@ index 8ab0974..a8d3c92 100644
 +		atomic_long_set_unchecked(&rollover->num, 0);
 +		atomic_long_set_unchecked(&rollover->num_huge, 0);
 +		atomic_long_set_unchecked(&rollover->num_failed, 0);
- 		po->rollover = rollover;
  	}
  
+ 	match = NULL;
 @@ -2119,7 +2119,7 @@ static int packet_rcv(struct sk_buff *skb, struct net_device *dev,
  	is_drop_n_account = true;
  	spin_lock(&sk->sk_receive_queue.lock);
@@ -63,19 +63,19 @@ index 8ab0974..a8d3c92 100644
  			return -EFAULT;
  		switch (val) {
  		case TPACKET_V1:
-@@ -3935,9 +3935,9 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
- 		rcu_read_lock();
- 		rollover = rcu_dereference(po->rollover);
- 		if (rollover) {
--			rstats.tp_all = atomic_long_read(&rollover->num);
--			rstats.tp_huge = atomic_long_read(&rollover->num_huge);
--			rstats.tp_failed = atomic_long_read(&rollover->num_failed);
-+			rstats.tp_all = atomic_long_read_unchecked(&rollover->num);
-+			rstats.tp_huge = atomic_long_read_unchecked(&rollover->num_huge);
-+			rstats.tp_failed = atomic_long_read_unchecked(&rollover->num_failed);
- 			data = &rstats;
- 			lv = sizeof(rstats);
- 		}
+@@ -3932,9 +3932,9 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
+ 	case PACKET_ROLLOVER_STATS:
+ 		if (!po->rollover)
+ 			return -EINVAL;
+-		rstats.tp_all = atomic_long_read(&po->rollover->num);
+-		rstats.tp_huge = atomic_long_read(&po->rollover->num_huge);
+-		rstats.tp_failed = atomic_long_read(&po->rollover->num_failed);
++		rstats.tp_all = atomic_long_read_unchecked(&po->rollover->num);
++		rstats.tp_huge = atomic_long_read_unchecked(&po->rollover->num_huge);
++		rstats.tp_failed = atomic_long_read_unchecked(&po->rollover->num_failed);
+ 		data = &rstats;
+ 		lv = sizeof(rstats);
+ 		break;
 @@ -3926,7 +3926,7 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
  		len = lv;
  	if (put_user(len, optlen))
