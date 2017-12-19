@@ -91,16 +91,14 @@ index 9e42842..fad7e1d 100644
  
  	/*
  	 * Pre UV4, the gnode is required to locate the payload queue
-@@ -1846,9 +1846,9 @@ static void pq_init(int node, int pnode)
+@@ -1846,8 +1846,8 @@ static void pq_init(int node, int pnode)
  		write_mmr_payload_tail(pnode, tail);
  	}
  
 -	ops.write_payload_first(pnode, first);
 -	ops.write_payload_last(pnode, last);
--	ops.write_g_sw_ack(pnode, 0xffffUL);
 +	ops->write_payload_first(pnode, first);
 +	ops->write_payload_last(pnode, last);
-+	ops->write_g_sw_ack(pnode, 0xffffUL);
  
  	/* in effect, all msg_type's are set to MSG_NOOP */
  	memset(pqp, 0, sizeof(struct bau_pq_entry) * DEST_Q_SIZE);

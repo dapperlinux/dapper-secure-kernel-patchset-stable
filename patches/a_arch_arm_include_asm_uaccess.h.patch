@@ -124,7 +124,7 @@ index 1f59ea05..81245f0 100644
  #define access_ok(type, addr, size)	(__range_ok(addr, size) == 0)
  
  #define user_addr_max() \
-@@ -474,10 +506,10 @@ do {									\
+@@ -474,10 +474,10 @@ do {									\
  
  
  #ifdef CONFIG_MMU
@@ -134,7 +134,7 @@ index 1f59ea05..81245f0 100644
  
 -static inline unsigned long __must_check
 +static inline unsigned long __must_check __size_overflow(3)
- __copy_from_user(void *to, const void __user *from, unsigned long n)
+ __arch_copy_from_user(void *to, const void __user *from, unsigned long n)
  {
  	unsigned int __ua_flags;
 @@ -489,9 +521,9 @@ __copy_from_user(void *to, const void __user *from, unsigned long n)
@@ -161,24 +161,3 @@ index 1f59ea05..81245f0 100644
  __clear_user_std(void __user *addr, unsigned long n);
  
  static inline unsigned long __must_check
-@@ -534,6 +566,10 @@ __clear_user(void __user *addr, unsigned long n)
- static inline unsigned long __must_check copy_from_user(void *to, const void __user *from, unsigned long n)
- {
- 	unsigned long res = n;
-+
-+	if ((long)n < 0)
-+		return n;
-+
- 	if (likely(access_ok(VERIFY_READ, from, n)))
- 		res = __copy_from_user(to, from, n);
- 	if (unlikely(res))
-@@ -543,6 +579,9 @@ static inline unsigned long __must_check copy_from_user(void *to, const void __u
- 
- static inline unsigned long __must_check copy_to_user(void __user *to, const void *from, unsigned long n)
- {
-+	if ((long)n < 0)
-+		return n;
-+
- 	if (access_ok(VERIFY_WRITE, to, n))
- 		n = __copy_to_user(to, from, n);
- 	return n;
