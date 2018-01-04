@@ -14,9 +14,9 @@ index a7655f6..0cab8dd 100644
  		/*
  		 * This gets called in the idle path where RCU
  		 * functions differently.  Tracing normally
-@@ -61,6 +65,47 @@ EXPORT_SYMBOL_GPL(leave_mm);
- 
- #endif /* CONFIG_SMP */
+@@ -57,6 +57,47 @@ void leave_mm(int cpu)
+ }
+ EXPORT_SYMBOL_GPL(leave_mm);
  
 +static void pax_switch_mm(struct mm_struct *next, unsigned int cpu)
 +{
@@ -72,7 +72,7 @@ index a7655f6..0cab8dd 100644
  
  	if (likely(prev != next)) {
  		if (IS_ENABLED(CONFIG_VMAP_STACK)) {
-@@ -89,9 +137,14 @@ void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
+@@ -85,8 +126,13 @@ void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
  
  			if (unlikely(pgd_none(*pgd)))
  				set_pgd(pgd, init_mm.pgd[stack_pgd_index]);
@@ -80,13 +80,12 @@ index a7655f6..0cab8dd 100644
 +				BUG_ON(pgd->pgd != init_mm.pgd[stack_pgd_index].pgd);
  		}
  
- #ifdef CONFIG_SMP
 +#if defined(CONFIG_X86_32) && (defined(CONFIG_PAX_PAGEEXEC) || defined(CONFIG_PAX_SEGMEXEC))
 +		tlbstate = this_cpu_read(cpu_tlbstate.state);
 +#endif
  		this_cpu_write(cpu_tlbstate.state, TLBSTATE_OK);
  		this_cpu_write(cpu_tlbstate.active_mm, next);
- #endif
+ 
 @@ -111,7 +164,7 @@ void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
  		 * We need to prevent an outcome in which CPU 1 observes
  		 * the new PTE value and CPU 0 observes bit 1 clear in
@@ -108,7 +107,7 @@ index a7655f6..0cab8dd 100644
  
  		trace_tlb_flush(TLB_FLUSH_ON_TASK_SWITCH, TLB_FLUSH_ALL);
  
-@@ -152,9 +209,31 @@ void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
+@@ -146,7 +192,27 @@ void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
  		if (unlikely(prev->context.ldt != next->context.ldt))
  			load_mm_ldt(next);
  #endif
@@ -126,22 +125,17 @@ index a7655f6..0cab8dd 100644
 +		if (unlikely(prev->context.user_cs_base != next->context.user_cs_base ||
 +			     prev->context.user_cs_limit != next->context.user_cs_limit))
 +			set_user_cs(next->context.user_cs_base, next->context.user_cs_limit, cpu);
-+#ifdef CONFIG_SMP
 +		else if (unlikely(tlbstate != TLBSTATE_OK))
 +			set_user_cs(next->context.user_cs_base, next->context.user_cs_limit, cpu);
 +#endif
-+#endif
 +
- 	}
-+	else {
+ 	} else {
 +		pax_switch_mm(next, cpu);
 +
- #ifdef CONFIG_SMP
--	  else {
  		this_cpu_write(cpu_tlbstate.state, TLBSTATE_OK);
  		BUG_ON(this_cpu_read(cpu_tlbstate.active_mm) != next);
  
-@@ -175,13 +254,30 @@ void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
+@@ -167,10 +233,27 @@ void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
  			 * As above, load_cr3() is serializing and orders TLB
  			 * fills with respect to the mm_cpumask write.
  			 */
@@ -167,9 +161,5 @@ index a7655f6..0cab8dd 100644
 +#endif
 +
  		}
-+#endif
  	}
--#endif
  }
- 
- #ifdef CONFIG_SMP
