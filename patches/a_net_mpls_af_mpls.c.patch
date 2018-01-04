@@ -11,15 +11,6 @@ index 1309e2c..6e543c6 100644
  	int i;
  
  	table = kmemdup(&mpls_dev_table, sizeof(mpls_dev_table), GFP_KERNEL);
-@@ -957,7 +957,7 @@ static void mpls_ifdown(struct net_device *dev, int event)
- 			case NETDEV_CHANGE:
- 				nh->nh_flags |= RTNH_F_LINKDOWN;
- 				if (event != NETDEV_UNREGISTER)
--					ACCESS_ONCE(rt->rt_nhn_alive) = rt->rt_nhn_alive - 1;
-+					ACCESS_ONCE_RW(rt->rt_nhn_alive) = rt->rt_nhn_alive - 1;
- 				break;
- 			}
- 			if (event == NETDEV_UNREGISTER)
 @@ -995,7 +995,7 @@ static void mpls_ifup(struct net_device *dev, unsigned int nh_flags)
  			nh->nh_flags &= ~nh_flags;
  		} endfor_nexthops(rt);
