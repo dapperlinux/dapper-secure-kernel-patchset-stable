@@ -29,16 +29,16 @@ index 1b02038..d42eaf6 100644
  #define b_replacement(num)	"664"#num
  #define e_replacement(num)	"665"#num
  
-@@ -137,7 +150,7 @@ static inline int alternatives_text_reserved(void *start, void *end)
+@@ -137,7 +137,7 @@ static inline int alternatives_text_reserved(void *start, void *end)
  	".pushsection .altinstructions,\"a\"\n"				\
  	ALTINSTR_ENTRY(feature, 1)					\
  	".popsection\n"							\
 -	".pushsection .altinstr_replacement, \"ax\"\n"			\
 +	".pushsection .altinstr_replacement, \"a\"\n"			\
  	ALTINSTR_REPLACEMENT(newinstr, feature, 1)			\
- 	".popsection"
+ 	".popsection\n"
  
-@@ -147,7 +160,7 @@ static inline int alternatives_text_reserved(void *start, void *end)
+@@ -147,7 +147,7 @@ static inline int alternatives_text_reserved(void *start, void *end)
  	ALTINSTR_ENTRY(feature1, 1)					\
  	ALTINSTR_ENTRY(feature2, 2)					\
  	".popsection\n"							\
@@ -46,7 +46,7 @@ index 1b02038..d42eaf6 100644
 +	".pushsection .altinstr_replacement, \"a\"\n"			\
  	ALTINSTR_REPLACEMENT(newinstr1, feature1, 1)			\
  	ALTINSTR_REPLACEMENT(newinstr2, feature2, 2)			\
- 	".popsection"
+ 	".popsection\n"
 @@ -206,7 +219,7 @@ static inline int alternatives_text_reserved(void *start, void *end)
  
  /* Like alternative_io, but for replacing a direct call with another one. */
