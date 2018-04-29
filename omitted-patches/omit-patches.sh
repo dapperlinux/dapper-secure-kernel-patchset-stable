@@ -4,5 +4,5 @@
 
 # ADD NEWEST FIRST
 
-#patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.76.patch
+patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.76.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.75.patch

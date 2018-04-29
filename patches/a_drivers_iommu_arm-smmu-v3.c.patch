@@ -29,7 +29,7 @@ index e6f9b2d..89c5054 100644
  	int (*finalise_stage_fn)(struct arm_smmu_domain *,
  				 struct io_pgtable_cfg *);
  	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
-@@ -1546,18 +1546,18 @@ static int arm_smmu_domain_finalise(struct iommu_domain *domain)
+@@ -1540,8 +1540,8 @@ static int arm_smmu_domain_finalise(struct iommu_domain *domain)
  		.iommu_dev	= smmu->dev,
  	};
  
@@ -40,18 +40,20 @@ index e6f9b2d..89c5054 100644
  		return -ENOMEM;
  
  	domain->pgsize_bitmap = pgtbl_cfg.pgsize_bitmap;
- 	domain->geometry.aperture_end = (1UL << ias) - 1;
- 	domain->geometry.force_aperture = true;
--	smmu_domain->pgtbl_ops = pgtbl_ops;
-+	smmu_domain->pgtbl = iop;
+@@ -1550,11 +1550,11 @@ static int arm_smmu_domain_finalise(struct iommu_domain *domain)
  
  	ret = finalise_stage_fn(smmu_domain, &pgtbl_cfg);
- 	if (ret < 0)
+ 	if (ret < 0) {
 -		free_io_pgtable_ops(pgtbl_ops);
 +		free_io_pgtable(iop);
+ 		return ret;
+ 	}
  
- 	return ret;
+-	smmu_domain->pgtbl_ops = pgtbl_ops;
++	smmu_domain->pgtbl = iop;
+ 	return 0;
  }
+ 
 @@ -1673,13 +1673,13 @@ static int arm_smmu_map(struct iommu_domain *domain, unsigned long iova,
  	int ret;
  	unsigned long flags;
