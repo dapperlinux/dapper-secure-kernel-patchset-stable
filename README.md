@@ -66,3 +66,20 @@ Once you are happy with your changes, you can make a real patch for compiling / 
 
 ### Compile The Kernel
 You can then use the release patch to compile a kernel. I highly recommend compiling using whatever package setup you have going for your distribution, just add it as a patch to be applied during the build process. If you want an explicit target, check out [dapper-secure-kernel](https://github.com/dapperlinux/dapper-kernel-grsec) and use that package on Dapper Linux or any RPM based distro.
+
+## Notes since 4.9.75
+In kernel 4.9.75, fixes for the meltdown and spectre vulnerability were included by extending KAISER. Now, there are a lot of underlying changes to PaX required to make these work, and it has stalled the release of this patchset as well as other forks. I am going to try and get 4.9 back to the latest version, and I will attempt to do this by REMOVING meltdown and spectre fixes.
+
+How will this be done? By manually picking patches to include in each patchlevel. If a patch is not compatible, then it will be "omitted". There is now two folders included. "patch-differences" and "omitted-patches". patch-differences shows the differences between a incremental version, such as 4.9.74 and 4.9.75, that is, exactly new patches included in 4.9.75. Patches that are not supported by this patched will be placed in the "omitted-patches" folder, under each version. When I make the patchset, omitted-patches will be reversed and not included. 
+
+If you want to see what got included, you can see them in omitted-patches/included-patches directory. Note that omit-4.9.75.patch + include-4.9.75.patch = diff-4.9.75.patch
+
+Hopefully this can get Dapper Secure Kernel Patchset Stable back on track. 
+
+### How to generate patch-differences:
+Clone the stable linux tree:
+```
+$ git clone git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git`
+$ cd linux-stable/
+$ git diff v4.9.74 v4.9.75 > ../patch-differences/diff-4.9.75.patch
+```

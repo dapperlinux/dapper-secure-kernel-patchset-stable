@@ -1,6 +1,6 @@
 DATE=`date +%Y-%m-%d`
 KERNEL_MAJOR_VERSION=4.9
-KERNEL_VERSION=4.9.74
+KERNEL_VERSION=4.9.75
 
 echo "Setting up release directory..."
 mkdir release
@@ -33,6 +33,11 @@ git commit -m "update" >> ../../release.log
 echo "Creating new branch..."
 git checkout -b dappersec
 
+echo "Omitting patches..."
+sh ../../omitted-patches/omit-patches.sh >> ../../release.log
+git add *
+git commit -m "Omitted patches from Dapper Secure Kernel Patchset" >> ../../release.log
+
 echo "Patching Dapper Secure Kernel Patches..."
 patch -F 0 -p1 < ../../dapper-secure-kernel-patchset-test.patch >> ../../release.log
 
@@ -44,7 +49,7 @@ echo "Running format-patch..."
 git format-patch master
 
 echo "Moving and renaming patch..."
-mv 000* ../../dapper-secure-kernel-patchset-$KERNEL_VERSION-$DATE.patch
+cat 000* > ../../dapper-secure-kernel-patchset-$KERNEL_VERSION-$DATE.patch
 
 echo "Tidying up.."
 rm ../../kernel/patch-$KERNEL_VERSION
