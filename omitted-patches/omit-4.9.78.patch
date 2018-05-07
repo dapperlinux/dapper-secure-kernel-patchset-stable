@@ -1,0 +1,378 @@
+diff --git a/Documentation/x86/pti.txt b/Documentation/x86/pti.txt
+index d11eff61fc9a..5cd58439ad2d 100644
+--- a/Documentation/x86/pti.txt
++++ b/Documentation/x86/pti.txt
+@@ -78,7 +78,7 @@ this protection comes at a cost:
+      non-PTI SYSCALL entry code, so requires mapping fewer
+      things into the userspace page tables.  The downside is
+      that stacks must be switched at entry time.
+-  d. Global pages are disabled for all kernel structures not
++  c. Global pages are disabled for all kernel structures not
+      mapped into both kernel and userspace page tables.  This
+      feature of the MMU allows different processes to share TLB
+      entries mapping the kernel.  Losing the feature means more
+diff --git a/arch/x86/entry/entry_32.S b/arch/x86/entry/entry_32.S
+index bdc9aeaf2e45..a76dc738ec61 100644
+--- a/arch/x86/entry/entry_32.S
++++ b/arch/x86/entry/entry_32.S
+@@ -229,6 +229,17 @@ ENTRY(__switch_to_asm)
+ 	movl	%ebx, PER_CPU_VAR(stack_canary)+stack_canary_offset
+ #endif
+ 
++#ifdef CONFIG_RETPOLINE
++	/*
++	 * When switching from a shallower to a deeper call stack
++	 * the RSB may either underflow or use entries populated
++	 * with userspace addresses. On CPUs where those concerns
++	 * exist, overwrite the RSB with entries which capture
++	 * speculative execution to prevent attack.
++	 */
++	FILL_RETURN_BUFFER %ebx, RSB_CLEAR_LOOPS, X86_FEATURE_RSB_CTXSW
++#endif
++
+ 	/* restore callee-saved registers */
+ 	popl	%esi
+ 	popl	%edi
+diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
+index b9c901ce6582..e729e1528584 100644
+--- a/arch/x86/entry/entry_64.S
++++ b/arch/x86/entry/entry_64.S
+@@ -427,6 +427,17 @@ ENTRY(__switch_to_asm)
+ 	movq	%rbx, PER_CPU_VAR(irq_stack_union)+stack_canary_offset
+ #endif
+ 
++#ifdef CONFIG_RETPOLINE
++	/*
++	 * When switching from a shallower to a deeper call stack
++	 * the RSB may either underflow or use entries populated
++	 * with userspace addresses. On CPUs where those concerns
++	 * exist, overwrite the RSB with entries which capture
++	 * speculative execution to prevent attack.
++	 */
++	FILL_RETURN_BUFFER %r12, RSB_CLEAR_LOOPS, X86_FEATURE_RSB_CTXSW
++#endif
++
+ 	/* restore callee-saved registers */
+ 	popq	%r15
+ 	popq	%r14
+@@ -1053,7 +1064,7 @@ idtentry async_page_fault	do_async_page_fault	has_error_code=1
+ #endif
+ 
+ #ifdef CONFIG_X86_MCE
+-idtentry machine_check					has_error_code=0	paranoid=1 do_sym=*machine_check_vector(%rip)
++idtentry machine_check		do_mce			has_error_code=0	paranoid=1
+ #endif
+ 
+ /*
+diff --git a/arch/x86/include/asm/nospec-branch.h b/arch/x86/include/asm/nospec-branch.h
+index 402a11c803c3..4ad41087ce0e 100644
+--- a/arch/x86/include/asm/nospec-branch.h
++++ b/arch/x86/include/asm/nospec-branch.h
+@@ -11,7 +11,7 @@
+  * Fill the CPU return stack buffer.
+  *
+  * Each entry in the RSB, if used for a speculative 'ret', contains an
+- * infinite 'pause; jmp' loop to capture speculative execution.
++ * infinite 'pause; lfence; jmp' loop to capture speculative execution.
+  *
+  * This is required in various cases for retpoline and IBRS-based
+  * mitigations for the Spectre variant 2 vulnerability. Sometimes to
+@@ -38,11 +38,13 @@
+ 	call	772f;				\
+ 773:	/* speculation trap */			\
+ 	pause;					\
++	lfence;					\
+ 	jmp	773b;				\
+ 772:						\
+ 	call	774f;				\
+ 775:	/* speculation trap */			\
+ 	pause;					\
++	lfence;					\
+ 	jmp	775b;				\
+ 774:						\
+ 	dec	reg;				\
+@@ -73,6 +75,7 @@
+ 	call	.Ldo_rop_\@
+ .Lspec_trap_\@:
+ 	pause
++	lfence
+ 	jmp	.Lspec_trap_\@
+ .Ldo_rop_\@:
+ 	mov	\reg, (%_ASM_SP)
+@@ -165,6 +168,7 @@
+ 	"       .align 16\n"					\
+ 	"901:	call   903f;\n"					\
+ 	"902:	pause;\n"					\
++	"    	lfence;\n"					\
+ 	"       jmp    902b;\n"					\
+ 	"       .align 16\n"					\
+ 	"903:	addl   $4, %%esp;\n"				\
+@@ -190,6 +194,9 @@ enum spectre_v2_mitigation {
+ 	SPECTRE_V2_IBRS,
+ };
+ 
++extern char __indirect_thunk_start[];
++extern char __indirect_thunk_end[];
++
+ /*
+  * On VMEXIT we must ensure that no RSB predictions learned in the guest
+  * can be followed in the host, by overwriting the RSB completely. Both
+@@ -199,16 +206,17 @@ enum spectre_v2_mitigation {
+ static inline void vmexit_fill_RSB(void)
+ {
+ #ifdef CONFIG_RETPOLINE
+-	unsigned long loops = RSB_CLEAR_LOOPS / 2;
++	unsigned long loops;
+ 
+ 	asm volatile (ANNOTATE_NOSPEC_ALTERNATIVE
+ 		      ALTERNATIVE("jmp 910f",
+ 				  __stringify(__FILL_RETURN_BUFFER(%0, RSB_CLEAR_LOOPS, %1)),
+ 				  X86_FEATURE_RETPOLINE)
+ 		      "910:"
+-		      : "=&r" (loops), ASM_CALL_CONSTRAINT
+-		      : "r" (loops) : "memory" );
++		      : "=r" (loops), ASM_CALL_CONSTRAINT
++		      : : "memory" );
+ #endif
+ }
++
+ #endif /* __ASSEMBLY__ */
+ #endif /* __NOSPEC_BRANCH_H__ */
+diff --git a/arch/x86/include/asm/traps.h b/arch/x86/include/asm/traps.h
+index 01fd0a7f48cd..688315b7a922 100644
+--- a/arch/x86/include/asm/traps.h
++++ b/arch/x86/include/asm/traps.h
+@@ -92,6 +92,7 @@ dotraplinkage void do_simd_coprocessor_error(struct pt_regs *, long);
+ #ifdef CONFIG_X86_32
+ dotraplinkage void do_iret_error(struct pt_regs *, long);
+ #endif
++dotraplinkage void do_mce(struct pt_regs *, long);
+ 
+ static inline int get_si_code(unsigned long condition)
+ {
+diff --git a/arch/x86/kernel/cpu/bugs.c b/arch/x86/kernel/cpu/bugs.c
+index 49d25ddf0e9f..8cacf62ec458 100644
+--- a/arch/x86/kernel/cpu/bugs.c
++++ b/arch/x86/kernel/cpu/bugs.c
+@@ -22,6 +22,7 @@
+ #include <asm/alternative.h>
+ #include <asm/pgtable.h>
+ #include <asm/cacheflush.h>
++#include <asm/intel-family.h>
+ 
+ static void __init spectre_v2_select_mitigation(void);
+ 
+@@ -154,6 +155,23 @@ static enum spectre_v2_mitigation_cmd __init spectre_v2_parse_cmdline(void)
+ 	return SPECTRE_V2_CMD_NONE;
+ }
+ 
++/* Check for Skylake-like CPUs (for RSB handling) */
++static bool __init is_skylake_era(void)
++{
++	if (boot_cpu_data.x86_vendor == X86_VENDOR_INTEL &&
++	    boot_cpu_data.x86 == 6) {
++		switch (boot_cpu_data.x86_model) {
++		case INTEL_FAM6_SKYLAKE_MOBILE:
++		case INTEL_FAM6_SKYLAKE_DESKTOP:
++		case INTEL_FAM6_SKYLAKE_X:
++		case INTEL_FAM6_KABYLAKE_MOBILE:
++		case INTEL_FAM6_KABYLAKE_DESKTOP:
++			return true;
++		}
++	}
++	return false;
++}
++
+ static void __init spectre_v2_select_mitigation(void)
+ {
+ 	enum spectre_v2_mitigation_cmd cmd = spectre_v2_parse_cmdline();
+@@ -212,6 +230,24 @@ static void __init spectre_v2_select_mitigation(void)
+ 
+ 	spectre_v2_enabled = mode;
+ 	pr_info("%s\n", spectre_v2_strings[mode]);
++
++	/*
++	 * If neither SMEP or KPTI are available, there is a risk of
++	 * hitting userspace addresses in the RSB after a context switch
++	 * from a shallow call stack to a deeper one. To prevent this fill
++	 * the entire RSB, even when using IBRS.
++	 *
++	 * Skylake era CPUs have a separate issue with *underflow* of the
++	 * RSB, when they will predict 'ret' targets from the generic BTB.
++	 * The proper mitigation for this is IBRS. If IBRS is not supported
++	 * or deactivated in favour of retpolines the RSB fill on context
++	 * switch is required.
++	 */
++	if ((!boot_cpu_has(X86_FEATURE_KAISER) &&
++	     !boot_cpu_has(X86_FEATURE_SMEP)) || is_skylake_era()) {
++		setup_force_cpu_cap(X86_FEATURE_RSB_CTXSW);
++		pr_info("Filling RSB on context switch\n");
++	}
+ }
+ 
+ #undef pr_fmt
+diff --git a/arch/x86/kernel/cpu/common.c b/arch/x86/kernel/cpu/common.c
+index 7b9ae04ddf5d..d198ae02f2b7 100644
+--- a/arch/x86/kernel/cpu/common.c
++++ b/arch/x86/kernel/cpu/common.c
+@@ -883,8 +883,8 @@ static void __init early_identify_cpu(struct cpuinfo_x86 *c)
+ 
+ 	setup_force_cpu_cap(X86_FEATURE_ALWAYS);
+ 
+-	/* Assume for now that ALL x86 CPUs are insecure */
+-	setup_force_cpu_bug(X86_BUG_CPU_MELTDOWN);
++	if (c->x86_vendor != X86_VENDOR_AMD)
++		setup_force_cpu_bug(X86_BUG_CPU_MELTDOWN);
+ 
+ 	setup_force_cpu_bug(X86_BUG_SPECTRE_V1);
+ 	setup_force_cpu_bug(X86_BUG_SPECTRE_V2);
+diff --git a/arch/x86/kernel/cpu/mcheck/mce.c b/arch/x86/kernel/cpu/mcheck/mce.c
+index 8ca5f8ad008e..fe5cd6ea1f0e 100644
+--- a/arch/x86/kernel/cpu/mcheck/mce.c
++++ b/arch/x86/kernel/cpu/mcheck/mce.c
+@@ -1754,6 +1754,11 @@ static void unexpected_machine_check(struct pt_regs *regs, long error_code)
+ void (*machine_check_vector)(struct pt_regs *, long error_code) =
+ 						unexpected_machine_check;
+ 
++dotraplinkage void do_mce(struct pt_regs *regs, long error_code)
++{
++	machine_check_vector(regs, error_code);
++}
++
+ /*
+  * Called for each booted CPU to set up machine checks.
+  * Must be called with preempt off:
+diff --git a/arch/x86/kernel/kprobes/opt.c b/arch/x86/kernel/kprobes/opt.c
+index 4d74f7386a61..dc20da1c78f0 100644
+--- a/arch/x86/kernel/kprobes/opt.c
++++ b/arch/x86/kernel/kprobes/opt.c
+@@ -37,6 +37,7 @@
+ #include <asm/alternative.h>
+ #include <asm/insn.h>
+ #include <asm/debugreg.h>
++#include <asm/nospec-branch.h>
+ 
+ #include "common.h"
+ 
+@@ -192,7 +193,7 @@ static int copy_optimized_instructions(u8 *dest, u8 *src)
+ }
+ 
+ /* Check whether insn is indirect jump */
+-static int insn_is_indirect_jump(struct insn *insn)
++static int __insn_is_indirect_jump(struct insn *insn)
+ {
+ 	return ((insn->opcode.bytes[0] == 0xff &&
+ 		(X86_MODRM_REG(insn->modrm.value) & 6) == 4) || /* Jump */
+@@ -226,6 +227,26 @@ static int insn_jump_into_range(struct insn *insn, unsigned long start, int len)
+ 	return (start <= target && target <= start + len);
+ }
+ 
++static int insn_is_indirect_jump(struct insn *insn)
++{
++	int ret = __insn_is_indirect_jump(insn);
++
++#ifdef CONFIG_RETPOLINE
++	/*
++	 * Jump to x86_indirect_thunk_* is treated as an indirect jump.
++	 * Note that even with CONFIG_RETPOLINE=y, the kernel compiled with
++	 * older gcc may use indirect jump. So we add this check instead of
++	 * replace indirect-jump check.
++	 */
++	if (!ret)
++		ret = insn_jump_into_range(insn,
++				(unsigned long)__indirect_thunk_start,
++				(unsigned long)__indirect_thunk_end -
++				(unsigned long)__indirect_thunk_start);
++#endif
++	return ret;
++}
++
+ /* Decode whole function to ensure any instructions don't jump into target */
+ static int can_optimize(unsigned long paddr)
+ {
+diff --git a/arch/x86/kernel/vmlinux.lds.S b/arch/x86/kernel/vmlinux.lds.S
+index dbf67f64d5ec..c7194e97c3d4 100644
+--- a/arch/x86/kernel/vmlinux.lds.S
++++ b/arch/x86/kernel/vmlinux.lds.S
+@@ -105,6 +105,13 @@ SECTIONS
+ 		SOFTIRQENTRY_TEXT
+ 		*(.fixup)
+ 		*(.gnu.warning)
++
++#ifdef CONFIG_RETPOLINE
++		__indirect_thunk_start = .;
++		*(.text.__x86.indirect_thunk)
++		__indirect_thunk_end = .;
++#endif
++
+ 		/* End of text section */
+ 		_etext = .;
+ 	} :text = 0x9090
+diff --git a/arch/x86/lib/retpoline.S b/arch/x86/lib/retpoline.S
+index cb45c6cb465f..dfb2ba91b670 100644
+--- a/arch/x86/lib/retpoline.S
++++ b/arch/x86/lib/retpoline.S
+@@ -9,7 +9,7 @@
+ #include <asm/nospec-branch.h>
+ 
+ .macro THUNK reg
+-	.section .text.__x86.indirect_thunk.\reg
++	.section .text.__x86.indirect_thunk
+ 
+ ENTRY(__x86_indirect_thunk_\reg)
+ 	CFI_STARTPROC
+@@ -25,7 +25,8 @@ ENDPROC(__x86_indirect_thunk_\reg)
+  * than one per register with the correct names. So we do it
+  * the simple and nasty way...
+  */
+-#define EXPORT_THUNK(reg) EXPORT_SYMBOL(__x86_indirect_thunk_ ## reg)
++#define __EXPORT_THUNK(sym) _ASM_NOKPROBE(sym); EXPORT_SYMBOL(sym)
++#define EXPORT_THUNK(reg) __EXPORT_THUNK(__x86_indirect_thunk_ ## reg)
+ #define GENERATE_THUNK(reg) THUNK reg ; EXPORT_THUNK(reg)
+ 
+ GENERATE_THUNK(_ASM_AX)
+diff --git a/include/linux/vermagic.h b/include/linux/vermagic.h
+index 6f8fbcf10dfb..a3d04934aa96 100644
+--- a/include/linux/vermagic.h
++++ b/include/linux/vermagic.h
+@@ -24,10 +24,16 @@
+ #ifndef MODULE_ARCH_VERMAGIC
+ #define MODULE_ARCH_VERMAGIC ""
+ #endif
++#ifdef RETPOLINE
++#define MODULE_VERMAGIC_RETPOLINE "retpoline "
++#else
++#define MODULE_VERMAGIC_RETPOLINE ""
++#endif
+ 
+ #define VERMAGIC_STRING 						\
+ 	UTS_RELEASE " "							\
+ 	MODULE_VERMAGIC_SMP MODULE_VERMAGIC_PREEMPT 			\
+ 	MODULE_VERMAGIC_MODULE_UNLOAD MODULE_VERMAGIC_MODVERSIONS	\
+-	MODULE_ARCH_VERMAGIC
++	MODULE_ARCH_VERMAGIC						\
++	MODULE_VERMAGIC_RETPOLINE
+ 
+diff --git a/arch/x86/include/asm/cpufeatures.h b/arch/x86/include/asm/cpufeatures.h
+index 4467568a531b..8537a21acd8b 100644
+--- a/arch/x86/include/asm/cpufeatures.h
++++ b/arch/x86/include/asm/cpufeatures.h
+@@ -197,9 +197,9 @@
+ #define X86_FEATURE_RETPOLINE	( 7*32+12) /* Generic Retpoline mitigation for Spectre variant 2 */
+ #define X86_FEATURE_RETPOLINE_AMD ( 7*32+13) /* AMD Retpoline mitigation for Spectre variant 2 */
+ 
+-#define X86_FEATURE_INTEL_PT	( 7*32+15) /* Intel Processor Trace */
+ #define X86_FEATURE_AVX512_4VNNIW (7*32+16) /* AVX-512 Neural Network Instructions */
+ #define X86_FEATURE_AVX512_4FMAPS (7*32+17) /* AVX-512 Multiply Accumulation Single precision */
++#define X86_FEATURE_RSB_CTXSW		( 7*32+19) /* Fill RSB on context switches */
+ 
+ /* Because the ALTERNATIVE scheme is for members of the X86_FEATURE club... */
+ #define X86_FEATURE_KAISER	( 7*32+31) /* CONFIG_PAGE_TABLE_ISOLATION w/o nokaiser */
+@@ -235,6 +235,7 @@
+ #define X86_FEATURE_SMAP	( 9*32+20) /* Supervisor Mode Access Prevention */
+ #define X86_FEATURE_CLFLUSHOPT	( 9*32+23) /* CLFLUSHOPT instruction */
+ #define X86_FEATURE_CLWB	( 9*32+24) /* CLWB instruction */
++#define X86_FEATURE_INTEL_PT	( 9*32+25) /* Intel Processor Trace */
+ #define X86_FEATURE_AVX512PF	( 9*32+26) /* AVX-512 Prefetch */
+ #define X86_FEATURE_AVX512ER	( 9*32+27) /* AVX-512 Exponential and Reciprocal */
+ #define X86_FEATURE_AVX512CD	( 9*32+28) /* AVX-512 Conflict Detection */

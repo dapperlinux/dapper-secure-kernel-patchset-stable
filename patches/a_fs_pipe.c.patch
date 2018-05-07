@@ -217,16 +217,16 @@ index 8e0d9f2..50c72462 100644
  		wake_up_interruptible(&pipe->wait);
  	ret = -ERESTARTSYS;
  	goto err;
-@@ -1020,7 +1021,7 @@ const struct file_operations pipefifo_fops = {
+@@ -1020,7 +1020,7 @@ const struct file_operations pipefifo_fops = {
   * Currently we rely on the pipe array holding a power-of-2 number
-  * of pages.
+  * of pages. Returns 0 on error.
   */
 -static inline unsigned int round_pipe_size(unsigned int size)
 +static inline unsigned long round_pipe_size(unsigned long size)
  {
  	unsigned long nr_pages;
  
-@@ -1035,14 +1036,17 @@ static inline unsigned int round_pipe_size(unsigned int size)
+@@ -1041,16 +1041,19 @@ static inline unsigned int round_pipe_size(unsigned int size)
  static long pipe_set_size(struct pipe_inode_info *pipe, unsigned long arg)
  {
  	struct pipe_buffer *bufs;
@@ -239,6 +239,8 @@ index 8e0d9f2..50c72462 100644
 +		return -EINVAL;
 +
  	size = round_pipe_size(arg);
+ 	if (size == 0)
+ 		return -EINVAL;
  	nr_pages = size >> PAGE_SHIFT;
  
 -	if (!nr_pages)
