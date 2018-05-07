@@ -1,0 +1,35 @@
+diff --git a/arch/x86/mm/kaiser.c b/arch/x86/mm/kaiser.c
+index a8ade08a9bf5..ec678aafa3f8 100644
+--- a/arch/x86/mm/kaiser.c
++++ b/arch/x86/mm/kaiser.c
+@@ -344,7 +344,7 @@ void __init kaiser_init(void)
+ 	if (vsyscall_enabled())
+ 		kaiser_add_user_map_early((void *)VSYSCALL_ADDR,
+ 					  PAGE_SIZE,
+-					   __PAGE_KERNEL_VSYSCALL);
++					  vsyscall_pgprot);
+ 
+ 	for_each_possible_cpu(cpu) {
+ 		void *percpu_vaddr = __per_cpu_user_mapped_start +
+diff --git a/include/linux/vermagic.h b/include/linux/vermagic.h
+index a3d04934aa96..6f8fbcf10dfb 100644
+--- a/include/linux/vermagic.h
++++ b/include/linux/vermagic.h
+@@ -24,16 +24,10 @@
+ #ifndef MODULE_ARCH_VERMAGIC
+ #define MODULE_ARCH_VERMAGIC ""
+ #endif
+-#ifdef RETPOLINE
+-#define MODULE_VERMAGIC_RETPOLINE "retpoline "
+-#else
+-#define MODULE_VERMAGIC_RETPOLINE ""
+-#endif
+ 
+ #define VERMAGIC_STRING 						\
+ 	UTS_RELEASE " "							\
+ 	MODULE_VERMAGIC_SMP MODULE_VERMAGIC_PREEMPT 			\
+ 	MODULE_VERMAGIC_MODULE_UNLOAD MODULE_VERMAGIC_MODVERSIONS	\
+-	MODULE_ARCH_VERMAGIC						\
+-	MODULE_VERMAGIC_RETPOLINE
++	MODULE_ARCH_VERMAGIC
+ 

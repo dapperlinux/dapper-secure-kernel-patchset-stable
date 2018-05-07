@@ -2,8 +2,8 @@ diff --git a/net/netfilter/nfnetlink_cthelper.c b/net/netfilter/nfnetlink_cthelp
 index 3b79f34..30666fc 100644
 --- a/net/netfilter/nfnetlink_cthelper.c
 +++ b/net/netfilter/nfnetlink_cthelper.c
-@@ -510,7 +510,7 @@ static int nfnl_cthelper_get(struct net *net, struct sock *nfnl,
- 	bool tuple_set = false;
+@@ -603,7 +603,7 @@ static int nfnl_cthelper_get(struct net *net, struct sock *nfnl,
+ 		return -EPERM;
  
  	if (nlh->nlmsg_flags & NLM_F_DUMP) {
 -		struct netlink_dump_control c = {
