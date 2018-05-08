@@ -2,7 +2,7 @@ diff --git a/scripts/gcc-plugins/gcc-common.h b/scripts/gcc-plugins/gcc-common.h
 index 12262c0..aab4a5e 100644
 --- a/scripts/gcc-plugins/gcc-common.h
 +++ b/scripts/gcc-plugins/gcc-common.h
-@@ -21,14 +21,22 @@
+@@ -21,18 +21,30 @@
  #include "rtl.h"
  #include "tm_p.h"
  #include "flags.h"
@@ -25,6 +25,14 @@ index 12262c0..aab4a5e 100644
  #include "timevar.h"
  
  #include "params.h"
+ 
++#if BUILDING_GCC_VERSION >= 8000
++#include "stringpool.h"
++#endif
++
+ #if BUILDING_GCC_VERSION <= 4009
+ #include "pointer-set.h"
+ #else
 @@ -43,12 +51,18 @@
  #include "memmodel.h"
  #endif
