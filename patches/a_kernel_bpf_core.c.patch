@@ -68,6 +68,15 @@ index aa6d981..d5d0272 100644
  {
  	u64 stack[MAX_BPF_STACK / sizeof(u64)];
  	u64 regs[MAX_BPF_REG], tmp;
+@@ -925,7 +925,7 @@ static unsigned int __bpf_prog_run(void *ctx, const struct bpf_insn *insn)
+ STACK_FRAME_NON_STANDARD(__bpf_prog_run); /* jump table */
+ 
+ #else
+-static unsigned int __bpf_prog_ret0(void *ctx, const struct bpf_insn *insn)
++unsigned int __bpf_prog_ret0(const struct sk_buff *ctx, const struct bpf_insn *insn)
+ {
+ 	return 0;
+ }
 @@ -979,9 +979,9 @@ static int bpf_check_tail_call(const struct bpf_prog *fp)
  struct bpf_prog *bpf_prog_select_runtime(struct bpf_prog *fp, int *err)
  {
