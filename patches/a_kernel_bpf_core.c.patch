@@ -2,16 +2,20 @@ diff --git a/kernel/bpf/core.c b/kernel/bpf/core.c
 index aa6d981..d5d0272 100644
 --- a/kernel/bpf/core.c
 +++ b/kernel/bpf/core.c
-@@ -208,6 +208,8 @@ struct bpf_prog *bpf_patch_insn_single(struct bpf_prog *prog, u32 off,
+@@ -208,6 +208,12 @@ struct bpf_prog *bpf_patch_insn_single(struct bpf_prog *prog, u32 off,
  }
  
  #ifdef CONFIG_BPF_JIT
++#ifndef CONFIG_BPF_JIT_ALWAYS_ON
 +extern long __rap_hash_call___bpf_prog_run;
++#else
++extern long __rap_hash_call___bpf_prog_ret0;
++#endif
 +
  struct bpf_binary_header *
  bpf_jit_binary_alloc(unsigned int proglen, u8 **image_ptr,
  		     unsigned int alignment,
-@@ -221,27 +223,45 @@ bpf_jit_binary_alloc(unsigned int proglen, u8 **image_ptr,
+@@ -221,27 +227,49 @@ bpf_jit_binary_alloc(unsigned int proglen, u8 **image_ptr,
  	 * random section of illegal instructions.
  	 */
  	size = round_up(proglen + sizeof(*hdr) + 128, PAGE_SIZE);
@@ -45,7 +49,11 @@ index aa6d981..d5d0272 100644
  
 +#ifdef CONFIG_PAX_RAP
 +	pax_open_kernel();
++#ifndef CONFIG_BPF_JIT_ALWAYS_ON
 +	*(long *)(*image_ptr - 8) = (long)&__rap_hash_call___bpf_prog_run;
++#else
++	*(long *)(*image_ptr - 8) = (long)&__rap_hash_call___bpf_prog_ret0;
++#endif
 +	pax_close_kernel();
 +#endif
 +
