@@ -11,7 +11,7 @@ index e1fb40b..44ce883 100644
  	}
  
  	pqn = kzalloc(sizeof(struct process_queue_node), GFP_KERNEL);
-@@ -220,7 +220,7 @@ int pqm_create_queue(struct process_queue_manager *pqm,
+@@ -217,7 +217,7 @@ int pqm_create_queue(struct process_queue_manager *pqm,
  			goto err_create_queue;
  		pqn->q = q;
  		pqn->kq = NULL;
@@ -20,7 +20,16 @@ index e1fb40b..44ce883 100644
  						&q->properties.vmid);
  		pr_debug("DQM returned %d for create_queue\n", retval);
  		print_queue(q);
-@@ -234,7 +234,7 @@ int pqm_create_queue(struct process_queue_manager *pqm,
+@@ -238,7 +238,7 @@ int pqm_create_queue(struct process_queue_manager *pqm,
+ 			goto err_create_queue;
+ 		pqn->q = q;
+ 		pqn->kq = NULL;
+-		retval = dev->dqm->ops.create_queue(dev->dqm, q, &pdd->qpd,
++		retval = dev->dqm->ops->create_queue(dev->dqm, q, &pdd->qpd,
+ 						&q->properties.vmid);
+ 		pr_debug("DQM returned %d for create_queue\n", retval);
+ 		print_queue(q);
+@@ -252,7 +252,7 @@ int pqm_create_queue(struct process_queue_manager *pqm,
  		kq->queue->properties.queue_id = *qid;
  		pqn->kq = kq;
  		pqn->q = NULL;
@@ -29,7 +38,7 @@ index e1fb40b..44ce883 100644
  							kq, &pdd->qpd);
  		break;
  	default:
-@@ -265,7 +265,7 @@ int pqm_create_queue(struct process_queue_manager *pqm,
+@@ -283,7 +283,7 @@ int pqm_create_queue(struct process_queue_manager *pqm,
  	/* check if queues list is empty unregister process from device */
  	clear_bit(*qid, pqm->queue_slot_bitmap);
  	if (list_empty(&pqm->queues))
@@ -38,7 +47,7 @@ index e1fb40b..44ce883 100644
  	return retval;
  }
  
-@@ -306,13 +306,13 @@ int pqm_destroy_queue(struct process_queue_manager *pqm, unsigned int qid)
+@@ -324,13 +324,13 @@ int pqm_destroy_queue(struct process_queue_manager *pqm, unsigned int qid)
  	if (pqn->kq) {
  		/* destroy kernel queue (DIQ) */
  		dqm = pqn->kq->dev->dqm;
@@ -54,7 +63,7 @@ index e1fb40b..44ce883 100644
  		if (retval != 0)
  			return retval;
  
-@@ -324,7 +324,7 @@ int pqm_destroy_queue(struct process_queue_manager *pqm, unsigned int qid)
+@@ -342,7 +342,7 @@ int pqm_destroy_queue(struct process_queue_manager *pqm, unsigned int qid)
  	clear_bit(qid, pqm->queue_slot_bitmap);
  
  	if (list_empty(&pqm->queues))
@@ -63,7 +72,7 @@ index e1fb40b..44ce883 100644
  
  	return retval;
  }
-@@ -349,7 +349,7 @@ int pqm_update_queue(struct process_queue_manager *pqm, unsigned int qid,
+@@ -367,7 +367,7 @@ int pqm_update_queue(struct process_queue_manager *pqm, unsigned int qid,
  	pqn->q->properties.queue_percent = p->queue_percent;
  	pqn->q->properties.priority = p->priority;
  
