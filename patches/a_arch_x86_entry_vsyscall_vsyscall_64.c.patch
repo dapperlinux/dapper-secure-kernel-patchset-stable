@@ -45,3 +45,12 @@ index 636c4b3..666991b 100644
  	.vm_ops		= &gate_vma_ops,
  };
  
+@@ -337,8 +337,6 @@ void __init map_vsyscall(void)
+ 	extern char __vsyscall_page;
+ 	unsigned long physaddr_vsyscall = __pa_symbol(&__vsyscall_page);
+ 
+-	if (vsyscall_mode != NATIVE)
+-		vsyscall_pgprot = __PAGE_KERNEL_VVAR;
+ 	if (vsyscall_mode != NONE)
+ 		__set_fixmap(VSYSCALL_PAGE, physaddr_vsyscall,
+ 			     __pgprot(vsyscall_pgprot));
