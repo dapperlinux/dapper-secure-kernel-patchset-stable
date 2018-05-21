@@ -3,7 +3,7 @@ new file mode 100644
 index 0000000..33f4af8
 --- /dev/null
 +++ b/scripts/gcc-plugins/checker_plugin.c
-@@ -0,0 +1,493 @@
+@@ -0,0 +1,491 @@
 +/*
 + * Copyright 2011-2017 by the PaX Team <pageexec@freemail.hu>
 + * Licensed under the GPL v2
@@ -179,21 +179,19 @@ index 0000000..33f4af8
 +	return NULL_TREE;
 +}
 +
-+static struct attribute_spec context_attr = {
-+	.name			= "context",
-+	.min_length		= 2,
-+	.max_length		= 3,
-+	.decl_required		= true,
-+	.type_required		= false,
-+	.function_type_required	= false,
-+	.handler		= handle_context_attribute,
-+#if BUILDING_GCC_VERSION >= 4007
-+	.affects_type_identity	= true
-+#endif
-+};
++static struct attribute_spec context_attr = { };
 +
 +static void register_attributes(void *event_data, void *data)
 +{
++	context_attr.name			= "context";
++	context_attr.min_length		= 2;
++	context_attr.max_length		= 3;
++	context_attr.decl_required	= true;
++	context_attr.handler		= handle_context_attribute;
++#if BUILDING_GCC_VERSION >= 4007
++	context_attr.affects_type_identity	= true;
++#endif
++
 +	register_attribute(&context_attr);
 +}
 +

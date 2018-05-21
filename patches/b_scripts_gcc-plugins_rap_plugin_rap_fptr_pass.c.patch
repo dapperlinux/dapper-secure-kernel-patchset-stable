@@ -3,7 +3,7 @@ new file mode 100644
 index 0000000..09e1377
 --- /dev/null
 +++ b/scripts/gcc-plugins/rap_plugin/rap_fptr_pass.c
-@@ -0,0 +1,281 @@
+@@ -0,0 +1,280 @@
 +/*
 + * Copyright 2012-2017 by PaX Team <pageexec@freemail.hu>
 + * Licensed under the GPL v2

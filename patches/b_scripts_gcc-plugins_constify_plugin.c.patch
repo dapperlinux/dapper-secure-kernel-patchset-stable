@@ -3,7 +3,7 @@ new file mode 100644
 index 0000000..42f2209
 --- /dev/null
 +++ b/scripts/gcc-plugins/constify_plugin.c
-@@ -0,0 +1,577 @@
+@@ -0,0 +1,567 @@
 +/*
 + * Copyright 2011 by Emese Revfy <re.emese@gmail.com>
 + * Copyright 2011-2017 by PaX Team <pageexec@freemail.hu>
@@ -306,34 +306,24 @@ index 0000000..42f2209
 +	return NULL_TREE;
 +}
 +
-+static struct attribute_spec no_const_attr = {
-+	.name			= "no_const",
-+	.min_length		= 0,
-+	.max_length		= 0,
-+	.decl_required		= false,
-+	.type_required		= false,
-+	.function_type_required	= false,
-+	.handler		= handle_no_const_attribute,
-+#if BUILDING_GCC_VERSION >= 4007
-+	.affects_type_identity	= true
-+#endif
-+};
++static struct attribute_spec no_const_attr = { };
 +
-+static struct attribute_spec do_const_attr = {
-+	.name			= "do_const",
-+	.min_length		= 0,
-+	.max_length		= 0,
-+	.decl_required		= false,
-+	.type_required		= false,
-+	.function_type_required	= false,
-+	.handler		= handle_do_const_attribute,
-+#if BUILDING_GCC_VERSION >= 4007
-+	.affects_type_identity	= true
-+#endif
-+};
++static struct attribute_spec do_const_attr = { };
 +
 +static void register_attributes(void *event_data, void *data)
 +{
++	no_const_attr.name			= "no_const";
++	no_const_attr.handler		= handle_no_const_attribute;
++#if BUILDING_GCC_VERSION >= 4007
++	no_const_attr.affects_type_identity	= true;
++#endif
++
++	do_const_attr.name			= "do_const";
++	do_const_attr.handler		= handle_do_const_attribute;
++#if BUILDING_GCC_VERSION >= 4007
++	do_const_attr.affects_type_identity	= true;
++#endif
++
 +	register_attribute(&no_const_attr);
 +	register_attribute(&do_const_attr);
 +}

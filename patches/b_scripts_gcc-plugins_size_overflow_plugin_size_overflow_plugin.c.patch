@@ -3,7 +3,7 @@ new file mode 100644
 index 0000000..f2571bf
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_plugin.c
-@@ -0,0 +1,299 @@
+@@ -0,0 +1,289 @@
 +/*
 + * Copyright 2011-2017 by Emese Revfy <re.emese@gmail.com>
 + * Licensed under the GPL v2
@@ -132,34 +132,24 @@ index 0000000..f2571bf
 +	return NULL_TREE;
 +}
 +
-+static struct attribute_spec size_overflow_attr = {
-+	.name				= "size_overflow",
-+	.min_length			= 1,
-+	.max_length			= -1,
-+	.decl_required			= true,
-+	.type_required			= false,
-+	.function_type_required		= false,
-+	.handler			= handle_size_overflow_attribute,
-+#if BUILDING_GCC_VERSION >= 4007
-+	.affects_type_identity		= false
-+#endif
-+};
++static struct attribute_spec size_overflow_attr = { };
 +
-+static struct attribute_spec intentional_overflow_attr = {
-+	.name				= "intentional_overflow",
-+	.min_length			= 1,
-+	.max_length			= -1,
-+	.decl_required			= true,
-+	.type_required			= false,
-+	.function_type_required		= false,
-+	.handler			= handle_intentional_overflow_attribute,
-+#if BUILDING_GCC_VERSION >= 4007
-+	.affects_type_identity		= false
-+#endif
-+};
++static struct attribute_spec intentional_overflow_attr = { };
 +
 +static void register_attributes(void __unused *event_data, void __unused *data)
 +{
++	size_overflow_attr.name				= "size_overflow";
++	size_overflow_attr.min_length		= 1;
++	size_overflow_attr.max_length		= -1;
++	size_overflow_attr.decl_required	= true;
++	size_overflow_attr.handler			= handle_size_overflow_attribute;
++
++	intentional_overflow_attr.name			= "intentional_overflow";
++	intentional_overflow_attr.min_length	= 1;
++	intentional_overflow_attr.max_length	= -1;
++	intentional_overflow_attr.decl_required	= true;
++	intentional_overflow_attr.handler		= handle_intentional_overflow_attribute;
++
 +	register_attribute(&size_overflow_attr);
 +	register_attribute(&intentional_overflow_attr);
 +}

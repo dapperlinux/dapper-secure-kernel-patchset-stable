@@ -3,7 +3,7 @@ new file mode 100644
 index 0000000..3a3ac17
 --- /dev/null
 +++ b/scripts/gcc-plugins/rap_plugin/rap_plugin.c
-@@ -0,0 +1,778 @@
+@@ -0,0 +1,773 @@
 +/*
 + * Copyright 2012-2017 by PaX Team <pageexec@freemail.hu>
 + * Licensed under the GPL v2
@@ -579,21 +579,16 @@ index 0000000..3a3ac17
 +	return NULL_TREE;
 +}
 +
-+static struct attribute_spec rap_hash_attr = {
-+	.name			= "rap_hash",
-+	.min_length		= 0,
-+	.max_length		= 0,
-+	.decl_required		= false,
-+	.type_required		= true,
-+	.function_type_required	= false,
-+	.handler		= handle_rap_hash_attribute,
-+#if BUILDING_GCC_VERSION >= 4007
-+	.affects_type_identity	= true
-+#endif
-+};
++static struct attribute_spec rap_hash_attr = { };
 +
 +static void register_attributes(void *event_data __unused, void *data __unused)
 +{
++	rap_hash_attr.name			= "rap_hash";
++	rap_hash_attr.type_required		= true;
++	rap_hash_attr.handler		= handle_rap_hash_attribute;
++#if BUILDING_GCC_VERSION >= 4007
++	rap_hash_attr.affects_type_identity	= true;
++#endif
 +	register_attribute(&rap_hash_attr);
 +}
 +
