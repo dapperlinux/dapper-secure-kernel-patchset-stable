@@ -75,7 +75,14 @@ index 12262c0..aab4a5e 100644
  #include "predict.h"
  #include "ipa-utils.h"
  
-@@ -90,6 +111,7 @@
+@@ -84,16 +84,17 @@
+ #include "ipa-utils.h"
+ 
+ #if BUILDING_GCC_VERSION >= 4009
++#include "stringpool.h"
+ #include "attribs.h"
+ #include "varasm.h"
+ #include "stor-layout.h"
  #include "internal-fn.h"
  #include "gimple-expr.h"
  #include "gimple-fold.h"
@@ -83,6 +90,10 @@ index 12262c0..aab4a5e 100644
  #include "context.h"
  #include "tree-ssa-alias.h"
  #include "tree-ssa.h"
+-#include "stringpool.h"
+ #if BUILDING_GCC_VERSION >= 7000
+ #include "tree-vrp.h"
+ #endif
 @@ -115,28 +137,34 @@
  #include "ssa-iterators.h"
  #endif
@@ -270,3 +281,41 @@ index 12262c0..aab4a5e 100644
  #if BUILDING_GCC_VERSION >= 7000
  #define get_inner_reference(exp, pbitsize, pbitpos, poffset, pmode, punsignedp, preversep, pvolatilep, keep_aligning)	\
  	get_inner_reference(exp, pbitsize, pbitpos, poffset, pmode, punsignedp, preversep, pvolatilep)
+@@ -913,4 +913,37 @@ static inline void debug_gimple_stmt(const_gimple s)
+ 	get_inner_reference(exp, pbitsize, pbitpos, poffset, pmode, punsignedp, preversep, pvolatilep)
+ #endif
+ 
++#if BUILDING_GCC_VERSION < 8000
++#define E_HImode HImode
++#define E_SImode SImode
++#define E_DImode DImode
++#define E_TImode TImode
++#define E_QImode QImode
++#endif
++
++#if BUILDING_GCC_VERSION < 5000
++#define SCALAR_INT_MODE	enum machine_mode
++#define MACHINE_MODE	enum machine_mode
++#elif BUILDING_GCC_VERSION < 8000
++#define SCALAR_INT_MODE	machine_mode
++#define MACHINE_MODE	machine_mode
++#else
++#define SCALAR_INT_MODE	scalar_int_mode
++#define MACHINE_MODE	machine_mode
++#endif
++
++#if BUILDING_GCC_VERSION >= 8000
++#define empty_string	""
++
++static inline profile_probability probability(int prob)
++{
++	return profile_probability::from_reg_br_prob_base(prob);
++}
++#else
++static inline int probability(int prob)
++{
++	return prob;
++}
++#endif
++
+ #endif

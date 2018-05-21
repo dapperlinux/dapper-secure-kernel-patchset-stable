@@ -43,20 +43,20 @@ index 0000000..7b24aea
 +		return TREE_TYPE(node);
 +
 +	switch (TYPE_MODE(type)) {
-+	case QImode:
-+	case HImode:
++	case E_QImode:
++	case E_HImode:
 +		new_type = size_overflow_type_SI;
 +		break;
-+	case SImode:
++	case E_SImode:
 +		new_type = size_overflow_type_DI;
 +		break;
-+	case DImode:
++	case E_DImode:
 +		if (LONG_TYPE_SIZE == GET_MODE_BITSIZE(SImode))
 +			new_type = TYPE_UNSIGNED(type) ? unsigned_intDI_type_node : intDI_type_node;
 +		else
 +			new_type = size_overflow_type_TI;
 +		break;
-+	case TImode:
++	case E_TImode:
 +		gcc_assert(!TYPE_UNSIGNED(type));
 +		new_type = size_overflow_type_TI;
 +		break;
@@ -513,7 +513,7 @@ index 0000000..7b24aea
 +	cond_bb = e->src;
 +	join_bb = e->dest;
 +	e->flags = EDGE_FALSE_VALUE;
-+	e->probability = REG_BR_PROB_BASE;
++	e->probability = probability(REG_BR_PROB_BASE);
 +
 +	bb_true = create_empty_bb(cond_bb);
 +	make_edge(cond_bb, bb_true, EDGE_TRUE_VALUE);
