@@ -56,14 +56,14 @@ index 83db0ea..0ad5d22 100644
  DECLARE_PER_CPU(unsigned int, irq_count);
  extern asmlinkage void ignore_sysret(void);
  #else	/* X86_64 */
-@@ -389,6 +392,7 @@ struct thread_struct {
+@@ -389,6 +389,7 @@ struct thread_struct {
  	unsigned short		ds;
  	unsigned short		fsindex;
  	unsigned short		gsindex;
 +	unsigned short		ss;
  #endif
  
- 	u32			status;		/* thread synchronous flags */
+ #ifdef CONFIG_X86_64
 @@ -405,6 +409,9 @@ struct thread_struct {
  	unsigned long gs;
  #endif
