@@ -1,0 +1,713 @@
+diff --git a/arch/x86/Makefile b/arch/x86/Makefile
+index cd22cb8ebd42..b60996184fa4 100644
+--- a/arch/x86/Makefile
++++ b/arch/x86/Makefile
+@@ -184,7 +184,10 @@ KBUILD_AFLAGS += $(mflags-y)
+ 
+ # Avoid indirect branches in kernel to deal with Spectre
+ ifdef CONFIG_RETPOLINE
+-    RETPOLINE_CFLAGS += $(call cc-option,-mindirect-branch=thunk-extern -mindirect-branch-register)
++    RETPOLINE_CFLAGS_GCC := -mindirect-branch=thunk-extern -mindirect-branch-register
++    RETPOLINE_CFLAGS_CLANG := -mretpoline-external-thunk
++
++    RETPOLINE_CFLAGS += $(call cc-option,$(RETPOLINE_CFLAGS_GCC),$(call cc-option,$(RETPOLINE_CFLAGS_CLANG)))
+     ifneq ($(RETPOLINE_CFLAGS),)
+         KBUILD_CFLAGS += $(RETPOLINE_CFLAGS) -DRETPOLINE
+     endif
+diff --git a/arch/x86/entry/entry_32.S b/arch/x86/entry/entry_32.S
+index f5434b4670c1..a76dc738ec61 100644
+--- a/arch/x86/entry/entry_32.S
++++ b/arch/x86/entry/entry_32.S
+@@ -237,8 +237,7 @@ ENTRY(__switch_to_asm)
+ 	 * exist, overwrite the RSB with entries which capture
+ 	 * speculative execution to prevent attack.
+ 	 */
+-	/* Clobbers %ebx */
+-	FILL_RETURN_BUFFER RSB_CLEAR_LOOPS, X86_FEATURE_RSB_CTXSW
++	FILL_RETURN_BUFFER %ebx, RSB_CLEAR_LOOPS, X86_FEATURE_RSB_CTXSW
+ #endif
+ 
+ 	/* restore callee-saved registers */
+diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
+index 8d7e4d48db0d..58610fe93f5d 100644
+--- a/arch/x86/entry/entry_64.S
++++ b/arch/x86/entry/entry_64.S
+@@ -331,8 +331,7 @@ ENTRY(__switch_to_asm)
+ 	 * exist, overwrite the RSB with entries which capture
+ 	 * speculative execution to prevent attack.
+ 	 */
+-	/* Clobbers %rbx */
+-	FILL_RETURN_BUFFER RSB_CLEAR_LOOPS, X86_FEATURE_RSB_CTXSW
++	FILL_RETURN_BUFFER %r12, RSB_CLEAR_LOOPS, X86_FEATURE_RSB_CTXSW
+ #endif
+ 
+ 	/* restore callee-saved registers */
+diff --git a/arch/x86/include/asm/apm.h b/arch/x86/include/asm/apm.h
+index 93eebc636c76..46e40aeae446 100644
+--- a/arch/x86/include/asm/apm.h
++++ b/arch/x86/include/asm/apm.h
+@@ -6,6 +6,8 @@
+ #ifndef _ASM_X86_MACH_DEFAULT_APM_H
+ #define _ASM_X86_MACH_DEFAULT_APM_H
+ 
++#include <asm/nospec-branch.h>
++
+ #ifdef APM_ZERO_SEGS
+ #	define APM_DO_ZERO_SEGS \
+ 		"pushl %%ds\n\t" \
+@@ -31,6 +33,7 @@ static inline void apm_bios_call_asm(u32 func, u32 ebx_in, u32 ecx_in,
+ 	 * N.B. We do NOT need a cld after the BIOS call
+ 	 * because we always save and restore the flags.
+ 	 */
++	firmware_restrict_branch_speculation_start();
+ 	__asm__ __volatile__(APM_DO_ZERO_SEGS
+ 		"pushl %%edi\n\t"
+ 		"pushl %%ebp\n\t"
+@@ -43,6 +46,7 @@ static inline void apm_bios_call_asm(u32 func, u32 ebx_in, u32 ecx_in,
+ 		  "=S" (*esi)
+ 		: "a" (func), "b" (ebx_in), "c" (ecx_in)
+ 		: "memory", "cc");
++	firmware_restrict_branch_speculation_end();
+ }
+ 
+ static inline bool apm_bios_call_simple_asm(u32 func, u32 ebx_in,
+@@ -55,6 +59,7 @@ static inline bool apm_bios_call_simple_asm(u32 func, u32 ebx_in,
+ 	 * N.B. We do NOT need a cld after the BIOS call
+ 	 * because we always save and restore the flags.
+ 	 */
++	firmware_restrict_branch_speculation_start();
+ 	__asm__ __volatile__(APM_DO_ZERO_SEGS
+ 		"pushl %%edi\n\t"
+ 		"pushl %%ebp\n\t"
+@@ -67,6 +72,7 @@ static inline bool apm_bios_call_simple_asm(u32 func, u32 ebx_in,
+ 		  "=S" (si)
+ 		: "a" (func), "b" (ebx_in), "c" (ecx_in)
+ 		: "memory", "cc");
++	firmware_restrict_branch_speculation_end();
+ 	return error;
+ }
+ 
+diff --git a/arch/x86/include/asm/asm-prototypes.h b/arch/x86/include/asm/asm-prototypes.h
+index 166654218329..5a25ada75aeb 100644
+--- a/arch/x86/include/asm/asm-prototypes.h
++++ b/arch/x86/include/asm/asm-prototypes.h
+@@ -37,7 +37,4 @@ INDIRECT_THUNK(dx)
+ INDIRECT_THUNK(si)
+ INDIRECT_THUNK(di)
+ INDIRECT_THUNK(bp)
+-asmlinkage void __fill_rsb(void);
+-asmlinkage void __clear_rsb(void);
+-
+ #endif /* CONFIG_RETPOLINE */
+diff --git a/arch/x86/include/asm/cpufeatures.h b/arch/x86/include/asm/cpufeatures.h
+index 8eb23f5cf7f4..ed7a1d2c4235 100644
+--- a/arch/x86/include/asm/cpufeatures.h
++++ b/arch/x86/include/asm/cpufeatures.h
+@@ -203,6 +203,7 @@
+ #define X86_FEATURE_KAISER	( 7*32+31) /* CONFIG_PAGE_TABLE_ISOLATION w/o nokaiser */
+ 
+ #define X86_FEATURE_USE_IBPB	( 7*32+21) /* "" Indirect Branch Prediction Barrier enabled */
++#define X86_FEATURE_USE_IBRS_FW	( 7*32+22) /* "" Use IBRS during runtime firmware calls */
+ 
+ /* Virtualization flags: Linux defined, word 8 */
+ #define X86_FEATURE_TPR_SHADOW  ( 8*32+ 0) /* Intel TPR Shadow */
+diff --git a/arch/x86/include/asm/efi.h b/arch/x86/include/asm/efi.h
+index 389d700b961e..9df22bb07f7f 100644
+--- a/arch/x86/include/asm/efi.h
++++ b/arch/x86/include/asm/efi.h
+@@ -5,6 +5,7 @@
+ #include <asm/pgtable.h>
+ #include <asm/processor-flags.h>
+ #include <asm/tlb.h>
++#include <asm/nospec-branch.h>
+ 
+ /*
+  * We map the EFI regions needed for runtime services non-contiguously,
+@@ -35,8 +36,18 @@
+ 
+ extern unsigned long asmlinkage efi_call_phys(void *, ...);
+ 
+-#define arch_efi_call_virt_setup()	kernel_fpu_begin()
+-#define arch_efi_call_virt_teardown()	kernel_fpu_end()
++#define arch_efi_call_virt_setup()					\
++({									\
++	kernel_fpu_begin();						\
++	firmware_restrict_branch_speculation_start();			\
++})
++
++#define arch_efi_call_virt_teardown()					\
++({									\
++	firmware_restrict_branch_speculation_end();			\
++	kernel_fpu_end();						\
++})
++
+ 
+ /*
+  * Wrap all the virtual calls in a way that forces the parameters on the stack.
+@@ -72,6 +83,7 @@ struct efi_scratch {
+ 	efi_sync_low_kernel_mappings();					\
+ 	preempt_disable();						\
+ 	__kernel_fpu_begin();						\
++	firmware_restrict_branch_speculation_start();			\
+ 									\
+ 	if (efi_scratch.use_pgd) {					\
+ 		efi_scratch.prev_cr3 = read_cr3();			\
+@@ -90,6 +102,7 @@ struct efi_scratch {
+ 		__flush_tlb_all();					\
+ 	}								\
+ 									\
++	firmware_restrict_branch_speculation_end();			\
+ 	__kernel_fpu_end();						\
+ 	preempt_enable();						\
+ })
+diff --git a/arch/x86/include/asm/nospec-branch.h b/arch/x86/include/asm/nospec-branch.h
+index 81a1be326571..d0dabeae0505 100644
+--- a/arch/x86/include/asm/nospec-branch.h
++++ b/arch/x86/include/asm/nospec-branch.h
+@@ -8,6 +8,50 @@
+ #include <asm/cpufeatures.h>
+ #include <asm/msr-index.h>
+ 
++/*
++ * Fill the CPU return stack buffer.
++ *
++ * Each entry in the RSB, if used for a speculative 'ret', contains an
++ * infinite 'pause; lfence; jmp' loop to capture speculative execution.
++ *
++ * This is required in various cases for retpoline and IBRS-based
++ * mitigations for the Spectre variant 2 vulnerability. Sometimes to
++ * eliminate potentially bogus entries from the RSB, and sometimes
++ * purely to ensure that it doesn't get empty, which on some CPUs would
++ * allow predictions from other (unwanted!) sources to be used.
++ *
++ * We define a CPP macro such that it can be used from both .S files and
++ * inline assembly. It's possible to do a .macro and then include that
++ * from C via asm(".include <asm/nospec-branch.h>") but let's not go there.
++ */
++
++#define RSB_CLEAR_LOOPS		32	/* To forcibly overwrite all entries */
++#define RSB_FILL_LOOPS		16	/* To avoid underflow */
++
++/*
++ * Google experimented with loop-unrolling and this turned out to be
++ * the optimal version — two calls, each with their own speculation
++ * trap should their return address end up getting used, in a loop.
++ */
++#define __FILL_RETURN_BUFFER(reg, nr, sp)	\
++	mov	$(nr/2), reg;			\
++771:						\
++	call	772f;				\
++773:	/* speculation trap */			\
++	pause;					\
++	lfence;					\
++	jmp	773b;				\
++772:						\
++	call	774f;				\
++775:	/* speculation trap */			\
++	pause;					\
++	lfence;					\
++	jmp	775b;				\
++774:						\
++	dec	reg;				\
++	jnz	771b;				\
++	add	$(BITS_PER_LONG/8) * nr, sp;
++
+ #ifdef __ASSEMBLY__
+ 
+ /*
+@@ -23,6 +67,18 @@
+ 	.popsection
+ .endm
+ 
++/*
++ * This should be used immediately before an indirect jump/call. It tells
++ * objtool the subsequent indirect jump/call is vouched safe for retpoline
++ * builds.
++ */
++.macro ANNOTATE_RETPOLINE_SAFE
++	.Lannotate_\@:
++	.pushsection .discard.retpoline_safe
++	_ASM_PTR .Lannotate_\@
++	.popsection
++.endm
++
+ /*
+  * These are the bare retpoline primitives for indirect jmp and call.
+  * Do not use these directly; they only exist to make the ALTERNATIVE
+@@ -59,9 +115,9 @@
+ .macro JMP_NOSPEC reg:req
+ #ifdef CONFIG_RETPOLINE
+ 	ANNOTATE_NOSPEC_ALTERNATIVE
+-	ALTERNATIVE_2 __stringify(jmp *\reg),				\
++	ALTERNATIVE_2 __stringify(ANNOTATE_RETPOLINE_SAFE; jmp *\reg),	\
+ 		__stringify(RETPOLINE_JMP \reg), X86_FEATURE_RETPOLINE,	\
+-		__stringify(lfence; jmp *\reg), X86_FEATURE_RETPOLINE_AMD
++		__stringify(lfence; ANNOTATE_RETPOLINE_SAFE; jmp *\reg), X86_FEATURE_RETPOLINE_AMD
+ #else
+ 	jmp	*\reg
+ #endif
+@@ -70,18 +126,25 @@
+ .macro CALL_NOSPEC reg:req
+ #ifdef CONFIG_RETPOLINE
+ 	ANNOTATE_NOSPEC_ALTERNATIVE
+-	ALTERNATIVE_2 __stringify(call *\reg),				\
++	ALTERNATIVE_2 __stringify(ANNOTATE_RETPOLINE_SAFE; call *\reg),	\
+ 		__stringify(RETPOLINE_CALL \reg), X86_FEATURE_RETPOLINE,\
+-		__stringify(lfence; call *\reg), X86_FEATURE_RETPOLINE_AMD
++		__stringify(lfence; ANNOTATE_RETPOLINE_SAFE; call *\reg), X86_FEATURE_RETPOLINE_AMD
+ #else
+ 	call	*\reg
+ #endif
+ .endm
+ 
+-/* This clobbers the BX register */
+-.macro FILL_RETURN_BUFFER nr:req ftr:req
++ /*
++  * A simpler FILL_RETURN_BUFFER macro. Don't make people use the CPP
++  * monstrosity above, manually.
++  */
++.macro FILL_RETURN_BUFFER reg:req nr:req ftr:req
+ #ifdef CONFIG_RETPOLINE
+-	ALTERNATIVE "", "call __clear_rsb", \ftr
++	ANNOTATE_NOSPEC_ALTERNATIVE
++	ALTERNATIVE "jmp .Lskip_rsb_\@",				\
++		__stringify(__FILL_RETURN_BUFFER(\reg,\nr,%_ASM_SP))	\
++		\ftr
++.Lskip_rsb_\@:
+ #endif
+ .endm
+ 
+@@ -93,6 +156,12 @@
+ 	".long 999b - .\n\t"					\
+ 	".popsection\n\t"
+ 
++#define ANNOTATE_RETPOLINE_SAFE					\
++	"999:\n\t"						\
++	".pushsection .discard.retpoline_safe\n\t"		\
++	_ASM_PTR " 999b\n\t"					\
++	".popsection\n\t"
++
+ #if defined(CONFIG_X86_64) && defined(RETPOLINE)
+ 
+ /*
+@@ -102,6 +171,7 @@
+ # define CALL_NOSPEC						\
+ 	ANNOTATE_NOSPEC_ALTERNATIVE				\
+ 	ALTERNATIVE(						\
++	ANNOTATE_RETPOLINE_SAFE					\
+ 	"call *%[thunk_target]\n",				\
+ 	"call __x86_indirect_thunk_%V[thunk_target]\n",		\
+ 	X86_FEATURE_RETPOLINE)
+@@ -156,26 +226,54 @@ extern char __indirect_thunk_end[];
+ static inline void vmexit_fill_RSB(void)
+ {
+ #ifdef CONFIG_RETPOLINE
+-	alternative_input("",
+-			  "call __fill_rsb",
+-			  X86_FEATURE_RETPOLINE,
+-			  ASM_NO_INPUT_CLOBBER(_ASM_BX, "memory"));
++	unsigned long loops;
++
++	asm volatile (ANNOTATE_NOSPEC_ALTERNATIVE
++		      ALTERNATIVE("jmp 910f",
++				  __stringify(__FILL_RETURN_BUFFER(%0, RSB_CLEAR_LOOPS, %1)),
++				  X86_FEATURE_RETPOLINE)
++		      "910:"
++		      : "=r" (loops), ASM_CALL_CONSTRAINT
++		      : : "memory" );
+ #endif
+ }
+ 
++#define alternative_msr_write(_msr, _val, _feature)		\
++	asm volatile(ALTERNATIVE("",				\
++				 "movl %[msr], %%ecx\n\t"	\
++				 "movl %[val], %%eax\n\t"	\
++				 "movl $0, %%edx\n\t"		\
++				 "wrmsr",			\
++				 _feature)			\
++		     : : [msr] "i" (_msr), [val] "i" (_val)	\
++		     : "eax", "ecx", "edx", "memory")
++
+ static inline void indirect_branch_prediction_barrier(void)
+ {
+-	asm volatile(ALTERNATIVE("",
+-				 "movl %[msr], %%ecx\n\t"
+-				 "movl %[val], %%eax\n\t"
+-				 "movl $0, %%edx\n\t"
+-				 "wrmsr",
+-				 X86_FEATURE_USE_IBPB)
+-		     : : [msr] "i" (MSR_IA32_PRED_CMD),
+-			 [val] "i" (PRED_CMD_IBPB)
+-		     : "eax", "ecx", "edx", "memory");
++	alternative_msr_write(MSR_IA32_PRED_CMD, PRED_CMD_IBPB,
++			      X86_FEATURE_USE_IBPB);
+ }
+ 
++/*
++ * With retpoline, we must use IBRS to restrict branch prediction
++ * before calling into firmware.
++ *
++ * (Implemented as CPP macros due to header hell.)
++ */
++#define firmware_restrict_branch_speculation_start()			\
++do {									\
++	preempt_disable();						\
++	alternative_msr_write(MSR_IA32_SPEC_CTRL, SPEC_CTRL_IBRS,	\
++			      X86_FEATURE_USE_IBRS_FW);			\
++} while (0)
++
++#define firmware_restrict_branch_speculation_end()			\
++do {									\
++	alternative_msr_write(MSR_IA32_SPEC_CTRL, 0,			\
++			      X86_FEATURE_USE_IBRS_FW);			\
++	preempt_enable();						\
++} while (0)
++
+ #endif /* __ASSEMBLY__ */
+ 
+ /*
+diff --git a/arch/x86/include/asm/paravirt.h b/arch/x86/include/asm/paravirt.h
+index ce932812f142..24af8b1de438 100644
+--- a/arch/x86/include/asm/paravirt.h
++++ b/arch/x86/include/asm/paravirt.h
+@@ -6,6 +6,7 @@
+ #ifdef CONFIG_PARAVIRT
+ #include <asm/pgtable_types.h>
+ #include <asm/asm.h>
++#include <asm/nospec-branch.h>
+ 
+ #include <asm/paravirt_types.h>
+ 
+@@ -869,23 +870,27 @@ extern void default_banner(void);
+ 
+ #define INTERRUPT_RETURN						\
+ 	PARA_SITE(PARA_PATCH(pv_cpu_ops, PV_CPU_iret), CLBR_NONE,	\
+-		  jmp PARA_INDIRECT(pv_cpu_ops+PV_CPU_iret))
++		  ANNOTATE_RETPOLINE_SAFE;					\
++		  jmp PARA_INDIRECT(pv_cpu_ops+PV_CPU_iret);)
+ 
+ #define DISABLE_INTERRUPTS(clobbers)					\
+ 	PARA_SITE(PARA_PATCH(pv_irq_ops, PV_IRQ_irq_disable), clobbers, \
+ 		  PV_SAVE_REGS(clobbers | CLBR_CALLEE_SAVE);		\
++		  ANNOTATE_RETPOLINE_SAFE;					\
+ 		  call PARA_INDIRECT(pv_irq_ops+PV_IRQ_irq_disable);	\
+ 		  PV_RESTORE_REGS(clobbers | CLBR_CALLEE_SAVE);)
+ 
+ #define ENABLE_INTERRUPTS(clobbers)					\
+ 	PARA_SITE(PARA_PATCH(pv_irq_ops, PV_IRQ_irq_enable), clobbers,	\
+ 		  PV_SAVE_REGS(clobbers | CLBR_CALLEE_SAVE);		\
++		  ANNOTATE_RETPOLINE_SAFE;					\
+ 		  call PARA_INDIRECT(pv_irq_ops+PV_IRQ_irq_enable);	\
+ 		  PV_RESTORE_REGS(clobbers | CLBR_CALLEE_SAVE);)
+ 
+ #ifdef CONFIG_X86_32
+ #define GET_CR0_INTO_EAX				\
+ 	push %ecx; push %edx;				\
++	ANNOTATE_RETPOLINE_SAFE;				\
+ 	call PARA_INDIRECT(pv_cpu_ops+PV_CPU_read_cr0);	\
+ 	pop %edx; pop %ecx
+ #else	/* !CONFIG_X86_32 */
+@@ -907,11 +912,13 @@ extern void default_banner(void);
+  */
+ #define SWAPGS								\
+ 	PARA_SITE(PARA_PATCH(pv_cpu_ops, PV_CPU_swapgs), CLBR_NONE,	\
+-		  call PARA_INDIRECT(pv_cpu_ops+PV_CPU_swapgs)		\
++		  ANNOTATE_RETPOLINE_SAFE;					\
++		  call PARA_INDIRECT(pv_cpu_ops+PV_CPU_swapgs);		\
+ 		 )
+ 
+ #define GET_CR2_INTO_RAX				\
+-	call PARA_INDIRECT(pv_mmu_ops+PV_MMU_read_cr2)
++	ANNOTATE_RETPOLINE_SAFE;				\
++	call PARA_INDIRECT(pv_mmu_ops+PV_MMU_read_cr2);
+ 
+ #define PARAVIRT_ADJUST_EXCEPTION_FRAME					\
+ 	PARA_SITE(PARA_PATCH(pv_irq_ops, PV_IRQ_adjust_exception_frame), \
+@@ -921,7 +928,8 @@ extern void default_banner(void);
+ #define USERGS_SYSRET64							\
+ 	PARA_SITE(PARA_PATCH(pv_cpu_ops, PV_CPU_usergs_sysret64),	\
+ 		  CLBR_NONE,						\
+-		  jmp PARA_INDIRECT(pv_cpu_ops+PV_CPU_usergs_sysret64))
++		  ANNOTATE_RETPOLINE_SAFE;					\
++		  jmp PARA_INDIRECT(pv_cpu_ops+PV_CPU_usergs_sysret64);)
+ #endif	/* CONFIG_X86_32 */
+ 
+ #endif /* __ASSEMBLY__ */
+diff --git a/arch/x86/include/asm/paravirt_types.h b/arch/x86/include/asm/paravirt_types.h
+index 0f400c0e4979..04b79712b09c 100644
+--- a/arch/x86/include/asm/paravirt_types.h
++++ b/arch/x86/include/asm/paravirt_types.h
+@@ -42,6 +42,7 @@
+ #include <asm/desc_defs.h>
+ #include <asm/kmap_types.h>
+ #include <asm/pgtable_types.h>
++#include <asm/nospec-branch.h>
+ 
+ struct page;
+ struct thread_struct;
+@@ -391,7 +392,9 @@ int paravirt_disable_iospace(void);
+  * offset into the paravirt_patch_template structure, and can therefore be
+  * freely converted back into a structure offset.
+  */
+-#define PARAVIRT_CALL	"call *%c[paravirt_opptr];"
++#define PARAVIRT_CALL					\
++	ANNOTATE_RETPOLINE_SAFE				\
++	"call *%c[paravirt_opptr];"
+ 
+ /*
+  * These macros are intended to wrap calls through one of the paravirt
+diff --git a/arch/x86/kernel/cpu/bugs.c b/arch/x86/kernel/cpu/bugs.c
+index baddc9ed3454..b8b0b6e78371 100644
+--- a/arch/x86/kernel/cpu/bugs.c
++++ b/arch/x86/kernel/cpu/bugs.c
+@@ -299,6 +299,15 @@ static void __init spectre_v2_select_mitigation(void)
+ 		setup_force_cpu_cap(X86_FEATURE_USE_IBPB);
+ 		pr_info("Spectre v2 mitigation: Enabling Indirect Branch Prediction Barrier\n");
+ 	}
++
++	/*
++	 * Retpoline means the kernel is safe because it has no indirect
++	 * branches. But firmware isn't, so use IBRS to protect that.
++	 */
++	if (boot_cpu_has(X86_FEATURE_IBRS)) {
++		setup_force_cpu_cap(X86_FEATURE_USE_IBRS_FW);
++		pr_info("Enabling Restricted Speculation for firmware calls\n");
++	}
+ }
+ 
+ #undef pr_fmt
+@@ -325,8 +334,9 @@ ssize_t cpu_show_spectre_v2(struct device *dev, struct device_attribute *attr, c
+ 	if (!boot_cpu_has_bug(X86_BUG_SPECTRE_V2))
+ 		return sprintf(buf, "Not affected\n");
+ 
+-	return sprintf(buf, "%s%s%s\n", spectre_v2_strings[spectre_v2_enabled],
++	return sprintf(buf, "%s%s%s%s\n", spectre_v2_strings[spectre_v2_enabled],
+ 		       boot_cpu_has(X86_FEATURE_USE_IBPB) ? ", IBPB" : "",
++		       boot_cpu_has(X86_FEATURE_USE_IBRS_FW) ? ", IBRS_FW" : "",
+ 		       spectre_v2_module_string());
+ }
+ #endif
+diff --git a/arch/x86/kernel/cpu/intel.c b/arch/x86/kernel/cpu/intel.c
+index 6ed206bd9071..768042530af2 100644
+--- a/arch/x86/kernel/cpu/intel.c
++++ b/arch/x86/kernel/cpu/intel.c
+@@ -103,6 +103,13 @@ static bool bad_spectre_microcode(struct cpuinfo_x86 *c)
+ {
+ 	int i;
+ 
++	/*
++	 * We know that the hypervisor lie to us on the microcode version so
++	 * we may as well hope that it is running the correct version.
++	 */
++	if (cpu_has(c, X86_FEATURE_HYPERVISOR))
++		return false;
++
+ 	for (i = 0; i < ARRAY_SIZE(spectre_bad_microcodes); i++) {
+ 		if (c->x86_model == spectre_bad_microcodes[i].model &&
+ 		    c->x86_stepping == spectre_bad_microcodes[i].stepping)
+diff --git a/arch/x86/kernel/head_64.S b/arch/x86/kernel/head_64.S
+index 67cd7c1b99da..9d72cf547c88 100644
+--- a/arch/x86/kernel/head_64.S
++++ b/arch/x86/kernel/head_64.S
+@@ -22,6 +22,7 @@
+ #include <asm/nops.h>
+ #include "../entry/calling.h"
+ #include <asm/export.h>
++#include <asm/nospec-branch.h>
+ 
+ #ifdef CONFIG_PARAVIRT
+ #include <asm/asm-offsets.h>
+@@ -200,6 +201,7 @@ ENTRY(secondary_startup_64)
+ 
+ 	/* Ensure I am executing from virtual addresses */
+ 	movq	$1f, %rax
++	ANNOTATE_RETPOLINE_SAFE
+ 	jmp	*%rax
+ 1:
+ 
+diff --git a/arch/x86/lib/Makefile b/arch/x86/lib/Makefile
+index 4ad7c4dd311c..6bf1898ddf49 100644
+--- a/arch/x86/lib/Makefile
++++ b/arch/x86/lib/Makefile
+@@ -26,7 +26,6 @@ lib-$(CONFIG_RWSEM_XCHGADD_ALGORITHM) += rwsem.o
+ lib-$(CONFIG_INSTRUCTION_DECODER) += insn.o inat.o
+ lib-$(CONFIG_RANDOMIZE_BASE) += kaslr.o
+ lib-$(CONFIG_RETPOLINE) += retpoline.o
+-OBJECT_FILES_NON_STANDARD_retpoline.o :=y
+ 
+ obj-y += msr.o msr-reg.o msr-reg-export.o hweight.o
+ 
+diff --git a/arch/x86/lib/retpoline.S b/arch/x86/lib/retpoline.S
+index 480edc3a5e03..c909961e678a 100644
+--- a/arch/x86/lib/retpoline.S
++++ b/arch/x86/lib/retpoline.S
+@@ -7,7 +7,6 @@
+ #include <asm/alternative-asm.h>
+ #include <asm/export.h>
+ #include <asm/nospec-branch.h>
+-#include <asm/bitsperlong.h>
+ 
+ .macro THUNK reg
+ 	.section .text.__x86.indirect_thunk
+@@ -47,58 +46,3 @@ GENERATE_THUNK(r13)
+ GENERATE_THUNK(r14)
+ GENERATE_THUNK(r15)
+ #endif
+-
+-/*
+- * Fill the CPU return stack buffer.
+- *
+- * Each entry in the RSB, if used for a speculative 'ret', contains an
+- * infinite 'pause; lfence; jmp' loop to capture speculative execution.
+- *
+- * This is required in various cases for retpoline and IBRS-based
+- * mitigations for the Spectre variant 2 vulnerability. Sometimes to
+- * eliminate potentially bogus entries from the RSB, and sometimes
+- * purely to ensure that it doesn't get empty, which on some CPUs would
+- * allow predictions from other (unwanted!) sources to be used.
+- *
+- * Google experimented with loop-unrolling and this turned out to be
+- * the optimal version - two calls, each with their own speculation
+- * trap should their return address end up getting used, in a loop.
+- */
+-.macro STUFF_RSB nr:req sp:req
+-	mov	$(\nr / 2), %_ASM_BX
+-	.align 16
+-771:
+-	call	772f
+-773:						/* speculation trap */
+-	pause
+-	lfence
+-	jmp	773b
+-	.align 16
+-772:
+-	call	774f
+-775:						/* speculation trap */
+-	pause
+-	lfence
+-	jmp	775b
+-	.align 16
+-774:
+-	dec	%_ASM_BX
+-	jnz	771b
+-	add	$((BITS_PER_LONG/8) * \nr), \sp
+-.endm
+-
+-#define RSB_FILL_LOOPS		16	/* To avoid underflow */
+-
+-ENTRY(__fill_rsb)
+-	STUFF_RSB RSB_FILL_LOOPS, %_ASM_SP
+-	ret
+-END(__fill_rsb)
+-EXPORT_SYMBOL_GPL(__fill_rsb)
+-
+-#define RSB_CLEAR_LOOPS		32	/* To forcibly overwrite all entries */
+-
+-ENTRY(__clear_rsb)
+-	STUFF_RSB RSB_CLEAR_LOOPS, %_ASM_SP
+-	ret
+-END(__clear_rsb)
+-EXPORT_SYMBOL_GPL(__clear_rsb)
+diff --git a/include/linux/compiler-clang.h b/include/linux/compiler-clang.h
+index de179993e039..01225b0059b1 100644
+--- a/include/linux/compiler-clang.h
++++ b/include/linux/compiler-clang.h
+@@ -15,3 +15,8 @@
+  * with any version that can compile the kernel
+  */
+ #define __UNIQUE_ID(prefix) __PASTE(__PASTE(__UNIQUE_ID_, prefix), __COUNTER__)
++
++/* Clang doesn't have a way to turn it off per-function, yet. */
++#ifdef __noretpoline
++#undef __noretpoline
++#endif
+diff --git a/include/linux/compiler-gcc.h b/include/linux/compiler-gcc.h
+index eb0ed31193a3..a1b1de17455c 100644
+--- a/include/linux/compiler-gcc.h
++++ b/include/linux/compiler-gcc.h
+@@ -88,6 +88,10 @@
+ #define __weak		__attribute__((weak))
+ #define __alias(symbol)	__attribute__((alias(#symbol)))
+ 
++#ifdef RETPOLINE
++#define __noretpoline __attribute__((indirect_branch("keep")))
++#endif
++
+ /*
+  * it doesn't make sense on ARM (currently the only user of __naked)
+  * to trace naked functions because then mcount is called without
+diff --git a/include/linux/init.h b/include/linux/init.h
+index 8e346d1bd837..683508f6bb4e 100644
+--- a/include/linux/init.h
++++ b/include/linux/init.h
+@@ -5,10 +5,10 @@
+ #include <linux/types.h>
+ 
+ /* Built-in __init functions needn't be compiled with retpoline */
+-#if defined(RETPOLINE) && !defined(MODULE)
+-#define __noretpoline __attribute__((indirect_branch("keep")))
++#if defined(__noretpoline) && !defined(MODULE)
++#define __noinitretpoline __noretpoline
+ #else
+-#define __noretpoline
++#define __noinitretpoline
+ #endif
+ 
+ /* These macros are used to mark some functions or 
+@@ -46,7 +46,7 @@
+ 
+ /* These are for everybody (although not all archs will actually
+    discard it in modules) */
+-#define __init		__section(.init.text) __cold notrace __latent_entropy __noretpoline
++#define __init		__section(.init.text) __cold notrace __latent_entropy __noinitretpoline
+ #define __initdata	__section(.init.data)
+ #define __initconst	__section(.init.rodata)
+ #define __exitdata	__section(.exit.data)
+diff --git a/include/linux/nospec.h b/include/linux/nospec.h
+index 132e3f5a2e0d..e791ebc65c9c 100644
+--- a/include/linux/nospec.h
++++ b/include/linux/nospec.h
+@@ -5,6 +5,7 @@
+ 
+ #ifndef _LINUX_NOSPEC_H
+ #define _LINUX_NOSPEC_H
++#include <asm/barrier.h>
+ 
+ /**
+  * array_index_mask_nospec() - generate a ~0 mask when index < size, 0 otherwise
+@@ -29,26 +30,6 @@ static inline unsigned long array_index_mask_nospec(unsigned long index,
+ }
+ #endif
+ 
+-/*
+- * Warn developers about inappropriate array_index_nospec() usage.
+- *
+- * Even if the CPU speculates past the WARN_ONCE branch, the
+- * sign bit of @index is taken into account when generating the
+- * mask.
+- *
+- * This warning is compiled out when the compiler can infer that
+- * @index and @size are less than LONG_MAX.
+- */
+-#define array_index_mask_nospec_check(index, size)				\
+-({										\
+-	if (WARN_ONCE(index > LONG_MAX || size > LONG_MAX,			\
+-	    "array_index_nospec() limited to range of [0, LONG_MAX]\n"))	\
+-		_mask = 0;							\
+-	else									\
+-		_mask = array_index_mask_nospec(index, size);			\
+-	_mask;									\
+-})
+-
+ /*
+  * array_index_nospec - sanitize an array index after a bounds check
+  *
+@@ -67,7 +48,7 @@ static inline unsigned long array_index_mask_nospec(unsigned long index,
+ ({									\
+ 	typeof(index) _i = (index);					\
+ 	typeof(size) _s = (size);					\
+-	unsigned long _mask = array_index_mask_nospec_check(_i, _s);	\
++	unsigned long _mask = array_index_mask_nospec(_i, _s);		\
+ 									\
+ 	BUILD_BUG_ON(sizeof(_i) > sizeof(long));			\
+ 	BUILD_BUG_ON(sizeof(_s) > sizeof(long));			\

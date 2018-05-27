@@ -114,15 +114,17 @@ index 477ae80..a280c67 100644
  			break;
  		default:
  			pr_err("%s: Unknown relocation: %u\n",
-@@ -171,21 +222,30 @@ int apply_relocate_add(Elf64_Shdr *sechdrs,
- 		case R_X86_64_NONE:
- 			break;
+@@ -173,19 +173,25 @@ int apply_relocate_add(Elf64_Shdr *sechdrs,
  		case R_X86_64_64:
+ 			if (*(u64 *)loc != 0)
+ 				goto invalid_relocation;
 +			pax_open_kernel();
  			*(u64 *)loc = val;
 +			pax_close_kernel();
  			break;
  		case R_X86_64_32:
+ 			if (*(u32 *)loc != 0)
+ 				goto invalid_relocation;
 +			pax_open_kernel();
  			*(u32 *)loc = val;
 +			pax_close_kernel();
@@ -130,18 +132,21 @@ index 477ae80..a280c67 100644
  				goto overflow;
  			break;
  		case R_X86_64_32S:
+ 			if (*(s32 *)loc != 0)
+ 				goto invalid_relocation;
 +			pax_open_kernel();
  			*(s32 *)loc = val;
 +			pax_close_kernel();
  			if ((s64)val != *(s32 *)loc)
  				goto overflow;
  			break;
- 		case R_X86_64_PC32:
+@@ -194,7 +200,9 @@ int apply_relocate_add(Elf64_Shdr *sechdrs,
+ 			if (*(u32 *)loc != 0)
+ 				goto invalid_relocation;
  			val -= (u64)loc;
 +			pax_open_kernel();
  			*(u32 *)loc = val;
 +			pax_close_kernel();
-+
  #if 0
  			if ((s64)val != *(s32 *)loc)
  				goto overflow;
