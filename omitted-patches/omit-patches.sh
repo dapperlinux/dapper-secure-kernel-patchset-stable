@@ -4,6 +4,7 @@
 
 # ADD NEWEST FIRST
 
+patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.83.patch
 # 4.9.82 does not need any omissions
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.81.patch
 # 4.9.80 does not need any omissions

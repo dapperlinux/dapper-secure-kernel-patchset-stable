@@ -65,7 +65,7 @@ index 9269d56..78d2a06 100644
  
  /*
   *  The console `switch' structure for the dummy console
-@@ -58,17 +106,17 @@ const struct consw dummy_con = {
+@@ -58,16 +58,16 @@ const struct consw dummy_con = {
      .owner =		THIS_MODULE,
      .con_startup =	dummycon_startup,
      .con_init =		dummycon_init,
@@ -78,7 +78,6 @@ index 9269d56..78d2a06 100644
 -    .con_switch =	DUMMY,
 -    .con_blank =	DUMMY,
 -    .con_font_set =	DUMMY,
--    .con_font_get =	DUMMY,
 -    .con_font_default =	DUMMY,
 -    .con_font_copy =	DUMMY,
 +    .con_deinit =	dummycon_deinit,
@@ -90,7 +89,6 @@ index 9269d56..78d2a06 100644
 +    .con_switch =	dummycon_switch,
 +    .con_blank =	dummycon_blank,
 +    .con_font_set =	dummycon_font_set,
-+    .con_font_get =	dummycon_font_get,
 +    .con_font_default =	dummycon_font_default,
 +    .con_font_copy =	dummycon_font_copy,
  };

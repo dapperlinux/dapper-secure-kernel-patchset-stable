@@ -9,5 +9,5 @@ index 2b4cf04..c73b25e 100644
 -	if ((c->x86 == 6)) {
 +	if (c->x86 == 6) {
  		/* Duron Rev A0 */
- 		if (c->x86_model == 3 && c->x86_mask == 0)
+ 		if (c->x86_model == 3 && c->x86_stepping == 0)
  			size = 64;

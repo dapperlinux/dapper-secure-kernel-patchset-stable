@@ -1,0 +1,343 @@
+diff --git a/arch/x86/entry/entry_64_compat.S b/arch/x86/entry/entry_64_compat.S
+index d76a97653980..92c55738d543 100644
+--- a/arch/x86/entry/entry_64_compat.S
++++ b/arch/x86/entry/entry_64_compat.S
+@@ -83,15 +83,25 @@ ENTRY(entry_SYSENTER_compat)
+ 	pushq	%rcx			/* pt_regs->cx */
+ 	pushq	$-ENOSYS		/* pt_regs->ax */
+ 	pushq   $0			/* pt_regs->r8  = 0 */
++	xorq	%r8, %r8		/* nospec   r8 */
+ 	pushq   $0			/* pt_regs->r9  = 0 */
++	xorq	%r9, %r9		/* nospec   r9 */
+ 	pushq   $0			/* pt_regs->r10 = 0 */
++	xorq	%r10, %r10		/* nospec   r10 */
+ 	pushq   $0			/* pt_regs->r11 = 0 */
++	xorq	%r11, %r11		/* nospec   r11 */
+ 	pushq   %rbx                    /* pt_regs->rbx */
++	xorl	%ebx, %ebx		/* nospec   rbx */
+ 	pushq   %rbp                    /* pt_regs->rbp (will be overwritten) */
++	xorl	%ebp, %ebp		/* nospec   rbp */
+ 	pushq   $0			/* pt_regs->r12 = 0 */
++	xorq	%r12, %r12		/* nospec   r12 */
+ 	pushq   $0			/* pt_regs->r13 = 0 */
++	xorq	%r13, %r13		/* nospec   r13 */
+ 	pushq   $0			/* pt_regs->r14 = 0 */
++	xorq	%r14, %r14		/* nospec   r14 */
+ 	pushq   $0			/* pt_regs->r15 = 0 */
++	xorq	%r15, %r15		/* nospec   r15 */
+ 	cld
+ 
+ 	/*
+@@ -209,15 +219,25 @@ ENTRY(entry_SYSCALL_compat)
+ 	pushq	%rbp			/* pt_regs->cx (stashed in bp) */
+ 	pushq	$-ENOSYS		/* pt_regs->ax */
+ 	pushq   $0			/* pt_regs->r8  = 0 */
++	xorq	%r8, %r8		/* nospec   r8 */
+ 	pushq   $0			/* pt_regs->r9  = 0 */
++	xorq	%r9, %r9		/* nospec   r9 */
+ 	pushq   $0			/* pt_regs->r10 = 0 */
++	xorq	%r10, %r10		/* nospec   r10 */
+ 	pushq   $0			/* pt_regs->r11 = 0 */
++	xorq	%r11, %r11		/* nospec   r11 */
+ 	pushq   %rbx                    /* pt_regs->rbx */
++	xorl	%ebx, %ebx		/* nospec   rbx */
+ 	pushq   %rbp                    /* pt_regs->rbp (will be overwritten) */
++	xorl	%ebp, %ebp		/* nospec   rbp */
+ 	pushq   $0			/* pt_regs->r12 = 0 */
++	xorq	%r12, %r12		/* nospec   r12 */
+ 	pushq   $0			/* pt_regs->r13 = 0 */
++	xorq	%r13, %r13		/* nospec   r13 */
+ 	pushq   $0			/* pt_regs->r14 = 0 */
++	xorq	%r14, %r14		/* nospec   r14 */
+ 	pushq   $0			/* pt_regs->r15 = 0 */
++	xorq	%r15, %r15		/* nospec   r15 */
+ 
+ 	/*
+ 	 * User mode is traced as though IRQs are on, and SYSENTER
+@@ -320,15 +340,25 @@ ENTRY(entry_INT80_compat)
+ 	pushq	%rcx			/* pt_regs->cx */
+ 	pushq	$-ENOSYS		/* pt_regs->ax */
+ 	pushq   $0			/* pt_regs->r8  = 0 */
++	xorq	%r8, %r8		/* nospec   r8 */
+ 	pushq   $0			/* pt_regs->r9  = 0 */
++	xorq	%r9, %r9		/* nospec   r9 */
+ 	pushq   $0			/* pt_regs->r10 = 0 */
++	xorq	%r10, %r10		/* nospec   r10 */
+ 	pushq   $0			/* pt_regs->r11 = 0 */
++	xorq	%r11, %r11		/* nospec   r11 */
+ 	pushq   %rbx                    /* pt_regs->rbx */
++	xorl	%ebx, %ebx		/* nospec   rbx */
+ 	pushq   %rbp                    /* pt_regs->rbp */
++	xorl	%ebp, %ebp		/* nospec   rbp */
+ 	pushq   %r12                    /* pt_regs->r12 */
++	xorq	%r12, %r12		/* nospec   r12 */
+ 	pushq   %r13                    /* pt_regs->r13 */
++	xorq	%r13, %r13		/* nospec   r13 */
+ 	pushq   %r14                    /* pt_regs->r14 */
++	xorq	%r14, %r14		/* nospec   r14 */
+ 	pushq   %r15                    /* pt_regs->r15 */
++	xorq	%r15, %r15		/* nospec   r15 */
+ 	cld
+ 
+ 	/*
+diff --git a/arch/x86/include/asm/barrier.h b/arch/x86/include/asm/barrier.h
+index 857590390397..78d1c6a3d221 100644
+--- a/arch/x86/include/asm/barrier.h
++++ b/arch/x86/include/asm/barrier.h
+@@ -39,7 +39,7 @@ static inline unsigned long array_index_mask_nospec(unsigned long index,
+ 
+ 	asm ("cmp %1,%2; sbb %0,%0;"
+ 			:"=r" (mask)
+-			:"r"(size),"r" (index)
++			:"g"(size),"r" (index)
+ 			:"cc");
+ 	return mask;
+ }
+diff --git a/arch/x86/include/asm/nospec-branch.h b/arch/x86/include/asm/nospec-branch.h
+index 300cc159b4a0..76b058533e47 100644
+--- a/arch/x86/include/asm/nospec-branch.h
++++ b/arch/x86/include/asm/nospec-branch.h
+@@ -6,6 +6,7 @@
+ #include <asm/alternative.h>
+ #include <asm/alternative-asm.h>
+ #include <asm/cpufeatures.h>
++#include <asm/msr-index.h>
+ 
+ #ifdef __ASSEMBLY__
+ 
+diff --git a/arch/x86/kernel/cpu/bugs.c b/arch/x86/kernel/cpu/bugs.c
+index 957ad443b786..baddc9ed3454 100644
+--- a/arch/x86/kernel/cpu/bugs.c
++++ b/arch/x86/kernel/cpu/bugs.c
+@@ -161,8 +161,7 @@ static enum spectre_v2_mitigation_cmd __init spectre_v2_parse_cmdline(void)
+ 	if (cmdline_find_option_bool(boot_command_line, "nospectre_v2"))
+ 		return SPECTRE_V2_CMD_NONE;
+ 	else {
+-		ret = cmdline_find_option(boot_command_line, "spectre_v2", arg,
+-					  sizeof(arg));
++		ret = cmdline_find_option(boot_command_line, "spectre_v2", arg, sizeof(arg));
+ 		if (ret < 0)
+ 			return SPECTRE_V2_CMD_AUTO;
+ 
+@@ -174,8 +173,7 @@ static enum spectre_v2_mitigation_cmd __init spectre_v2_parse_cmdline(void)
+ 		}
+ 
+ 		if (i >= ARRAY_SIZE(mitigation_options)) {
+-			pr_err("unknown option (%s). Switching to AUTO select\n",
+-			       mitigation_options[i].option);
++			pr_err("unknown option (%s). Switching to AUTO select\n", arg);
+ 			return SPECTRE_V2_CMD_AUTO;
+ 		}
+ 	}
+@@ -184,8 +182,7 @@ static enum spectre_v2_mitigation_cmd __init spectre_v2_parse_cmdline(void)
+ 	     cmd == SPECTRE_V2_CMD_RETPOLINE_AMD ||
+ 	     cmd == SPECTRE_V2_CMD_RETPOLINE_GENERIC) &&
+ 	    !IS_ENABLED(CONFIG_RETPOLINE)) {
+-		pr_err("%s selected but not compiled in. Switching to AUTO select\n",
+-		       mitigation_options[i].option);
++		pr_err("%s selected but not compiled in. Switching to AUTO select\n", mitigation_options[i].option);
+ 		return SPECTRE_V2_CMD_AUTO;
+ 	}
+ 
+@@ -255,14 +252,14 @@ static void __init spectre_v2_select_mitigation(void)
+ 			goto retpoline_auto;
+ 		break;
+ 	}
+-	pr_err("kernel not compiled with retpoline; no mitigation available!");
++	pr_err("Spectre mitigation: kernel not compiled with retpoline; no mitigation available!");
+ 	return;
+ 
+ retpoline_auto:
+ 	if (boot_cpu_data.x86_vendor == X86_VENDOR_AMD) {
+ 	retpoline_amd:
+ 		if (!boot_cpu_has(X86_FEATURE_LFENCE_RDTSC)) {
+-			pr_err("LFENCE not serializing. Switching to generic retpoline\n");
++			pr_err("Spectre mitigation: LFENCE not serializing, switching to generic retpoline\n");
+ 			goto retpoline_generic;
+ 		}
+ 		mode = retp_compiler() ? SPECTRE_V2_RETPOLINE_AMD :
+@@ -280,7 +277,7 @@ static void __init spectre_v2_select_mitigation(void)
+ 	pr_info("%s\n", spectre_v2_strings[mode]);
+ 
+ 	/*
+-	 * If neither SMEP or KPTI are available, there is a risk of
++	 * If neither SMEP nor PTI are available, there is a risk of
+ 	 * hitting userspace addresses in the RSB after a context switch
+ 	 * from a shallow call stack to a deeper one. To prevent this fill
+ 	 * the entire RSB, even when using IBRS.
+@@ -294,21 +291,20 @@ static void __init spectre_v2_select_mitigation(void)
+ 	if ((!boot_cpu_has(X86_FEATURE_KAISER) &&
+ 	     !boot_cpu_has(X86_FEATURE_SMEP)) || is_skylake_era()) {
+ 		setup_force_cpu_cap(X86_FEATURE_RSB_CTXSW);
+-		pr_info("Filling RSB on context switch\n");
++		pr_info("Spectre v2 mitigation: Filling RSB on context switch\n");
+ 	}
+ 
+ 	/* Initialize Indirect Branch Prediction Barrier if supported */
+ 	if (boot_cpu_has(X86_FEATURE_IBPB)) {
+ 		setup_force_cpu_cap(X86_FEATURE_USE_IBPB);
+-		pr_info("Enabling Indirect Branch Prediction Barrier\n");
++		pr_info("Spectre v2 mitigation: Enabling Indirect Branch Prediction Barrier\n");
+ 	}
+ }
+ 
+ #undef pr_fmt
+ 
+ #ifdef CONFIG_SYSFS
+-ssize_t cpu_show_meltdown(struct device *dev,
+-			  struct device_attribute *attr, char *buf)
++ssize_t cpu_show_meltdown(struct device *dev, struct device_attribute *attr, char *buf)
+ {
+ 	if (!boot_cpu_has_bug(X86_BUG_CPU_MELTDOWN))
+ 		return sprintf(buf, "Not affected\n");
+@@ -317,16 +313,14 @@ ssize_t cpu_show_meltdown(struct device *dev,
+ 	return sprintf(buf, "Vulnerable\n");
+ }
+ 
+-ssize_t cpu_show_spectre_v1(struct device *dev,
+-			    struct device_attribute *attr, char *buf)
++ssize_t cpu_show_spectre_v1(struct device *dev, struct device_attribute *attr, char *buf)
+ {
+ 	if (!boot_cpu_has_bug(X86_BUG_SPECTRE_V1))
+ 		return sprintf(buf, "Not affected\n");
+ 	return sprintf(buf, "Mitigation: __user pointer sanitization\n");
+ }
+ 
+-ssize_t cpu_show_spectre_v2(struct device *dev,
+-			    struct device_attribute *attr, char *buf)
++ssize_t cpu_show_spectre_v2(struct device *dev, struct device_attribute *attr, char *buf)
+ {
+ 	if (!boot_cpu_has_bug(X86_BUG_SPECTRE_V2))
+ 		return sprintf(buf, "Not affected\n");
+diff --git a/arch/x86/kernel/cpu/intel.c b/arch/x86/kernel/cpu/intel.c
+index 4097b43cba2d..6ed206bd9071 100644
+--- a/arch/x86/kernel/cpu/intel.c
++++ b/arch/x86/kernel/cpu/intel.c
+@@ -75,14 +75,13 @@ struct sku_microcode {
+ 	u32 microcode;
+ };
+ static const struct sku_microcode spectre_bad_microcodes[] = {
+-	{ INTEL_FAM6_KABYLAKE_DESKTOP,	0x0B,	0x84 },
+-	{ INTEL_FAM6_KABYLAKE_DESKTOP,	0x0A,	0x84 },
+-	{ INTEL_FAM6_KABYLAKE_DESKTOP,	0x09,	0x84 },
+-	{ INTEL_FAM6_KABYLAKE_MOBILE,	0x0A,	0x84 },
+-	{ INTEL_FAM6_KABYLAKE_MOBILE,	0x09,	0x84 },
++	{ INTEL_FAM6_KABYLAKE_DESKTOP,	0x0B,	0x80 },
++	{ INTEL_FAM6_KABYLAKE_DESKTOP,	0x0A,	0x80 },
++	{ INTEL_FAM6_KABYLAKE_DESKTOP,	0x09,	0x80 },
++	{ INTEL_FAM6_KABYLAKE_MOBILE,	0x0A,	0x80 },
++	{ INTEL_FAM6_KABYLAKE_MOBILE,	0x09,	0x80 },
+ 	{ INTEL_FAM6_SKYLAKE_X,		0x03,	0x0100013e },
+ 	{ INTEL_FAM6_SKYLAKE_X,		0x04,	0x0200003c },
+-	{ INTEL_FAM6_SKYLAKE_MOBILE,	0x03,	0xc2 },
+ 	{ INTEL_FAM6_SKYLAKE_DESKTOP,	0x03,	0xc2 },
+ 	{ INTEL_FAM6_BROADWELL_CORE,	0x04,	0x28 },
+ 	{ INTEL_FAM6_BROADWELL_GT3E,	0x01,	0x1b },
+@@ -95,8 +94,6 @@ static const struct sku_microcode spectre_bad_microcodes[] = {
+ 	{ INTEL_FAM6_HASWELL_X,		0x02,	0x3b },
+ 	{ INTEL_FAM6_HASWELL_X,		0x04,	0x10 },
+ 	{ INTEL_FAM6_IVYBRIDGE_X,	0x04,	0x42a },
+-	/* Updated in the 20180108 release; blacklist until we know otherwise */
+-	{ INTEL_FAM6_ATOM_GEMINI_LAKE,	0x01,	0x22 },
+ 	/* Observed in the wild */
+ 	{ INTEL_FAM6_SANDYBRIDGE_X,	0x06,	0x61b },
+ 	{ INTEL_FAM6_SANDYBRIDGE_X,	0x07,	0x712 },
+@@ -108,7 +105,7 @@ static bool bad_spectre_microcode(struct cpuinfo_x86 *c)
+ 
+ 	for (i = 0; i < ARRAY_SIZE(spectre_bad_microcodes); i++) {
+ 		if (c->x86_model == spectre_bad_microcodes[i].model &&
+-		    c->x86_mask == spectre_bad_microcodes[i].stepping)
++		    c->x86_stepping == spectre_bad_microcodes[i].stepping)
+ 			return (c->microcode <= spectre_bad_microcodes[i].microcode);
+ 	}
+ 	return false;
+diff --git a/arch/x86/kvm/vmx.c b/arch/x86/kvm/vmx.c
+index d66224e695cf..1e16821c1378 100644
+--- a/arch/x86/kvm/vmx.c
++++ b/arch/x86/kvm/vmx.c
+@@ -9606,8 +9606,8 @@ static inline bool nested_vmx_merge_msr_bitmap(struct kvm_vcpu *vcpu,
+ 	 *    updated to reflect this when L1 (or its L2s) actually write to
+ 	 *    the MSR.
+ 	 */
+-	bool pred_cmd = msr_write_intercepted_l01(vcpu, MSR_IA32_PRED_CMD);
+-	bool spec_ctrl = msr_write_intercepted_l01(vcpu, MSR_IA32_SPEC_CTRL);
++	bool pred_cmd = !msr_write_intercepted_l01(vcpu, MSR_IA32_PRED_CMD);
++	bool spec_ctrl = !msr_write_intercepted_l01(vcpu, MSR_IA32_SPEC_CTRL);
+ 
+ 	if (!nested_cpu_has_virt_x2apic_mode(vmcs12) &&
+ 	    !pred_cmd && !spec_ctrl)
+diff --git a/include/linux/kaiser.h b/include/linux/kaiser.h
+index 58c55b1589d0..b56c19010480 100644
+--- a/include/linux/kaiser.h
++++ b/include/linux/kaiser.h
+@@ -32,7 +32,7 @@ static inline void kaiser_init(void)
+ {
+ }
+ static inline int kaiser_add_mapping(unsigned long addr,
+-				     unsigned long size, unsigned long flags)
++				     unsigned long size, u64 flags)
+ {
+ 	return 0;
+ }
+diff --git a/include/linux/nospec.h b/include/linux/nospec.h
+index b99bced39ac2..fbc98e2c8228 100644
+--- a/include/linux/nospec.h
++++ b/include/linux/nospec.h
+@@ -19,20 +19,6 @@
+ static inline unsigned long array_index_mask_nospec(unsigned long index,
+ 						    unsigned long size)
+ {
+-	/*
+-	 * Warn developers about inappropriate array_index_nospec() usage.
+-	 *
+-	 * Even if the CPU speculates past the WARN_ONCE branch, the
+-	 * sign bit of @index is taken into account when generating the
+-	 * mask.
+-	 *
+-	 * This warning is compiled out when the compiler can infer that
+-	 * @index and @size are less than LONG_MAX.
+-	 */
+-	if (WARN_ONCE(index > LONG_MAX || size > LONG_MAX,
+-			"array_index_nospec() limited to range of [0, LONG_MAX]\n"))
+-		return 0;
+-
+ 	/*
+ 	 * Always calculate and emit the mask even if the compiler
+ 	 * thinks the mask is not needed. The compiler does not take
+@@ -43,6 +29,26 @@ static inline unsigned long array_index_mask_nospec(unsigned long index,
+ }
+ #endif
+ 
++/*
++ * Warn developers about inappropriate array_index_nospec() usage.
++ *
++ * Even if the CPU speculates past the WARN_ONCE branch, the
++ * sign bit of @index is taken into account when generating the
++ * mask.
++ *
++ * This warning is compiled out when the compiler can infer that
++ * @index and @size are less than LONG_MAX.
++ */
++#define array_index_mask_nospec_check(index, size)				\
++({										\
++	if (WARN_ONCE(index > LONG_MAX || size > LONG_MAX,			\
++	    "array_index_nospec() limited to range of [0, LONG_MAX]\n"))	\
++		_mask = 0;							\
++	else									\
++		_mask = array_index_mask_nospec(index, size);			\
++	_mask;									\
++})
++
+ /*
+  * array_index_nospec - sanitize an array index after a bounds check
+  *
+@@ -61,7 +67,7 @@ static inline unsigned long array_index_mask_nospec(unsigned long index,
+ ({									\
+ 	typeof(index) _i = (index);					\
+ 	typeof(size) _s = (size);					\
+-	unsigned long _mask = array_index_mask_nospec(_i, _s);		\
++	unsigned long _mask = array_index_mask_nospec_check(_i, _s);	\
+ 									\
+ 	BUILD_BUG_ON(sizeof(_i) > sizeof(long));			\
+ 	BUILD_BUG_ON(sizeof(_s) > sizeof(long));			\
+
