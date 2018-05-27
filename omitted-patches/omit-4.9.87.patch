@@ -1,0 +1,510 @@
+diff --git a/arch/x86/include/asm/nospec-branch.h b/arch/x86/include/asm/nospec-branch.h
+index 76b058533e47..81a1be326571 100644
+--- a/arch/x86/include/asm/nospec-branch.h
++++ b/arch/x86/include/asm/nospec-branch.h
+@@ -177,4 +177,41 @@ static inline void indirect_branch_prediction_barrier(void)
+ }
+ 
+ #endif /* __ASSEMBLY__ */
++
++/*
++ * Below is used in the eBPF JIT compiler and emits the byte sequence
++ * for the following assembly:
++ *
++ * With retpolines configured:
++ *
++ *    callq do_rop
++ *  spec_trap:
++ *    pause
++ *    lfence
++ *    jmp spec_trap
++ *  do_rop:
++ *    mov %rax,(%rsp)
++ *    retq
++ *
++ * Without retpolines configured:
++ *
++ *    jmp *%rax
++ */
++#ifdef CONFIG_RETPOLINE
++# define RETPOLINE_RAX_BPF_JIT_SIZE	17
++# define RETPOLINE_RAX_BPF_JIT()				\
++	EMIT1_off32(0xE8, 7);	 /* callq do_rop */		\
++	/* spec_trap: */					\
++	EMIT2(0xF3, 0x90);       /* pause */			\
++	EMIT3(0x0F, 0xAE, 0xE8); /* lfence */			\
++	EMIT2(0xEB, 0xF9);       /* jmp spec_trap */		\
++	/* do_rop: */						\
++	EMIT4(0x48, 0x89, 0x04, 0x24); /* mov %rax,(%rsp) */	\
++	EMIT1(0xC3);             /* retq */
++#else
++# define RETPOLINE_RAX_BPF_JIT_SIZE	2
++# define RETPOLINE_RAX_BPF_JIT()				\
++	EMIT2(0xFF, 0xE0);	 /* jmp *%rax */
++#endif
++
+ #endif /* _ASM_X86_NOSPEC_BRANCH_H_ */
+diff --git a/arch/x86/kvm/svm.c b/arch/x86/kvm/svm.c
+index be644afab1bb..24d2a3ee743f 100644
+--- a/arch/x86/kvm/svm.c
++++ b/arch/x86/kvm/svm.c
+@@ -44,6 +44,7 @@
+ #include <asm/debugreg.h>
+ #include <asm/kvm_para.h>
+ #include <asm/irq_remapping.h>
++#include <asm/microcode.h>
+ #include <asm/nospec-branch.h>
+ 
+ #include <asm/virtext.h>
+@@ -4919,7 +4920,7 @@ static void svm_vcpu_run(struct kvm_vcpu *vcpu)
+ 	 * being speculatively taken.
+ 	 */
+ 	if (svm->spec_ctrl)
+-		wrmsrl(MSR_IA32_SPEC_CTRL, svm->spec_ctrl);
++		native_wrmsrl(MSR_IA32_SPEC_CTRL, svm->spec_ctrl);
+ 
+ 	asm volatile (
+ 		"push %%" _ASM_BP "; \n\t"
+@@ -5028,11 +5029,11 @@ static void svm_vcpu_run(struct kvm_vcpu *vcpu)
+ 	 * If the L02 MSR bitmap does not intercept the MSR, then we need to
+ 	 * save it.
+ 	 */
+-	if (!msr_write_intercepted(vcpu, MSR_IA32_SPEC_CTRL))
+-		rdmsrl(MSR_IA32_SPEC_CTRL, svm->spec_ctrl);
++	if (unlikely(!msr_write_intercepted(vcpu, MSR_IA32_SPEC_CTRL)))
++		svm->spec_ctrl = native_read_msr(MSR_IA32_SPEC_CTRL);
+ 
+ 	if (svm->spec_ctrl)
+-		wrmsrl(MSR_IA32_SPEC_CTRL, 0);
++		native_wrmsrl(MSR_IA32_SPEC_CTRL, 0);
+ 
+ 	/* Eliminate branch target predictions from guest mode */
+ 	vmexit_fill_RSB();
+diff --git a/arch/x86/kvm/vmx.c b/arch/x86/kvm/vmx.c
+index c51aaac953b4..0f3bb4632310 100644
+--- a/arch/x86/kvm/vmx.c
++++ b/arch/x86/kvm/vmx.c
+@@ -49,6 +49,7 @@
+ #include <asm/kexec.h>
+ #include <asm/apic.h>
+ #include <asm/irq_remapping.h>
++#include <asm/microcode.h>
+ #include <asm/nospec-branch.h>
+ 
+ #include "trace.h"
+@@ -8906,7 +8907,7 @@ static void __noclone vmx_vcpu_run(struct kvm_vcpu *vcpu)
+ 	 * being speculatively taken.
+ 	 */
+ 	if (vmx->spec_ctrl)
+-		wrmsrl(MSR_IA32_SPEC_CTRL, vmx->spec_ctrl);
++		native_wrmsrl(MSR_IA32_SPEC_CTRL, vmx->spec_ctrl);
+ 
+ 	vmx->__launched = vmx->loaded_vmcs->launched;
+ 	asm(
+@@ -9041,11 +9042,11 @@ static void __noclone vmx_vcpu_run(struct kvm_vcpu *vcpu)
+ 	 * If the L02 MSR bitmap does not intercept the MSR, then we need to
+ 	 * save it.
+ 	 */
+-	if (!msr_write_intercepted(vcpu, MSR_IA32_SPEC_CTRL))
+-		rdmsrl(MSR_IA32_SPEC_CTRL, vmx->spec_ctrl);
++	if (unlikely(!msr_write_intercepted(vcpu, MSR_IA32_SPEC_CTRL)))
++		vmx->spec_ctrl = native_read_msr(MSR_IA32_SPEC_CTRL);
+ 
+ 	if (vmx->spec_ctrl)
+-		wrmsrl(MSR_IA32_SPEC_CTRL, 0);
++		native_wrmsrl(MSR_IA32_SPEC_CTRL, 0);
+ 
+ 	/* Eliminate branch target predictions from guest mode */
+ 	vmexit_fill_RSB();
+diff --git a/arch/x86/mm/tlb.c b/arch/x86/mm/tlb.c
+index 578973ade71b..eac92e2d171b 100644
+--- a/arch/x86/mm/tlb.c
++++ b/arch/x86/mm/tlb.c
+@@ -10,6 +10,7 @@
+ 
+ #include <asm/tlbflush.h>
+ #include <asm/mmu_context.h>
++#include <asm/nospec-branch.h>
+ #include <asm/cache.h>
+ #include <asm/apic.h>
+ #include <asm/uv/uv.h>
+@@ -29,6 +30,8 @@
+  *	Implement flush IPI by CALL_FUNCTION_VECTOR, Alex Shi
+  */
+ 
++atomic64_t last_mm_ctx_id = ATOMIC64_INIT(1);
++
+ struct flush_tlb_info {
+ 	struct mm_struct *flush_mm;
+ 	unsigned long flush_start;
+@@ -104,6 +107,28 @@ void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
+ 	unsigned cpu = smp_processor_id();
+ 
+ 	if (likely(prev != next)) {
++		u64 last_ctx_id = this_cpu_read(cpu_tlbstate.last_ctx_id);
++
++		/*
++		 * Avoid user/user BTB poisoning by flushing the branch
++		 * predictor when switching between processes. This stops
++		 * one process from doing Spectre-v2 attacks on another.
++		 *
++		 * As an optimization, flush indirect branches only when
++		 * switching into processes that disable dumping. This
++		 * protects high value processes like gpg, without having
++		 * too high performance overhead. IBPB is *expensive*!
++		 *
++		 * This will not flush branches when switching into kernel
++		 * threads. It will also not flush if we switch to idle
++		 * thread and back to the same process. It will flush if we
++		 * switch to a different non-dumpable process.
++		 */
++		if (tsk && tsk->mm &&
++		    tsk->mm->context.ctx_id != last_ctx_id &&
++		    get_dumpable(tsk->mm) != SUID_DUMP_USER)
++			indirect_branch_prediction_barrier();
++
+ 		if (IS_ENABLED(CONFIG_VMAP_STACK)) {
+ 			/*
+ 			 * If our current stack is in vmalloc space and isn't
+@@ -118,6 +143,14 @@ void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
+ 				set_pgd(pgd, init_mm.pgd[stack_pgd_index]);
+ 		}
+ 
++		/*
++		 * Record last user mm's context id, so we can avoid
++		 * flushing branch buffer with IBPB if we switch back
++		 * to the same user.
++		 */
++		if (next != &init_mm)
++			this_cpu_write(cpu_tlbstate.last_ctx_id, next->context.ctx_id);
++
+ 		this_cpu_write(cpu_tlbstate.state, TLBSTATE_OK);
+ 		this_cpu_write(cpu_tlbstate.active_mm, next);
+ 
+diff --git a/arch/x86/net/bpf_jit_comp.c b/arch/x86/net/bpf_jit_comp.c
+index 7840331d3056..1f7ed2ed6ff7 100644
+--- a/arch/x86/net/bpf_jit_comp.c
++++ b/arch/x86/net/bpf_jit_comp.c
+@@ -12,6 +12,7 @@
+ #include <linux/filter.h>
+ #include <linux/if_vlan.h>
+ #include <asm/cacheflush.h>
++#include <asm/nospec-branch.h>
+ #include <linux/bpf.h>
+ 
+ int bpf_jit_enable __read_mostly;
+@@ -281,7 +282,7 @@ static void emit_bpf_tail_call(u8 **pprog)
+ 	EMIT2(0x89, 0xD2);                        /* mov edx, edx */
+ 	EMIT3(0x39, 0x56,                         /* cmp dword ptr [rsi + 16], edx */
+ 	      offsetof(struct bpf_array, map.max_entries));
+-#define OFFSET1 43 /* number of bytes to jump */
++#define OFFSET1 (41 + RETPOLINE_RAX_BPF_JIT_SIZE) /* number of bytes to jump */
+ 	EMIT2(X86_JBE, OFFSET1);                  /* jbe out */
+ 	label1 = cnt;
+ 
+@@ -290,7 +291,7 @@ static void emit_bpf_tail_call(u8 **pprog)
+ 	 */
+ 	EMIT2_off32(0x8B, 0x85, -STACKSIZE + 36); /* mov eax, dword ptr [rbp - 516] */
+ 	EMIT3(0x83, 0xF8, MAX_TAIL_CALL_CNT);     /* cmp eax, MAX_TAIL_CALL_CNT */
+-#define OFFSET2 32
++#define OFFSET2 (30 + RETPOLINE_RAX_BPF_JIT_SIZE)
+ 	EMIT2(X86_JA, OFFSET2);                   /* ja out */
+ 	label2 = cnt;
+ 	EMIT3(0x83, 0xC0, 0x01);                  /* add eax, 1 */
+@@ -304,7 +305,7 @@ static void emit_bpf_tail_call(u8 **pprog)
+ 	 *   goto out;
+ 	 */
+ 	EMIT3(0x48, 0x85, 0xC0);		  /* test rax,rax */
+-#define OFFSET3 10
++#define OFFSET3 (8 + RETPOLINE_RAX_BPF_JIT_SIZE)
+ 	EMIT2(X86_JE, OFFSET3);                   /* je out */
+ 	label3 = cnt;
+ 
+@@ -317,7 +318,7 @@ static void emit_bpf_tail_call(u8 **pprog)
+ 	 * rdi == ctx (1st arg)
+ 	 * rax == prog->bpf_func + prologue_size
+ 	 */
+-	EMIT2(0xFF, 0xE0);                        /* jmp rax */
++	RETPOLINE_RAX_BPF_JIT();
+ 
+ 	/* out: */
+ 	BUILD_BUG_ON(cnt - label1 != OFFSET1);
+diff --git a/arch/x86/platform/intel-mid/intel-mid.c b/arch/x86/platform/intel-mid/intel-mid.c
+index 7850128f0026..834783bc6752 100644
+--- a/arch/x86/platform/intel-mid/intel-mid.c
++++ b/arch/x86/platform/intel-mid/intel-mid.c
+@@ -79,7 +79,7 @@ static void intel_mid_power_off(void)
+ 
+ static void intel_mid_reboot(void)
+ {
+-	intel_scu_ipc_simple_command(IPCMSG_COLD_BOOT, 0);
++	intel_scu_ipc_simple_command(IPCMSG_COLD_RESET, 0);
+ }
+ 
+ static unsigned long __init intel_mid_calibrate_tsc(void)
+diff --git a/arch/x86/xen/suspend.c b/arch/x86/xen/suspend.c
+index 7f664c416faf..4ecd0de08557 100644
+--- a/arch/x86/xen/suspend.c
++++ b/arch/x86/xen/suspend.c
+@@ -1,11 +1,14 @@
+ #include <linux/types.h>
+ #include <linux/tick.h>
++#include <linux/percpu-defs.h>
+ 
+ #include <xen/xen.h>
+ #include <xen/interface/xen.h>
+ #include <xen/grant_table.h>
+ #include <xen/events.h>
+ 
++#include <asm/cpufeatures.h>
++#include <asm/msr-index.h>
+ #include <asm/xen/hypercall.h>
+ #include <asm/xen/page.h>
+ #include <asm/fixmap.h>
+@@ -68,6 +71,8 @@ static void xen_pv_post_suspend(int suspend_cancelled)
+ 	xen_mm_unpin_all();
+ }
+ 
++static DEFINE_PER_CPU(u64, spec_ctrl);
++
+ void xen_arch_pre_suspend(void)
+ {
+ 	if (xen_pv_domain())
+@@ -84,6 +89,9 @@ void xen_arch_post_suspend(int cancelled)
+ 
+ static void xen_vcpu_notify_restore(void *data)
+ {
++	if (xen_pv_domain() && boot_cpu_has(X86_FEATURE_SPEC_CTRL))
++		wrmsrl(MSR_IA32_SPEC_CTRL, this_cpu_read(spec_ctrl));
++
+ 	/* Boot processor notified via generic timekeeping_resume() */
+ 	if (smp_processor_id() == 0)
+ 		return;
+@@ -93,7 +101,15 @@ static void xen_vcpu_notify_restore(void *data)
+ 
+ static void xen_vcpu_notify_suspend(void *data)
+ {
++	u64 tmp;
++
+ 	tick_suspend_local();
++
++	if (xen_pv_domain() && boot_cpu_has(X86_FEATURE_SPEC_CTRL)) {
++		rdmsrl(MSR_IA32_SPEC_CTRL, tmp);
++		this_cpu_write(spec_ctrl, tmp);
++		wrmsrl(MSR_IA32_SPEC_CTRL, 0);
++	}
+ }
+ 
+ void xen_arch_resume(void)
+diff --git a/include/linux/nospec.h b/include/linux/nospec.h
+index fbc98e2c8228..132e3f5a2e0d 100644
+--- a/include/linux/nospec.h
++++ b/include/linux/nospec.h
+@@ -72,7 +72,6 @@ static inline unsigned long array_index_mask_nospec(unsigned long index,
+ 	BUILD_BUG_ON(sizeof(_i) > sizeof(long));			\
+ 	BUILD_BUG_ON(sizeof(_s) > sizeof(long));			\
+ 									\
+-	_i &= _mask;							\
+-	_i;								\
++	(typeof(_i)) (_i & _mask);					\
+ })
+ #endif /* _LINUX_NOSPEC_H */
+diff --git a/net/mpls/af_mpls.c b/net/mpls/af_mpls.c
+index c5a5a6959c1b..ffab94d61e1d 100644
+--- a/net/mpls/af_mpls.c
++++ b/net/mpls/af_mpls.c
+@@ -7,6 +7,7 @@
+ #include <linux/if_arp.h>
+ #include <linux/ipv6.h>
+ #include <linux/mpls.h>
++#include <linux/nospec.h>
+ #include <linux/vmalloc.h>
+ #include <net/ip.h>
+ #include <net/dst.h>
+@@ -756,6 +757,22 @@ static int mpls_nh_build_multi(struct mpls_route_config *cfg,
+ 	return err;
+ }
+ 
++static bool mpls_label_ok(struct net *net, unsigned int *index)
++{
++	bool is_ok = true;
++
++	/* Reserved labels may not be set */
++	if (*index < MPLS_LABEL_FIRST_UNRESERVED)
++		is_ok = false;
++
++	/* The full 20 bit range may not be supported. */
++	if (is_ok && *index >= net->mpls.platform_labels)
++		is_ok = false;
++
++	*index = array_index_nospec(*index, net->mpls.platform_labels);
++	return is_ok;
++}
++
+ static int mpls_route_add(struct mpls_route_config *cfg)
+ {
+ 	struct mpls_route __rcu **platform_label;
+@@ -774,12 +791,7 @@ static int mpls_route_add(struct mpls_route_config *cfg)
+ 		index = find_free_label(net);
+ 	}
+ 
+-	/* Reserved labels may not be set */
+-	if (index < MPLS_LABEL_FIRST_UNRESERVED)
+-		goto errout;
+-
+-	/* The full 20 bit range may not be supported. */
+-	if (index >= net->mpls.platform_labels)
++	if (!mpls_label_ok(net, &index))
+ 		goto errout;
+ 
+ 	/* Append makes no sense with mpls */
+@@ -840,12 +852,7 @@ static int mpls_route_del(struct mpls_route_config *cfg)
+ 
+ 	index = cfg->rc_label;
+ 
+-	/* Reserved labels may not be removed */
+-	if (index < MPLS_LABEL_FIRST_UNRESERVED)
+-		goto errout;
+-
+-	/* The full 20 bit range may not be supported */
+-	if (index >= net->mpls.platform_labels)
++	if (!mpls_label_ok(net, &index))
+ 		goto errout;
+ 
+ 	mpls_route_update(net, index, NULL, &cfg->rc_nlinfo);
+@@ -1279,10 +1286,9 @@ static int rtm_to_route_config(struct sk_buff *skb,  struct nlmsghdr *nlh,
+ 					   &cfg->rc_label))
+ 				goto errout;
+ 
+-			/* Reserved labels may not be set */
+-			if (cfg->rc_label < MPLS_LABEL_FIRST_UNRESERVED)
++			if (!mpls_label_ok(cfg->rc_nlinfo.nl_net,
++					   &cfg->rc_label))
+ 				goto errout;
+-
+ 			break;
+ 		}
+ 		case RTA_VIA:
+diff --git a/arch/parisc/kernel/cache.c b/arch/parisc/kernel/cache.c
+index df757c9675e6..025afe5f17a7 100644
+--- a/arch/parisc/kernel/cache.c
++++ b/arch/parisc/kernel/cache.c
+@@ -464,10 +464,10 @@ EXPORT_SYMBOL(copy_user_page);
+ int __flush_tlb_range(unsigned long sid, unsigned long start,
+ 		      unsigned long end)
+ {
+-	unsigned long flags, size;
++	unsigned long flags;
+ 
+-	size = (end - start);
+-	if (size >= parisc_tlb_flush_threshold) {
++	if ((!IS_ENABLED(CONFIG_SMP) || !arch_irqs_disabled()) &&
++	    end - start >= parisc_tlb_flush_threshold) {
+ 		flush_tlb_all();
+ 		return 1;
+ 	}
+@@ -538,13 +538,11 @@ void flush_cache_mm(struct mm_struct *mm)
+ 	struct vm_area_struct *vma;
+ 	pgd_t *pgd;
+ 
+-	/* Flush the TLB to avoid speculation if coherency is required. */
+-	if (parisc_requires_coherency())
+-		flush_tlb_all();
+-
+ 	/* Flushing the whole cache on each cpu takes forever on
+ 	   rp3440, etc.  So, avoid it if the mm isn't too big.  */
+-	if (mm_total_size(mm) >= parisc_cache_flush_threshold) {
++	if ((!IS_ENABLED(CONFIG_SMP) || !arch_irqs_disabled()) &&
++	    mm_total_size(mm) >= parisc_cache_flush_threshold) {
++		flush_tlb_all();
+ 		flush_cache_all();
+ 		return;
+ 	}
+@@ -552,9 +550,9 @@ void flush_cache_mm(struct mm_struct *mm)
+ 	if (mm->context == mfsp(3)) {
+ 		for (vma = mm->mmap; vma; vma = vma->vm_next) {
+ 			flush_user_dcache_range_asm(vma->vm_start, vma->vm_end);
+-			if ((vma->vm_flags & VM_EXEC) == 0)
+-				continue;
+-			flush_user_icache_range_asm(vma->vm_start, vma->vm_end);
++			if (vma->vm_flags & VM_EXEC)
++				flush_user_icache_range_asm(vma->vm_start, vma->vm_end);
++			flush_tlb_range(vma, vma->vm_start, vma->vm_end);
+ 		}
+ 		return;
+ 	}
+@@ -598,14 +596,9 @@ flush_user_icache_range(unsigned long start, unsigned long end)
+ void flush_cache_range(struct vm_area_struct *vma,
+ 		unsigned long start, unsigned long end)
+ {
+-	BUG_ON(!vma->vm_mm->context);
+-
+-	/* Flush the TLB to avoid speculation if coherency is required. */
+-	if (parisc_requires_coherency())
++	if ((!IS_ENABLED(CONFIG_SMP) || !arch_irqs_disabled()) &&
++	    end - start >= parisc_cache_flush_threshold) {
+ 		flush_tlb_range(vma, start, end);
+-
+-	if ((end - start) >= parisc_cache_flush_threshold
+-	    || vma->vm_mm->context != mfsp(3)) {
+ 		flush_cache_all();
+ 		return;
+ 	}
+@@ -613,6 +606,7 @@ void flush_cache_range(struct vm_area_struct *vma,
+ 	flush_user_dcache_range_asm(start, end);
+ 	if (vma->vm_flags & VM_EXEC)
+ 		flush_user_icache_range_asm(start, end);
++	flush_tlb_range(vma, start, end);
+ }
+ 
+ void
+@@ -621,8 +615,7 @@ flush_cache_page(struct vm_area_struct *vma, unsigned long vmaddr, unsigned long
+ 	BUG_ON(!vma->vm_mm->context);
+ 
+ 	if (pfn_valid(pfn)) {
+-		if (parisc_requires_coherency())
+-			flush_tlb_page(vma, vmaddr);
++		flush_tlb_page(vma, vmaddr);
+ 		__flush_cache_page(vma, vmaddr, PFN_PHYS(pfn));
+ 	}
+ }
+@@ -630,21 +623,33 @@ flush_cache_page(struct vm_area_struct *vma, unsigned long vmaddr, unsigned long
+ void flush_kernel_vmap_range(void *vaddr, int size)
+ {
+ 	unsigned long start = (unsigned long)vaddr;
++	unsigned long end = start + size;
+ 
+-	if ((unsigned long)size > parisc_cache_flush_threshold)
++	if ((!IS_ENABLED(CONFIG_SMP) || !arch_irqs_disabled()) &&
++	    (unsigned long)size >= parisc_cache_flush_threshold) {
++		flush_tlb_kernel_range(start, end);
+ 		flush_data_cache();
+-	else
+-		flush_kernel_dcache_range_asm(start, start + size);
++		return;
++	}
++
++	flush_kernel_dcache_range_asm(start, end);
++	flush_tlb_kernel_range(start, end);
+ }
+ EXPORT_SYMBOL(flush_kernel_vmap_range);
+ 
+ void invalidate_kernel_vmap_range(void *vaddr, int size)
+ {
+ 	unsigned long start = (unsigned long)vaddr;
++	unsigned long end = start + size;
+ 
+-	if ((unsigned long)size > parisc_cache_flush_threshold)
++	if ((!IS_ENABLED(CONFIG_SMP) || !arch_irqs_disabled()) &&
++	    (unsigned long)size >= parisc_cache_flush_threshold) {
++		flush_tlb_kernel_range(start, end);
+ 		flush_data_cache();
+-	else
+-		flush_kernel_dcache_range_asm(start, start + size);
++		return;
++	}
++
++	purge_kernel_dcache_range_asm(start, end);
++	flush_tlb_kernel_range(start, end);
+ }
+ EXPORT_SYMBOL(invalidate_kernel_vmap_range);
