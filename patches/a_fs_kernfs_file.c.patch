@@ -29,15 +29,6 @@ index 78219d5..b602ed6 100644
  	ops = kernfs_ops(of->kn);
  	if (ops->read)
  		len = ops->read(of, buf, len, *ppos);
-@@ -275,7 +275,7 @@ static ssize_t kernfs_fop_write(struct file *file, const char __user *user_buf,
- {
- 	struct kernfs_open_file *of = kernfs_of(file);
- 	const struct kernfs_ops *ops;
--	size_t len;
-+	ssize_t len;
- 	char *buf;
- 
- 	if (of->atomic_write_len) {
 @@ -391,12 +391,12 @@ static int kernfs_vma_page_mkwrite(struct vm_area_struct *vma,
  	return ret;
  }

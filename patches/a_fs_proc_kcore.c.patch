@@ -24,42 +24,6 @@ index 5c89a07..1749d06 100644
  	while (buflen) {
  		struct kcore_list *m;
  
-@@ -508,24 +509,22 @@ read_kcore(struct file *file, char __user *buffer, size_t buflen, loff_t *fpos)
- 		} else {
- 			if (kern_addr_valid(start)) {
- 				unsigned long n;
-+				mm_segment_t oldfs;
- 
- 				/*
- 				 * Using bounce buffer to bypass the
- 				 * hardened user copy kernel text checks.
- 				 */
--				memcpy(buf, (char *) start, tsz);
--				n = copy_to_user(buffer, buf, tsz);
--				/*
--				 * We cannot distinguish between fault on source
--				 * and fault on destination. When this happens
--				 * we clear too and hope it will trigger the
--				 * EFAULT again.
--				 */
--				if (n) { 
--					if (clear_user(buffer + tsz - n,
--								n))
--						return -EFAULT;
--				}
-+				oldfs = get_fs();
-+				set_fs(KERNEL_DS);
-+				n = __copy_from_user(buf, (const void __user *)start, tsz);
-+				set_fs(oldfs);
-+				if (n)
-+					n = clear_user(buffer, tsz);
-+				else
-+					n = copy_to_user(buffer, buf, tsz);
-+				if (n)
-+					return -EFAULT;
- 			} else {
- 				if (clear_user(buffer, tsz))
- 					return -EFAULT;
 @@ -545,10 +544,13 @@ read_kcore(struct file *file, char __user *buffer, size_t buflen, loff_t *fpos)
  
  static int open_kcore(struct inode *inode, struct file *filp)
