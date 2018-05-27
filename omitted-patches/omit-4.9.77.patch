@@ -568,26 +568,6 @@ index 44b8762fa0c7..b15aa4083dfd 100644
 +INDIRECT_THUNK(bp)
 +INDIRECT_THUNK(sp)
 +#endif /* CONFIG_RETPOLINE */
-diff --git a/arch/x86/include/asm/asm.h b/arch/x86/include/asm/asm.h
-index 7acb51c49fec..00523524edbf 100644
---- a/arch/x86/include/asm/asm.h
-+++ b/arch/x86/include/asm/asm.h
-@@ -125,4 +125,15 @@
- /* For C file, we already have NOKPROBE_SYMBOL macro */
- #endif
- 
-+#ifndef __ASSEMBLY__
-+/*
-+ * This output constraint should be used for any inline asm which has a "call"
-+ * instruction.  Otherwise the asm may be inserted before the frame pointer
-+ * gets set up by the containing function.  If you forget to do this, objtool
-+ * may print a "call without frame pointer save/setup" warning.
-+ */
-+register unsigned long current_stack_pointer asm(_ASM_SP);
-+#define ASM_CALL_CONSTRAINT "+r" (current_stack_pointer)
-+#endif
-+
- #endif /* _ASM_X86_ASM_H */
 diff --git a/arch/x86/include/asm/cpufeature.h b/arch/x86/include/asm/cpufeature.h
 index 1d2b69fc0ceb..9ea67a04ff4f 100644
 --- a/arch/x86/include/asm/cpufeature.h

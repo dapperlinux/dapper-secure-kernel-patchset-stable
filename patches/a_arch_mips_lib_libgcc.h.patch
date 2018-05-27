@@ -2,7 +2,7 @@ diff --git a/arch/mips/lib/libgcc.h b/arch/mips/lib/libgcc.h
 index 05909d58..b03284b 100644
 --- a/arch/mips/lib/libgcc.h
 +++ b/arch/mips/lib/libgcc.h
-@@ -5,13 +5,19 @@
+@@ -5,9 +5,15 @@
  
  typedef int word_type __attribute__ ((mode (__word__)));
  
@@ -17,14 +17,18 @@ index 05909d58..b03284b 100644
 -	int high, low;
 +	long high, low;
  };
+ 
+ struct TWstruct {
+@@ -15,7 +21,7 @@ struct TWstruct {
+ };
  #elif defined(__LITTLE_ENDIAN)
  struct DWstruct {
 -	int low, high;
 +	long low, high;
  };
- #else
- #error I feel sick.
-@@ -19,7 +25,7 @@ struct DWstruct {
+ 
+ struct TWstruct {
+@@ -27,7 +33,7 @@ struct TWstruct {
  
  typedef union {
  	struct DWstruct s;
@@ -32,4 +36,4 @@ index 05909d58..b03284b 100644
 +	DWtype ll;
  } DWunion;
  
- #endif /* __ASM_LIBGCC_H */
+ #if defined(CONFIG_64BIT) && defined(CONFIG_CPU_MIPSR6)

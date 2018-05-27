@@ -2,11 +2,11 @@ diff --git a/net/sctp/socket.c b/net/sctp/socket.c
 index 6734420..aa1101c 100644
 --- a/net/sctp/socket.c
 +++ b/net/sctp/socket.c
-@@ -4719,7 +4719,7 @@ static int sctp_getsockopt_autoclose(struct sock *sk, int len, char __user *optv
+@@ -4765,7 +4765,7 @@ static int sctp_getsockopt_autoclose(struct sock *sk, int len, char __user *optv
  	len = sizeof(int);
  	if (put_user(len, optlen))
  		return -EFAULT;
--	if (copy_to_user(optval, &sctp_sk(sk)->autoclose, sizeof(int)))
+-	if (copy_to_user(optval, &sctp_sk(sk)->autoclose, len))
 +	if (put_user(sctp_sk(sk)->autoclose, (int __user *)optval))
  		return -EFAULT;
  	return 0;
