@@ -9,7 +9,7 @@ index 2625872..9f3ad72 100644
 +#include <linux/irqreturn.h>
  #include <linux/module.h>
  #include <linux/netdevice.h>
- #include <linux/phy.h>
+ #include <linux/of.h>
 @@ -1200,7 +1201,7 @@ static int ftgmac100_stop(struct net_device *netdev)
  	return 0;
  }

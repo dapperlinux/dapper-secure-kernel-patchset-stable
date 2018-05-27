@@ -20,4 +20,4 @@ index 2cb1cc2..787d524 100644
 +} __no_const;
  
  extern struct machine_ops machine_ops;
- 
+ extern int crashing_cpu;

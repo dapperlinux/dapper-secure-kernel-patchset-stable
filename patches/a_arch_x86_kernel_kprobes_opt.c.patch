@@ -27,7 +27,7 @@ index 3bb4c5f..657db4e 100644
  	if (abs(rel) > 0x7fffffff) {
  		__arch_remove_optimized_kprobe(op, 0);
  		return -ERANGE;
-@@ -360,16 +362,18 @@ int arch_prepare_optimized_kprobe(struct optimized_kprobe *op,
+@@ -361,16 +361,18 @@ int arch_prepare_optimized_kprobe(struct optimized_kprobe *op,
  	op->optinsn.size = ret;
  
  	/* Copy arch-dep-instance from template */
@@ -48,7 +48,7 @@ index 3bb4c5f..657db4e 100644
 +	synthesize_reljump((u8 *)ktva_ktla((unsigned long)buf) + TMPL_END_IDX + op->optinsn.size,
  			   (u8 *)op->kp.addr + op->optinsn.size);
  
- 	flush_icache_range((unsigned long) buf,
+ 	set_memory_ro((unsigned long)buf & PAGE_MASK, 1);
 @@ -394,7 +398,7 @@ void arch_optimize_kprobes(struct list_head *oplist)
  		WARN_ON(kprobe_disabled(&op->kp));
  

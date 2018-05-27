@@ -2,10 +2,10 @@ diff --git a/sound/firewire/digi00x/amdtp-dot.c b/sound/firewire/digi00x/amdtp-d
 index b3cffd0..f17b591 100644
 --- a/sound/firewire/digi00x/amdtp-dot.c
 +++ b/sound/firewire/digi00x/amdtp-dot.c
-@@ -365,7 +365,7 @@ void amdtp_dot_midi_trigger(struct amdtp_stream *s, unsigned int port,
+@@ -384,7 +384,7 @@ void amdtp_dot_midi_trigger(struct amdtp_stream *s, unsigned int port,
  	struct amdtp_dot *p = s->protocol;
  
- 	if (port < p->midi_ports)
+ 	if (port < MAX_MIDI_PORTS)
 -		ACCESS_ONCE(p->midi[port]) = midi;
 +		ACCESS_ONCE_RW(p->midi[port]) = midi;
  }

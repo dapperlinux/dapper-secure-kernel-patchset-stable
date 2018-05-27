@@ -2,7 +2,7 @@ diff --git a/arch/x86/kernel/sys_x86_64.c b/arch/x86/kernel/sys_x86_64.c
 index a55ed63..665be0a 100644
 --- a/arch/x86/kernel/sys_x86_64.c
 +++ b/arch/x86/kernel/sys_x86_64.c
-@@ -97,8 +97,8 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
+@@ -98,8 +98,8 @@ SYSCALL_DEFINE6(mmap, unsigned long, addr, unsigned long, len,
  	return error;
  }
  
@@ -11,7 +11,7 @@ index a55ed63..665be0a 100644
 +static void find_start_end(struct mm_struct *mm, unsigned long flags,
 +			   unsigned long *begin, unsigned long *end)
  {
- 	if (!test_thread_flag(TIF_ADDR32) && (flags & MAP_32BIT)) {
+ 	if (!in_compat_syscall() && (flags & MAP_32BIT)) {
  		/* This is usually used needed to map code in small
 @@ -114,7 +114,7 @@ static void find_start_end(unsigned long flags, unsigned long *begin,
  			*begin = randomize_page(*begin, 0x02000000);
@@ -74,8 +74,8 @@ index a55ed63..665be0a 100644
  
  	/* requested length too big for entire address space */
  	if (len > TASK_SIZE)
-@@ -178,12 +182,15 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
- 	if (!test_thread_flag(TIF_ADDR32) && (flags & MAP_32BIT))
+@@ -179,12 +179,15 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
+ 	if (!in_compat_syscall() && (flags & MAP_32BIT))
  		goto bottomup;
  
 +#ifdef CONFIG_PAX_RANDMMAP
