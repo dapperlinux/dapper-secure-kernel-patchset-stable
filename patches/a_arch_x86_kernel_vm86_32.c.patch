@@ -11,12 +11,12 @@ index 01f30e5..a304a4c 100644
  	tsk->thread.sp0 = vm86->saved_sp0;
  	tsk->thread.sysenter_cs = __KERNEL_CS;
  	load_sp0(tss, &tsk->thread);
-@@ -176,10 +176,8 @@ static void mark_screen_rdonly(struct mm_struct *mm)
+@@ -177,10 +177,8 @@ static void mark_screen_rdonly(struct mm_struct *mm)
  		goto out;
  	pmd = pmd_offset(pud, 0xA0000);
  
 -	if (pmd_trans_huge(*pmd)) {
--		struct vm_area_struct *vma = find_vma(mm, 0xA0000);
+-		vma = find_vma(mm, 0xA0000);
 -		split_huge_pmd(vma, pmd, 0xA0000);
 -	}
 +	if (pmd_trans_huge(*pmd))

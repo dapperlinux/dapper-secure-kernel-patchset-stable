@@ -27,9 +27,9 @@ index 67eec55..1a5c1ab 100644
  	---help---
  	  This option helps catch unintended modifications to loadable
  	  kernel module's text and read-only data. It also prevents execution
-@@ -353,6 +355,7 @@ config X86_DEBUG_FPU
- config PUNIT_ATOM_DEBUG
+@@ -354,6 +354,7 @@ config PUNIT_ATOM_DEBUG
  	tristate "ATOM Punit debug driver"
+ 	depends on PCI
  	select DEBUG_FS
 +	depends on !GRKERNSEC_KMEM
  	select IOSF_MBI

@@ -70,7 +70,7 @@ index 26b6f6a..434ee17 100644
  
  extern char *strim(char *);
  
-@@ -72,63 +72,63 @@ static inline __must_check char *strstrip(char *str)
+@@ -72,64 +72,64 @@ static inline __must_check char *strstrip(char *str)
  }
  
  #ifndef __HAVE_ARCH_STRSTR
@@ -137,10 +137,12 @@ index 26b6f6a..434ee17 100644
 -extern const char *kstrdup_const(const char *s, gfp_t gfp);
 -extern char *kstrndup(const char *s, size_t len, gfp_t gfp);
 -extern void *kmemdup(const void *src, size_t len, gfp_t gfp);
+-extern char *kmemdup_nul(const char *s, size_t len, gfp_t gfp);
 +extern char *kstrdup(const char *s, gfp_t gfp) __malloc __nocapture(1);
 +extern const char *kstrdup_const(const char *s, gfp_t gfp) __nocapture(1);
 +extern char *kstrndup(const char *s, size_t len, gfp_t gfp) __nocapture(1);
 +extern void *kmemdup(const void *src, size_t len, gfp_t gfp) __nocapture(1);
++extern char *kmemdup_nul(const char *s, size_t len, gfp_t gfp) __nocapture(1);
  
  extern char **argv_split(gfp_t gfp, const char *str, int *argcp);
  extern void argv_free(char **argv);

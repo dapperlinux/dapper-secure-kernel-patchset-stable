@@ -60,7 +60,7 @@ index 13d6b1a..eaa0cee 100644
  		break;
  
  	case DSO_NODELAY:
-@@ -1621,13 +1631,15 @@ static int __dn_getsockopt(struct socket *sock, int level,int optname, char __us
+@@ -1618,13 +1618,15 @@ static int __dn_getsockopt(struct socket *sock, int level,int optname, char __us
  	case DSO_SERVICES:
  		if (r_len > sizeof(unsigned char))
  			r_len = sizeof(unsigned char);
@@ -76,5 +76,5 @@ index 13d6b1a..eaa0cee 100644
 +		rem = scp->info_rem;
 +		r_data = &rem;
  		break;
- 	}
  
+ 	case DSO_STREAM:
