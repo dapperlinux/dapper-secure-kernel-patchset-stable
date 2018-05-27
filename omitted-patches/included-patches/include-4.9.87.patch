@@ -1898,3 +1898,16 @@ index 1b20768e781d..eaae7252f60c 100644
  				continue;
  			if (!((base_gfn + npages <= slot->base_gfn) ||
  			      (base_gfn >= slot->base_gfn + slot->npages)))
+diff --git a/arch/x86/mm/tlb.c b/arch/x86/mm/tlb.c
+index 578973ade71b..eac92e2d171b 100644
+--- a/arch/x86/mm/tlb.c
++++ b/arch/x86/mm/tlb.c
+@@ -29,6 +30,8 @@
+  *	Implement flush IPI by CALL_FUNCTION_VECTOR, Alex Shi
+  */
+ 
++atomic64_t last_mm_ctx_id = ATOMIC64_INIT(1);
++
+ struct flush_tlb_info {
+ 	struct mm_struct *flush_mm;
+ 	unsigned long flush_start;

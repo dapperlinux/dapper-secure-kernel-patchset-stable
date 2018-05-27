@@ -128,15 +128,6 @@ index 578973ade71b..eac92e2d171b 100644
  #include <asm/cache.h>
  #include <asm/apic.h>
  #include <asm/uv/uv.h>
-@@ -29,6 +30,8 @@
-  *	Implement flush IPI by CALL_FUNCTION_VECTOR, Alex Shi
-  */
- 
-+atomic64_t last_mm_ctx_id = ATOMIC64_INIT(1);
-+
- struct flush_tlb_info {
- 	struct mm_struct *flush_mm;
- 	unsigned long flush_start;
 @@ -104,6 +107,28 @@ void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
  	unsigned cpu = smp_processor_id();
  

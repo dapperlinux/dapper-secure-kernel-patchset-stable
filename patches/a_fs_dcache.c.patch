@@ -33,6 +33,15 @@ index 4485a48..2cdeaf6 100644
  		return NULL;
  	if (likely(spin_trylock(&parent->d_lock)))
  		return parent;
+@@ -639,7 +639,7 @@ static inline struct dentry *lock_parent(struct dentry *dentry)
+ 	}
+ 	if (parent != dentry) {
+ 		spin_lock_nested(&dentry->d_lock, DENTRY_D_LOCK_NESTED);
+-		if (unlikely(dentry->d_lockref.count < 0)) {
++		if (unlikely(__lockref_read(&dentry->d_lockref) < 0)) {
+ 			spin_unlock(&parent->d_lock);
+ 			parent = NULL;
+ 		}
 @@ -651,8 +653,8 @@ static inline bool fast_dput(struct dentry *dentry)
  	 */
  	if (unlikely(ret < 0)) {

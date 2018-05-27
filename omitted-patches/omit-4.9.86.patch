@@ -1,0 +1,19 @@
+diff --git a/arch/x86/include/asm/asm.h b/arch/x86/include/asm/asm.h
+index 7bb29a416b77..f35f246a26bf 100644
+--- a/arch/x86/include/asm/asm.h
++++ b/arch/x86/include/asm/asm.h
+@@ -128,6 +128,7 @@
+ #endif
+ 
+ #ifndef __ASSEMBLY__
++#ifndef __BPF__
+ /*
+  * This output constraint should be used for any inline asm which has a "call"
+  * instruction.  Otherwise the asm may be inserted before the frame pointer
+@@ -137,5 +138,6 @@
+ register unsigned long current_stack_pointer asm(_ASM_SP);
+ #define ASM_CALL_CONSTRAINT "+r" (current_stack_pointer)
+ #endif
++#endif
+ 
+ #endif /* _ASM_X86_ASM_H */

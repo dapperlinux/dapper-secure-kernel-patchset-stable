@@ -39,8 +39,8 @@ index b3c5a5f0..596115e 100644
  	int i;
  
  	memcpy(&ehdr, output, sizeof(ehdr));
-@@ -301,11 +305,14 @@ static void parse_elf(void *output)
- 		case PT_LOAD:
+@@ -305,11 +305,14 @@ static void parse_elf(void *output)
+ #endif
  #ifdef CONFIG_RELOCATABLE
  			dest = output;
 -			dest += (phdr->p_paddr - LOAD_PHYSICAL_ADDR);

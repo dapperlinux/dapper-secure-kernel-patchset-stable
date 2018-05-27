@@ -254,21 +254,18 @@ index bd4e3d4..4cff0f1 100644
  	/*
  	 * Set the IDT descriptor to a fixed read-only location, so that the
  	 * "sidt" instruction will not leak the location of the kernel, and
-@@ -993,7 +1095,7 @@ void __init trap_init(void)
- 	 * in early_trap_init(). However, ITS works only after
- 	 * cpu_init() loads TSS. See comments in early_trap_init().
+@@ -994,12 +994,12 @@ void __init trap_init(void)
+ 	 * IST works only after cpu_init() loads TSS. See comments
+ 	 * in early_trap_init().
  	 */
 -	set_intr_gate_ist(X86_TRAP_DB, &debug, DEBUG_STACK);
 +	set_intr_gate_ist(X86_TRAP_DB, &int1, DEBUG_STACK);
- 	/* int3 can be called from all */
- 	set_system_intr_gate_ist(X86_TRAP_BP, &int3, DEBUG_STACK);
  
-@@ -1001,7 +1103,7 @@ void __init trap_init(void)
+ 	x86_init.irqs.trap_init();
  
  #ifdef CONFIG_X86_64
  	memcpy(&debug_idt_table, &idt_table, IDT_ENTRIES * 16);
 -	set_nmi_gate(X86_TRAP_DB, &debug);
 +	set_nmi_gate(X86_TRAP_DB, &int1);
- 	set_nmi_gate(X86_TRAP_BP, &int3);
  #endif
  }

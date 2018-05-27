@@ -904,13 +904,13 @@ index ef766a3..d3f0e59 100644
  
  apicinterrupt3 HYPERVISOR_CALLBACK_VECTOR \
  	xen_hvm_callback_vector xen_evtchn_do_upcall
-@@ -998,7 +1473,7 @@ apicinterrupt3 HYPERVISOR_CALLBACK_VECTOR \
+@@ -998,7 +998,7 @@ apicinterrupt3 HYPERVISOR_CALLBACK_VECTOR \
  	hyperv_callback_vector hyperv_vector_handler
  #endif /* CONFIG_HYPERV */
  
 -idtentry debug			do_debug		has_error_code=0	paranoid=1 shift_ist=DEBUG_STACK
 +idtentry int1			do_debug		has_error_code=0	paranoid=1 shift_ist=DEBUG_STACK
- idtentry int3			do_int3			has_error_code=0	paranoid=1 shift_ist=DEBUG_STACK
+ idtentry int3			do_int3			has_error_code=0
  idtentry stack_segment		do_stack_segment	has_error_code=1
  
 @@ -1016,7 +1491,7 @@ idtentry async_page_fault	do_async_page_fault	has_error_code=1
