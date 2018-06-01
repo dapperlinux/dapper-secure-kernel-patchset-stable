@@ -4582,18 +4582,6 @@ index 93721f3c91bf..7b163f99624c 100755
  
 -exit($errors);
 +exit($output_mode eq "none" ? 0 : $errors);
-diff --git a/security/keys/Kconfig b/security/keys/Kconfig
-index 0832f6368955..f2980084a38f 100644
---- a/security/keys/Kconfig
-+++ b/security/keys/Kconfig
-@@ -45,6 +45,7 @@ config BIG_KEYS
- 	bool "Large payload keys"
- 	depends on KEYS
- 	depends on TMPFS
-+	select CRYPTO
- 	select CRYPTO_AES
- 	select CRYPTO_GCM
- 	help
 diff --git a/security/selinux/ss/services.c b/security/selinux/ss/services.c
 index 082b20c78363..73275a92f2e2 100644
 --- a/security/selinux/ss/services.c

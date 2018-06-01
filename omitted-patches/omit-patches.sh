@@ -22,3 +22,7 @@ patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.78.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.77.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.76.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.75.patch
+
+
+# Contains a size_overflow bug that needs to be looked into
+patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.53.patch

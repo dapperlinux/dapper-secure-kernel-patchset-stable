@@ -473,3 +473,15 @@ index 083f92746951..bf949623de90 100644
  		    event->state != PERF_EVENT_STATE_OFF) {
  			if (n >= max_count)
  				return -1;
+diff --git a/security/keys/Kconfig b/security/keys/Kconfig
+index 0832f6368955..f2980084a38f 100644
+--- a/security/keys/Kconfig
++++ b/security/keys/Kconfig
+@@ -45,6 +45,7 @@ config BIG_KEYS
+ 	bool "Large payload keys"
+ 	depends on KEYS
+ 	depends on TMPFS
++	select CRYPTO
+ 	select CRYPTO_AES
+ 	select CRYPTO_GCM
+ 	help
