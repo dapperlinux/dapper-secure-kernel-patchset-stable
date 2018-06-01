@@ -12,7 +12,7 @@ index d630954..9c0f54d 100644
  #include <linux/kprobes.h>
  #include <linux/hash.h>
  #include <linux/init.h>
-@@ -122,12 +125,12 @@ enum kprobe_slot_state {
+@@ -122,12 +122,12 @@ enum kprobe_slot_state {
  
  static void *alloc_insn_page(void)
  {
@@ -20,7 +20,7 @@ index d630954..9c0f54d 100644
 +	return module_alloc_exec(PAGE_SIZE);
  }
  
- static void free_insn_page(void *page)
+ void __weak free_insn_page(void *page)
  {
 -	module_memfree(page);
 +	module_memfree_exec(page);
