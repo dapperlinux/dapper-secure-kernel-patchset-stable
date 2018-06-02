@@ -4,6 +4,7 @@
 
 # ADD NEWEST FIRST
 
+patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.100.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.99.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.98.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.97.patch
