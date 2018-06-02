@@ -43,16 +43,16 @@ index cce6057..2c080d8 100644
  static int grow_stripes(struct r5conf *conf, int num)
  {
  	struct kmem_cache *sc;
-@@ -2050,7 +2054,11 @@ static int grow_stripes(struct r5conf *conf, int num)
+@@ -2057,7 +2057,11 @@ static int grow_stripes(struct r5conf *conf, int num)
  			"raid%d-%s", conf->level, mdname(conf->mddev));
  	else
- 		sprintf(conf->cache_name[0],
+ 		snprintf(conf->cache_name[0], namelen,
 +#ifdef CONFIG_GRKERNSEC_HIDESYM
 +			"raid%d-%08lx", conf->level, atomic_inc_return_unchecked(&raid5_cache_id));
 +#else
  			"raid%d-%p", conf->level, conf->mddev);
 +#endif
- 	sprintf(conf->cache_name[1], "%s-alt", conf->cache_name[0]);
+ 	snprintf(conf->cache_name[1], namelen, "%.27s-alt", conf->cache_name[0]);
  
  	conf->active_name = 0;
 @@ -2354,21 +2362,21 @@ static void raid5_end_read_request(struct bio * bi)

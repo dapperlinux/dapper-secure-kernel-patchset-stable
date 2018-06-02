@@ -28,12 +28,3 @@ index be20239..99d75dd 100644
  
  	do {
  		struct insn insn;
-@@ -1158,7 +1159,7 @@ static void setup_pebs_sample_data(struct perf_event *event,
- 	}
- 
- 	if (event->attr.precise_ip > 1 && x86_pmu.intel_cap.pebs_format >= 2) {
--		regs->ip = pebs->real_ip;
-+		set_linear_ip(regs, pebs->real_ip);
- 		regs->flags |= PERF_EFLAGS_EXACT;
- 	} else if (event->attr.precise_ip > 1 && intel_pmu_pebs_fixup_ip(regs))
- 		regs->flags |= PERF_EFLAGS_EXACT;

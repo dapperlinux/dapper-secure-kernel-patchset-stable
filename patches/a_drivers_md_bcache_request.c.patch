@@ -84,7 +84,7 @@ index a37c177..a4dfbfc 100644
  	struct search *s = container_of(cl, struct search, iop.cl);
  	struct bio *bio = &s->bio.bio;
  	int ret;
-@@ -629,8 +634,9 @@ static void do_bio_hook(struct search *s, struct bio *orig_bio)
+@@ -630,8 +630,9 @@ static void do_bio_hook(struct search *s, struct bio *orig_bio)
  	bio_cnt_set(bio, 3);
  }
  
@@ -93,8 +93,8 @@ index a37c177..a4dfbfc 100644
  {
 +	struct closure *cl = container_of(work, struct closure, work);
  	struct search *s = container_of(cl, struct search, cl);
- 	bio_complete(s);
  
+ 	if (s->iop.bio)
 @@ -674,19 +680,21 @@ static inline struct search *search_alloc(struct bio *bio,
  
  /* Cached devices */
