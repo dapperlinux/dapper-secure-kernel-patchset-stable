@@ -49,3 +49,15 @@ index a69f18d4676c..7e5119c1d15c 100644
  		} else {
  			entry->ebx = 0;
  			entry->ecx = 0;
+diff --git a/kernel/sys.c b/kernel/sys.c
+index 143cd63f1d47..b13b530b5e0f 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -1313,6 +1313,7 @@ SYSCALL_DEFINE2(old_getrlimit, unsigned int, resource,
+ 	if (resource >= RLIM_NLIMITS)
+ 		return -EINVAL;
+ 
++	resource = array_index_nospec(resource, RLIM_NLIMITS);
+ 	task_lock(current->group_leader);
+ 	x = current->signal->rlim[resource];
+ 	task_unlock(current->group_leader);

@@ -13,6 +13,14 @@ index ae3996a..5a222fc 100644
  #include <linux/types.h>
  #include <linux/module.h>
  #include <linux/proc_fs.h>
+@@ -80,6 +80,7 @@
+ #include <linux/integrity.h>
+ #include <linux/proc_ns.h>
+ #include <linux/io.h>
++#include <linux/cache.h>
+ 
+ #include <asm/io.h>
+ #include <asm/bugs.h>
 @@ -94,6 +98,8 @@ extern void init_IRQ(void);
  extern void fork_init(void);
  extern void radix_tree_init(void);
@@ -112,7 +120,7 @@ index ae3996a..5a222fc 100644
  }
  
  static int try_to_run_init_process(const char *init_filename)
-@@ -911,6 +957,10 @@ static int try_to_run_init_process(const char *init_filename)
+@@ -910,6 +911,10 @@ static int try_to_run_init_process(const char *init_filename)
  	return ret;
  }
  
@@ -122,7 +130,7 @@ index ae3996a..5a222fc 100644
 +
  static noinline void __init kernel_init_freeable(void);
  
- #ifdef CONFIG_DEBUG_RODATA
+ #if defined(CONFIG_DEBUG_RODATA) || defined(CONFIG_SET_MODULE_RONX)
 @@ -959,6 +1009,11 @@ static int __ref kernel_init(void *unused)
  		       ramdisk_execute_command, ret);
  	}

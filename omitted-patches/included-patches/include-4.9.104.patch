@@ -10608,18 +10608,6 @@ index 17428fec19b0..4364e57e6038 100644
  	read_lock(&tasklist_lock);
  	if (pid != -1) {
  		ret = __kill_pgrp_info(sig, info,
-diff --git a/kernel/sys.c b/kernel/sys.c
-index 143cd63f1d47..b13b530b5e0f 100644
---- a/kernel/sys.c
-+++ b/kernel/sys.c
-@@ -1313,6 +1313,7 @@ SYSCALL_DEFINE2(old_getrlimit, unsigned int, resource,
- 	if (resource >= RLIM_NLIMITS)
- 		return -EINVAL;
- 
-+	resource = array_index_nospec(resource, RLIM_NLIMITS);
- 	task_lock(current->group_leader);
- 	x = current->signal->rlim[resource];
- 	task_unlock(current->group_leader);
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
 index 664aebc50fe3..1961dd408bc5 100644
 --- a/kernel/workqueue.c

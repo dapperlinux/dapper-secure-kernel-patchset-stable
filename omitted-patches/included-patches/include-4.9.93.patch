@@ -2541,3 +2541,26 @@ index 65f42d257414..f736a6f81ecd 100644
  
  /*
   * __cpu_soft_restart(el2_switch, entry, arg0, arg1, arg2) - Helper for
+diff --git a/init/main.c b/init/main.c
+index 99f026565608..f22957afb37e 100644
+--- a/init/main.c
++++ b/init/main.c
+@@ -914,14 +915,16 @@ static int try_to_run_init_process(const char *init_filename)
+ 
+ static noinline void __init kernel_init_freeable(void);
+ 
+-#ifdef CONFIG_DEBUG_RODATA
+-static bool rodata_enabled = true;
++#if defined(CONFIG_DEBUG_RODATA) || defined(CONFIG_SET_MODULE_RONX)
++bool rodata_enabled __ro_after_init = true;
+ static int __init set_debug_rodata(char *str)
+ {
+ 	return strtobool(str, &rodata_enabled);
+ }
+ __setup("rodata=", set_debug_rodata);
++#endif
+ 
++#ifdef CONFIG_DEBUG_RODATA
+ static void mark_readonly(void)
+ {
+ 	if (rodata_enabled)
