@@ -1,0 +1,255 @@
+diff --git a/arch/arm/include/asm/kvm_host.h b/arch/arm/include/asm/kvm_host.h
+index 9fe1043e72d2..f4dab20ac9f3 100644
+--- a/arch/arm/include/asm/kvm_host.h
++++ b/arch/arm/include/asm/kvm_host.h
+@@ -78,6 +78,9 @@ struct kvm_arch {
+ 	/* Interrupt controller */
+ 	struct vgic_dist	vgic;
+ 	int max_vcpus;
++
++	/* Mandated version of PSCI */
++	u32 psci_version;
+ };
+ 
+ #define KVM_NR_MEM_OBJS     40
+diff --git a/arch/arm/include/uapi/asm/kvm.h b/arch/arm/include/uapi/asm/kvm.h
+index b38c10c73579..0b8cf31d8416 100644
+--- a/arch/arm/include/uapi/asm/kvm.h
++++ b/arch/arm/include/uapi/asm/kvm.h
+@@ -173,6 +173,12 @@ struct kvm_arch_memory_slot {
+ #define KVM_REG_ARM_VFP_FPINST		0x1009
+ #define KVM_REG_ARM_VFP_FPINST2		0x100A
+ 
++/* KVM-as-firmware specific pseudo-registers */
++#define KVM_REG_ARM_FW			(0x0014 << KVM_REG_ARM_COPROC_SHIFT)
++#define KVM_REG_ARM_FW_REG(r)		(KVM_REG_ARM | KVM_REG_SIZE_U64 | \
++					 KVM_REG_ARM_FW | ((r) & 0xffff))
++#define KVM_REG_ARM_PSCI_VERSION	KVM_REG_ARM_FW_REG(0)
++
+ /* Device Control API: ARM VGIC */
+ #define KVM_DEV_ARM_VGIC_GRP_ADDR	0
+ #define KVM_DEV_ARM_VGIC_GRP_DIST_REGS	1
+diff --git a/arch/arm/kvm/guest.c b/arch/arm/kvm/guest.c
+index 9aca92074f85..630117d2e8bd 100644
+--- a/arch/arm/kvm/guest.c
++++ b/arch/arm/kvm/guest.c
+@@ -22,6 +22,7 @@
+ #include <linux/module.h>
+ #include <linux/vmalloc.h>
+ #include <linux/fs.h>
++#include <kvm/arm_psci.h>
+ #include <asm/cputype.h>
+ #include <asm/uaccess.h>
+ #include <asm/kvm.h>
+@@ -176,6 +177,7 @@ static unsigned long num_core_regs(void)
+ unsigned long kvm_arm_num_regs(struct kvm_vcpu *vcpu)
+ {
+ 	return num_core_regs() + kvm_arm_num_coproc_regs(vcpu)
++		+ kvm_arm_get_fw_num_regs(vcpu)
+ 		+ NUM_TIMER_REGS;
+ }
+ 
+@@ -196,6 +198,11 @@ int kvm_arm_copy_reg_indices(struct kvm_vcpu *vcpu, u64 __user *uindices)
+ 		uindices++;
+ 	}
+ 
++	ret = kvm_arm_copy_fw_reg_indices(vcpu, uindices);
++	if (ret)
++		return ret;
++	uindices += kvm_arm_get_fw_num_regs(vcpu);
++
+ 	ret = copy_timer_indices(vcpu, uindices);
+ 	if (ret)
+ 		return ret;
+@@ -214,6 +221,9 @@ int kvm_arm_get_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg)
+ 	if ((reg->id & KVM_REG_ARM_COPROC_MASK) == KVM_REG_ARM_CORE)
+ 		return get_core_reg(vcpu, reg);
+ 
++	if ((reg->id & KVM_REG_ARM_COPROC_MASK) == KVM_REG_ARM_FW)
++		return kvm_arm_get_fw_reg(vcpu, reg);
++
+ 	if (is_timer_reg(reg->id))
+ 		return get_timer_reg(vcpu, reg);
+ 
+@@ -230,6 +240,9 @@ int kvm_arm_set_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg)
+ 	if ((reg->id & KVM_REG_ARM_COPROC_MASK) == KVM_REG_ARM_CORE)
+ 		return set_core_reg(vcpu, reg);
+ 
++	if ((reg->id & KVM_REG_ARM_COPROC_MASK) == KVM_REG_ARM_FW)
++		return kvm_arm_set_fw_reg(vcpu, reg);
++
+ 	if (is_timer_reg(reg->id))
+ 		return set_timer_reg(vcpu, reg);
+ 
+diff --git a/arch/arm/kvm/psci.c b/arch/arm/kvm/psci.c
+index 3d962257c166..8a9c654f4f87 100644
+--- a/arch/arm/kvm/psci.c
++++ b/arch/arm/kvm/psci.c
+@@ -18,6 +18,7 @@
+ #include <linux/arm-smccc.h>
+ #include <linux/preempt.h>
+ #include <linux/kvm_host.h>
++#include <linux/uaccess.h>
+ #include <linux/wait.h>
+ 
+ #include <asm/cputype.h>
+@@ -425,3 +426,62 @@ int kvm_hvc_call_handler(struct kvm_vcpu *vcpu)
+ 	smccc_set_retval(vcpu, val, 0, 0, 0);
+ 	return 1;
+ }
++
++int kvm_arm_get_fw_num_regs(struct kvm_vcpu *vcpu)
++{
++	return 1;		/* PSCI version */
++}
++
++int kvm_arm_copy_fw_reg_indices(struct kvm_vcpu *vcpu, u64 __user *uindices)
++{
++	if (put_user(KVM_REG_ARM_PSCI_VERSION, uindices))
++		return -EFAULT;
++
++	return 0;
++}
++
++int kvm_arm_get_fw_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg)
++{
++	if (reg->id == KVM_REG_ARM_PSCI_VERSION) {
++		void __user *uaddr = (void __user *)(long)reg->addr;
++		u64 val;
++
++		val = kvm_psci_version(vcpu, vcpu->kvm);
++		if (copy_to_user(uaddr, &val, KVM_REG_SIZE(reg->id)))
++			return -EFAULT;
++
++		return 0;
++	}
++
++	return -EINVAL;
++}
++
++int kvm_arm_set_fw_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg)
++{
++	if (reg->id == KVM_REG_ARM_PSCI_VERSION) {
++		void __user *uaddr = (void __user *)(long)reg->addr;
++		bool wants_02;
++		u64 val;
++
++		if (copy_from_user(&val, uaddr, KVM_REG_SIZE(reg->id)))
++			return -EFAULT;
++
++		wants_02 = test_bit(KVM_ARM_VCPU_PSCI_0_2, vcpu->arch.features);
++
++		switch (val) {
++		case KVM_ARM_PSCI_0_1:
++			if (wants_02)
++				return -EINVAL;
++			vcpu->kvm->arch.psci_version = val;
++			return 0;
++		case KVM_ARM_PSCI_0_2:
++		case KVM_ARM_PSCI_1_0:
++			if (!wants_02)
++				return -EINVAL;
++			vcpu->kvm->arch.psci_version = val;
++			return 0;
++		}
++	}
++
++	return -EINVAL;
++}
+diff --git a/arch/arm64/include/asm/kvm_host.h b/arch/arm64/include/asm/kvm_host.h
+index 37d56e85036e..0a33ea304e63 100644
+--- a/arch/arm64/include/asm/kvm_host.h
++++ b/arch/arm64/include/asm/kvm_host.h
+@@ -73,6 +73,9 @@ struct kvm_arch {
+ 
+ 	/* Timer */
+ 	struct arch_timer_kvm	timer;
++
++	/* Mandated version of PSCI */
++	u32 psci_version;
+ };
+ 
+ #define KVM_NR_MEM_OBJS     40
+diff --git a/arch/arm64/include/uapi/asm/kvm.h b/arch/arm64/include/uapi/asm/kvm.h
+index 3051f86a9b5f..702de7a2b024 100644
+--- a/arch/arm64/include/uapi/asm/kvm.h
++++ b/arch/arm64/include/uapi/asm/kvm.h
+@@ -195,6 +195,12 @@ struct kvm_arch_memory_slot {
+ #define KVM_REG_ARM_TIMER_CNT		ARM64_SYS_REG(3, 3, 14, 3, 2)
+ #define KVM_REG_ARM_TIMER_CVAL		ARM64_SYS_REG(3, 3, 14, 0, 2)
+ 
++/* KVM-as-firmware specific pseudo-registers */
++#define KVM_REG_ARM_FW			(0x0014 << KVM_REG_ARM_COPROC_SHIFT)
++#define KVM_REG_ARM_FW_REG(r)		(KVM_REG_ARM64 | KVM_REG_SIZE_U64 | \
++					 KVM_REG_ARM_FW | ((r) & 0xffff))
++#define KVM_REG_ARM_PSCI_VERSION	KVM_REG_ARM_FW_REG(0)
++
+ /* Device Control API: ARM VGIC */
+ #define KVM_DEV_ARM_VGIC_GRP_ADDR	0
+ #define KVM_DEV_ARM_VGIC_GRP_DIST_REGS	1
+diff --git a/arch/arm64/kvm/guest.c b/arch/arm64/kvm/guest.c
+index 3f9e15722473..d3e0a2ffb383 100644
+--- a/arch/arm64/kvm/guest.c
++++ b/arch/arm64/kvm/guest.c
+@@ -25,6 +25,7 @@
+ #include <linux/module.h>
+ #include <linux/vmalloc.h>
+ #include <linux/fs.h>
++#include <kvm/arm_psci.h>
+ #include <asm/cputype.h>
+ #include <asm/uaccess.h>
+ #include <asm/kvm.h>
+@@ -205,7 +206,7 @@ static int get_timer_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg)
+ unsigned long kvm_arm_num_regs(struct kvm_vcpu *vcpu)
+ {
+ 	return num_core_regs() + kvm_arm_num_sys_reg_descs(vcpu)
+-                + NUM_TIMER_REGS;
++		+ kvm_arm_get_fw_num_regs(vcpu)	+ NUM_TIMER_REGS;
+ }
+ 
+ /**
+@@ -225,6 +226,11 @@ int kvm_arm_copy_reg_indices(struct kvm_vcpu *vcpu, u64 __user *uindices)
+ 		uindices++;
+ 	}
+ 
++	ret = kvm_arm_copy_fw_reg_indices(vcpu, uindices);
++	if (ret)
++		return ret;
++	uindices += kvm_arm_get_fw_num_regs(vcpu);
++
+ 	ret = copy_timer_indices(vcpu, uindices);
+ 	if (ret)
+ 		return ret;
+@@ -243,6 +249,9 @@ int kvm_arm_get_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg)
+ 	if ((reg->id & KVM_REG_ARM_COPROC_MASK) == KVM_REG_ARM_CORE)
+ 		return get_core_reg(vcpu, reg);
+ 
++	if ((reg->id & KVM_REG_ARM_COPROC_MASK) == KVM_REG_ARM_FW)
++		return kvm_arm_get_fw_reg(vcpu, reg);
++
+ 	if (is_timer_reg(reg->id))
+ 		return get_timer_reg(vcpu, reg);
+ 
+@@ -259,6 +268,9 @@ int kvm_arm_set_reg(struct kvm_vcpu *vcpu, const struct kvm_one_reg *reg)
+ 	if ((reg->id & KVM_REG_ARM_COPROC_MASK) == KVM_REG_ARM_CORE)
+ 		return set_core_reg(vcpu, reg);
+ 
++	if ((reg->id & KVM_REG_ARM_COPROC_MASK) == KVM_REG_ARM_FW)
++		return kvm_arm_set_fw_reg(vcpu, reg);
++
+ 	if (is_timer_reg(reg->id))
+ 		return set_timer_reg(vcpu, reg);
+ 
+diff --git a/arch/s390/include/asm/facility.h b/arch/s390/include/asm/facility.h
+index 7a8a1457dbb8..5811e7849a2e 100644
+--- a/arch/s390/include/asm/facility.h
++++ b/arch/s390/include/asm/facility.h
+@@ -15,7 +15,7 @@
+ #include <linux/preempt.h>
+ #include <asm/lowcore.h>
+ 
+-#define MAX_FACILITY_BIT (256*8)	/* stfle_fac_list has 256 bytes */
++#define MAX_FACILITY_BIT (sizeof(((struct lowcore *)0)->stfle_fac_list) * 8)
+ 
+ static inline void __set_facility(unsigned long nr, void *facilities)
+ {
