@@ -2,10 +2,10 @@ diff --git a/include/linux/psci.h b/include/linux/psci.h
 index bdea1cb..a094b75 100644
 --- a/include/linux/psci.h
 +++ b/include/linux/psci.h
-@@ -33,7 +33,7 @@ struct psci_operations {
- 	int (*affinity_info)(unsigned long target_affinity,
- 			unsigned long lowest_affinity_level);
+@@ -47,7 +47,7 @@ struct psci_operations {
  	int (*migrate_info_type)(void);
+ 	enum psci_conduit conduit;
+ 	enum smccc_version smccc_version;
 -};
 +} __no_const;
  

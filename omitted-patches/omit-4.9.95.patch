@@ -1,0 +1,1819 @@
+diff --git a/arch/arm/include/asm/kvm_host.h b/arch/arm/include/asm/kvm_host.h
+index d5423ab15ed5..9fe1043e72d2 100644
+--- a/arch/arm/include/asm/kvm_host.h
++++ b/arch/arm/include/asm/kvm_host.h
+@@ -318,4 +318,10 @@ static inline int kvm_arm_vcpu_arch_has_attr(struct kvm_vcpu *vcpu,
+ 	return -ENXIO;
+ }
+ 
++static inline bool kvm_arm_harden_branch_predictor(void)
++{
++	/* No way to detect it yet, pretend it is not there. */
++	return false;
++}
++
+ #endif /* __ARM_KVM_HOST_H__ */
+diff --git a/arch/arm/include/asm/kvm_mmu.h b/arch/arm/include/asm/kvm_mmu.h
+index a58bbaa3ec60..d10e36235438 100644
+--- a/arch/arm/include/asm/kvm_mmu.h
++++ b/arch/arm/include/asm/kvm_mmu.h
+@@ -223,6 +223,16 @@ static inline unsigned int kvm_get_vmid_bits(void)
+ 	return 8;
+ }
+ 
++static inline void *kvm_get_hyp_vector(void)
++{
++	return kvm_ksym_ref(__kvm_hyp_vector);
++}
++
++static inline int kvm_map_vectors(void)
++{
++	return 0;
++}
++
+ #endif	/* !__ASSEMBLY__ */
+ 
+ #endif /* __ARM_KVM_MMU_H__ */
+diff --git a/arch/arm/include/asm/kvm_psci.h b/arch/arm/include/asm/kvm_psci.h
+deleted file mode 100644
+index 6bda945d31fa..000000000000
+--- a/arch/arm/include/asm/kvm_psci.h
++++ /dev/null
+@@ -1,27 +0,0 @@
+-/*
+- * Copyright (C) 2012 - ARM Ltd
+- * Author: Marc Zyngier <marc.zyngier@arm.com>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+- */
+-
+-#ifndef __ARM_KVM_PSCI_H__
+-#define __ARM_KVM_PSCI_H__
+-
+-#define KVM_ARM_PSCI_0_1	1
+-#define KVM_ARM_PSCI_0_2	2
+-
+-int kvm_psci_version(struct kvm_vcpu *vcpu);
+-int kvm_psci_call(struct kvm_vcpu *vcpu);
+-
+-#endif /* __ARM_KVM_PSCI_H__ */
+diff --git a/arch/arm/kvm/arm.c b/arch/arm/kvm/arm.c
+index c38bfbeec306..ef6595c7d697 100644
+--- a/arch/arm/kvm/arm.c
++++ b/arch/arm/kvm/arm.c
+@@ -29,6 +29,7 @@
+ #include <linux/kvm.h>
+ #include <trace/events/kvm.h>
+ #include <kvm/arm_pmu.h>
++#include <kvm/arm_psci.h>
+ 
+ #define CREATE_TRACE_POINTS
+ #include "trace.h"
+@@ -44,7 +45,6 @@
+ #include <asm/kvm_mmu.h>
+ #include <asm/kvm_emulate.h>
+ #include <asm/kvm_coproc.h>
+-#include <asm/kvm_psci.h>
+ #include <asm/sections.h>
+ 
+ #ifdef REQUIRES_VIRT
+@@ -1088,7 +1088,7 @@ static void cpu_init_hyp_mode(void *dummy)
+ 	pgd_ptr = kvm_mmu_get_httbr();
+ 	stack_page = __this_cpu_read(kvm_arm_hyp_stack_page);
+ 	hyp_stack_ptr = stack_page + PAGE_SIZE;
+-	vector_ptr = (unsigned long)kvm_ksym_ref(__kvm_hyp_vector);
++	vector_ptr = (unsigned long)kvm_get_hyp_vector();
+ 
+ 	__cpu_init_hyp_mode(pgd_ptr, hyp_stack_ptr, vector_ptr);
+ 	__cpu_init_stage2();
+@@ -1345,6 +1345,13 @@ static int init_hyp_mode(void)
+ 		goto out_err;
+ 	}
+ 
++
++	err = kvm_map_vectors();
++	if (err) {
++		kvm_err("Cannot map vectors\n");
++		goto out_err;
++	}
++
+ 	/*
+ 	 * Map the Hyp stack pages
+ 	 */
+diff --git a/arch/arm/kvm/handle_exit.c b/arch/arm/kvm/handle_exit.c
+index 4e57ebca6e69..de1aedce2a8b 100644
+--- a/arch/arm/kvm/handle_exit.c
++++ b/arch/arm/kvm/handle_exit.c
+@@ -21,7 +21,7 @@
+ #include <asm/kvm_emulate.h>
+ #include <asm/kvm_coproc.h>
+ #include <asm/kvm_mmu.h>
+-#include <asm/kvm_psci.h>
++#include <kvm/arm_psci.h>
+ #include <trace/events/kvm.h>
+ 
+ #include "trace.h"
+@@ -36,7 +36,7 @@ static int handle_hvc(struct kvm_vcpu *vcpu, struct kvm_run *run)
+ 		      kvm_vcpu_hvc_get_imm(vcpu));
+ 	vcpu->stat.hvc_exit_stat++;
+ 
+-	ret = kvm_psci_call(vcpu);
++	ret = kvm_hvc_call_handler(vcpu);
+ 	if (ret < 0) {
+ 		vcpu_set_reg(vcpu, 0, ~0UL);
+ 		return 1;
+diff --git a/arch/arm/kvm/psci.c b/arch/arm/kvm/psci.c
+index a08d7a93aebb..3d962257c166 100644
+--- a/arch/arm/kvm/psci.c
++++ b/arch/arm/kvm/psci.c
+@@ -15,16 +15,16 @@
+  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  */
+ 
++#include <linux/arm-smccc.h>
+ #include <linux/preempt.h>
+ #include <linux/kvm_host.h>
+ #include <linux/wait.h>
+ 
+ #include <asm/cputype.h>
+ #include <asm/kvm_emulate.h>
+-#include <asm/kvm_psci.h>
+ #include <asm/kvm_host.h>
+ 
+-#include <uapi/linux/psci.h>
++#include <kvm/arm_psci.h>
+ 
+ /*
+  * This is an implementation of the Power State Coordination Interface
+@@ -33,6 +33,38 @@
+ 
+ #define AFFINITY_MASK(level)	~((0x1UL << ((level) * MPIDR_LEVEL_BITS)) - 1)
+ 
++static u32 smccc_get_function(struct kvm_vcpu *vcpu)
++{
++	return vcpu_get_reg(vcpu, 0);
++}
++
++static unsigned long smccc_get_arg1(struct kvm_vcpu *vcpu)
++{
++	return vcpu_get_reg(vcpu, 1);
++}
++
++static unsigned long smccc_get_arg2(struct kvm_vcpu *vcpu)
++{
++	return vcpu_get_reg(vcpu, 2);
++}
++
++static unsigned long smccc_get_arg3(struct kvm_vcpu *vcpu)
++{
++	return vcpu_get_reg(vcpu, 3);
++}
++
++static void smccc_set_retval(struct kvm_vcpu *vcpu,
++			     unsigned long a0,
++			     unsigned long a1,
++			     unsigned long a2,
++			     unsigned long a3)
++{
++	vcpu_set_reg(vcpu, 0, a0);
++	vcpu_set_reg(vcpu, 1, a1);
++	vcpu_set_reg(vcpu, 2, a2);
++	vcpu_set_reg(vcpu, 3, a3);
++}
++
+ static unsigned long psci_affinity_mask(unsigned long affinity_level)
+ {
+ 	if (affinity_level <= 3)
+@@ -75,7 +107,7 @@ static unsigned long kvm_psci_vcpu_on(struct kvm_vcpu *source_vcpu)
+ 	unsigned long context_id;
+ 	phys_addr_t target_pc;
+ 
+-	cpu_id = vcpu_get_reg(source_vcpu, 1) & MPIDR_HWID_BITMASK;
++	cpu_id = smccc_get_arg1(source_vcpu) & MPIDR_HWID_BITMASK;
+ 	if (vcpu_mode_is_32bit(source_vcpu))
+ 		cpu_id &= ~((u32) 0);
+ 
+@@ -88,14 +120,14 @@ static unsigned long kvm_psci_vcpu_on(struct kvm_vcpu *source_vcpu)
+ 	if (!vcpu)
+ 		return PSCI_RET_INVALID_PARAMS;
+ 	if (!vcpu->arch.power_off) {
+-		if (kvm_psci_version(source_vcpu) != KVM_ARM_PSCI_0_1)
++		if (kvm_psci_version(source_vcpu, kvm) != KVM_ARM_PSCI_0_1)
+ 			return PSCI_RET_ALREADY_ON;
+ 		else
+ 			return PSCI_RET_INVALID_PARAMS;
+ 	}
+ 
+-	target_pc = vcpu_get_reg(source_vcpu, 2);
+-	context_id = vcpu_get_reg(source_vcpu, 3);
++	target_pc = smccc_get_arg2(source_vcpu);
++	context_id = smccc_get_arg3(source_vcpu);
+ 
+ 	kvm_reset_vcpu(vcpu);
+ 
+@@ -114,7 +146,7 @@ static unsigned long kvm_psci_vcpu_on(struct kvm_vcpu *source_vcpu)
+ 	 * NOTE: We always update r0 (or x0) because for PSCI v0.1
+ 	 * the general puspose registers are undefined upon CPU_ON.
+ 	 */
+-	vcpu_set_reg(vcpu, 0, context_id);
++	smccc_set_retval(vcpu, context_id, 0, 0, 0);
+ 	vcpu->arch.power_off = false;
+ 	smp_mb();		/* Make sure the above is visible */
+ 
+@@ -134,8 +166,8 @@ static unsigned long kvm_psci_vcpu_affinity_info(struct kvm_vcpu *vcpu)
+ 	struct kvm *kvm = vcpu->kvm;
+ 	struct kvm_vcpu *tmp;
+ 
+-	target_affinity = vcpu_get_reg(vcpu, 1);
+-	lowest_affinity_level = vcpu_get_reg(vcpu, 2);
++	target_affinity = smccc_get_arg1(vcpu);
++	lowest_affinity_level = smccc_get_arg2(vcpu);
+ 
+ 	/* Determine target affinity mask */
+ 	target_affinity_mask = psci_affinity_mask(lowest_affinity_level);
+@@ -198,18 +230,10 @@ static void kvm_psci_system_reset(struct kvm_vcpu *vcpu)
+ 	kvm_prepare_system_event(vcpu, KVM_SYSTEM_EVENT_RESET);
+ }
+ 
+-int kvm_psci_version(struct kvm_vcpu *vcpu)
+-{
+-	if (test_bit(KVM_ARM_VCPU_PSCI_0_2, vcpu->arch.features))
+-		return KVM_ARM_PSCI_0_2;
+-
+-	return KVM_ARM_PSCI_0_1;
+-}
+-
+ static int kvm_psci_0_2_call(struct kvm_vcpu *vcpu)
+ {
+ 	struct kvm *kvm = vcpu->kvm;
+-	unsigned long psci_fn = vcpu_get_reg(vcpu, 0) & ~((u32) 0);
++	unsigned long psci_fn = smccc_get_function(vcpu);
+ 	unsigned long val;
+ 	int ret = 1;
+ 
+@@ -219,7 +243,7 @@ static int kvm_psci_0_2_call(struct kvm_vcpu *vcpu)
+ 		 * Bits[31:16] = Major Version = 0
+ 		 * Bits[15:0] = Minor Version = 2
+ 		 */
+-		val = 2;
++		val = KVM_ARM_PSCI_0_2;
+ 		break;
+ 	case PSCI_0_2_FN_CPU_SUSPEND:
+ 	case PSCI_0_2_FN64_CPU_SUSPEND:
+@@ -276,14 +300,56 @@ static int kvm_psci_0_2_call(struct kvm_vcpu *vcpu)
+ 		break;
+ 	}
+ 
+-	vcpu_set_reg(vcpu, 0, val);
++	smccc_set_retval(vcpu, val, 0, 0, 0);
++	return ret;
++}
++
++static int kvm_psci_1_0_call(struct kvm_vcpu *vcpu)
++{
++	u32 psci_fn = smccc_get_function(vcpu);
++	u32 feature;
++	unsigned long val;
++	int ret = 1;
++
++	switch(psci_fn) {
++	case PSCI_0_2_FN_PSCI_VERSION:
++		val = KVM_ARM_PSCI_1_0;
++		break;
++	case PSCI_1_0_FN_PSCI_FEATURES:
++		feature = smccc_get_arg1(vcpu);
++		switch(feature) {
++		case PSCI_0_2_FN_PSCI_VERSION:
++		case PSCI_0_2_FN_CPU_SUSPEND:
++		case PSCI_0_2_FN64_CPU_SUSPEND:
++		case PSCI_0_2_FN_CPU_OFF:
++		case PSCI_0_2_FN_CPU_ON:
++		case PSCI_0_2_FN64_CPU_ON:
++		case PSCI_0_2_FN_AFFINITY_INFO:
++		case PSCI_0_2_FN64_AFFINITY_INFO:
++		case PSCI_0_2_FN_MIGRATE_INFO_TYPE:
++		case PSCI_0_2_FN_SYSTEM_OFF:
++		case PSCI_0_2_FN_SYSTEM_RESET:
++		case PSCI_1_0_FN_PSCI_FEATURES:
++		case ARM_SMCCC_VERSION_FUNC_ID:
++			val = 0;
++			break;
++		default:
++			val = PSCI_RET_NOT_SUPPORTED;
++			break;
++		}
++		break;
++	default:
++		return kvm_psci_0_2_call(vcpu);
++	}
++
++	smccc_set_retval(vcpu, val, 0, 0, 0);
+ 	return ret;
+ }
+ 
+ static int kvm_psci_0_1_call(struct kvm_vcpu *vcpu)
+ {
+ 	struct kvm *kvm = vcpu->kvm;
+-	unsigned long psci_fn = vcpu_get_reg(vcpu, 0) & ~((u32) 0);
++	unsigned long psci_fn = smccc_get_function(vcpu);
+ 	unsigned long val;
+ 
+ 	switch (psci_fn) {
+@@ -301,7 +367,7 @@ static int kvm_psci_0_1_call(struct kvm_vcpu *vcpu)
+ 		break;
+ 	}
+ 
+-	vcpu_set_reg(vcpu, 0, val);
++	smccc_set_retval(vcpu, val, 0, 0, 0);
+ 	return 1;
+ }
+ 
+@@ -319,9 +385,11 @@ static int kvm_psci_0_1_call(struct kvm_vcpu *vcpu)
+  * Errors:
+  * -EINVAL: Unrecognized PSCI function
+  */
+-int kvm_psci_call(struct kvm_vcpu *vcpu)
++static int kvm_psci_call(struct kvm_vcpu *vcpu)
+ {
+-	switch (kvm_psci_version(vcpu)) {
++	switch (kvm_psci_version(vcpu, vcpu->kvm)) {
++	case KVM_ARM_PSCI_1_0:
++		return kvm_psci_1_0_call(vcpu);
+ 	case KVM_ARM_PSCI_0_2:
+ 		return kvm_psci_0_2_call(vcpu);
+ 	case KVM_ARM_PSCI_0_1:
+@@ -330,3 +398,30 @@ int kvm_psci_call(struct kvm_vcpu *vcpu)
+ 		return -EINVAL;
+ 	};
+ }
++
++int kvm_hvc_call_handler(struct kvm_vcpu *vcpu)
++{
++	u32 func_id = smccc_get_function(vcpu);
++	u32 val = PSCI_RET_NOT_SUPPORTED;
++	u32 feature;
++
++	switch (func_id) {
++	case ARM_SMCCC_VERSION_FUNC_ID:
++		val = ARM_SMCCC_VERSION_1_1;
++		break;
++	case ARM_SMCCC_ARCH_FEATURES_FUNC_ID:
++		feature = smccc_get_arg1(vcpu);
++		switch(feature) {
++		case ARM_SMCCC_ARCH_WORKAROUND_1:
++			if (kvm_arm_harden_branch_predictor())
++				val = 0;
++			break;
++		}
++		break;
++	default:
++		return kvm_psci_call(vcpu);
++	}
++
++	smccc_set_retval(vcpu, val, 0, 0, 0);
++	return 1;
++}
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index c8471cf46cbb..90e58bbbd858 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -745,6 +745,23 @@ config UNMAP_KERNEL_AT_EL0
+ 
+ 	  If unsure, say Y.
+ 
++config HARDEN_BRANCH_PREDICTOR
++	bool "Harden the branch predictor against aliasing attacks" if EXPERT
++	default y
++	help
++	  Speculation attacks against some high-performance processors rely on
++	  being able to manipulate the branch predictor for a victim context by
++	  executing aliasing branches in the attacker context.  Such attacks
++	  can be partially mitigated against by clearing internal branch
++	  predictor state and limiting the prediction logic in some situations.
++
++	  This config option will take CPU-specific actions to harden the
++	  branch predictor against aliasing attacks and may rely on specific
++	  instruction sequences or control bits being set by the system
++	  firmware.
++
++	  If unsure, say Y.
++
+ menuconfig ARMV8_DEPRECATED
+ 	bool "Emulate deprecated/obsolete ARMv8 instructions"
+ 	depends on COMPAT
+diff --git a/arch/arm64/include/asm/assembler.h b/arch/arm64/include/asm/assembler.h
+index 7193bf97b8da..e60375ce0dd2 100644
+--- a/arch/arm64/include/asm/assembler.h
++++ b/arch/arm64/include/asm/assembler.h
+@@ -86,6 +86,24 @@
+ 	dmb	\opt
+ 	.endm
+ 
++/*
++ * Value prediction barrier
++ */
++	.macro	csdb
++	hint	#20
++	.endm
++
++/*
++ * Sanitise a 64-bit bounded index wrt speculation, returning zero if out
++ * of bounds.
++ */
++	.macro	mask_nospec64, idx, limit, tmp
++	sub	\tmp, \idx, \limit
++	bic	\tmp, \tmp, \idx
++	and	\idx, \idx, \tmp, asr #63
++	csdb
++	.endm
++
+ /*
+  * NOP sequence
+  */
+@@ -416,4 +434,5 @@ alternative_endif
+ 	.macro	pte_to_phys, phys, pte
+ 	and	\phys, \pte, #(((1 << (48 - PAGE_SHIFT)) - 1) << PAGE_SHIFT)
+ 	.endm
++
+ #endif	/* __ASM_ASSEMBLER_H */
+diff --git a/arch/arm64/include/asm/barrier.h b/arch/arm64/include/asm/barrier.h
+index 0fe7e43b7fbc..0b0755c961ac 100644
+--- a/arch/arm64/include/asm/barrier.h
++++ b/arch/arm64/include/asm/barrier.h
+@@ -31,6 +31,8 @@
+ #define dmb(opt)	asm volatile("dmb " #opt : : : "memory")
+ #define dsb(opt)	asm volatile("dsb " #opt : : : "memory")
+ 
++#define csdb()		asm volatile("hint #20" : : : "memory")
++
+ #define mb()		dsb(sy)
+ #define rmb()		dsb(ld)
+ #define wmb()		dsb(st)
+@@ -38,6 +40,27 @@
+ #define dma_rmb()	dmb(oshld)
+ #define dma_wmb()	dmb(oshst)
+ 
++/*
++ * Generate a mask for array_index__nospec() that is ~0UL when 0 <= idx < sz
++ * and 0 otherwise.
++ */
++#define array_index_mask_nospec array_index_mask_nospec
++static inline unsigned long array_index_mask_nospec(unsigned long idx,
++						    unsigned long sz)
++{
++	unsigned long mask;
++
++	asm volatile(
++	"	cmp	%1, %2\n"
++	"	sbc	%0, xzr, xzr\n"
++	: "=r" (mask)
++	: "r" (idx), "Ir" (sz)
++	: "cc");
++
++	csdb();
++	return mask;
++}
++
+ #define __smp_mb()	dmb(ish)
+ #define __smp_rmb()	dmb(ishld)
+ #define __smp_wmb()	dmb(ishst)
+diff --git a/arch/arm64/include/asm/cpucaps.h b/arch/arm64/include/asm/cpucaps.h
+index 7ddf233f05bd..ce67bf6a0886 100644
+--- a/arch/arm64/include/asm/cpucaps.h
++++ b/arch/arm64/include/asm/cpucaps.h
+@@ -35,7 +35,8 @@
+ #define ARM64_HYP_OFFSET_LOW			14
+ #define ARM64_MISMATCHED_CACHE_LINE_SIZE	15
+ #define ARM64_UNMAP_KERNEL_AT_EL0		16
++#define ARM64_HARDEN_BRANCH_PREDICTOR		17
+ 
+-#define ARM64_NCAPS				17
++#define ARM64_NCAPS				18
+ 
+ #endif /* __ASM_CPUCAPS_H */
+diff --git a/arch/arm64/include/asm/cputype.h b/arch/arm64/include/asm/cputype.h
+index 1d47930c30dc..9ee3038a6b98 100644
+--- a/arch/arm64/include/asm/cputype.h
++++ b/arch/arm64/include/asm/cputype.h
+@@ -75,7 +75,10 @@
+ #define ARM_CPU_PART_AEM_V8		0xD0F
+ #define ARM_CPU_PART_FOUNDATION		0xD00
+ #define ARM_CPU_PART_CORTEX_A57		0xD07
++#define ARM_CPU_PART_CORTEX_A72		0xD08
+ #define ARM_CPU_PART_CORTEX_A53		0xD03
++#define ARM_CPU_PART_CORTEX_A73		0xD09
++#define ARM_CPU_PART_CORTEX_A75		0xD0A
+ 
+ #define APM_CPU_PART_POTENZA		0x000
+ 
+@@ -87,6 +90,9 @@
+ 
+ #define MIDR_CORTEX_A53 MIDR_CPU_MODEL(ARM_CPU_IMP_ARM, ARM_CPU_PART_CORTEX_A53)
+ #define MIDR_CORTEX_A57 MIDR_CPU_MODEL(ARM_CPU_IMP_ARM, ARM_CPU_PART_CORTEX_A57)
++#define MIDR_CORTEX_A72 MIDR_CPU_MODEL(ARM_CPU_IMP_ARM, ARM_CPU_PART_CORTEX_A72)
++#define MIDR_CORTEX_A73 MIDR_CPU_MODEL(ARM_CPU_IMP_ARM, ARM_CPU_PART_CORTEX_A73)
++#define MIDR_CORTEX_A75 MIDR_CPU_MODEL(ARM_CPU_IMP_ARM, ARM_CPU_PART_CORTEX_A75)
+ #define MIDR_THUNDERX	MIDR_CPU_MODEL(ARM_CPU_IMP_CAVIUM, CAVIUM_CPU_PART_THUNDERX)
+ #define MIDR_THUNDERX_81XX MIDR_CPU_MODEL(ARM_CPU_IMP_CAVIUM, CAVIUM_CPU_PART_THUNDERX_81XX)
+ #define MIDR_CAVIUM_THUNDERX2 MIDR_CPU_MODEL(ARM_CPU_IMP_CAVIUM, CAVIUM_CPU_PART_THUNDERX2)
+diff --git a/arch/arm64/include/asm/futex.h b/arch/arm64/include/asm/futex.h
+index 20dcb196b240..4e5f36a804b4 100644
+--- a/arch/arm64/include/asm/futex.h
++++ b/arch/arm64/include/asm/futex.h
+@@ -51,13 +51,14 @@
+ 	: "memory")
+ 
+ static inline int
+-futex_atomic_op_inuser(unsigned int encoded_op, u32 __user *uaddr)
++futex_atomic_op_inuser(unsigned int encoded_op, u32 __user *_uaddr)
+ {
+ 	int op = (encoded_op >> 28) & 7;
+ 	int cmp = (encoded_op >> 24) & 15;
+ 	int oparg = (int)(encoded_op << 8) >> 20;
+ 	int cmparg = (int)(encoded_op << 20) >> 20;
+ 	int oldval = 0, ret, tmp;
++	u32 __user *uaddr = __uaccess_mask_ptr(_uaddr);
+ 
+ 	if (encoded_op & (FUTEX_OP_OPARG_SHIFT << 28))
+ 		oparg = 1U << (oparg & 0x1f);
+@@ -109,15 +110,17 @@ futex_atomic_op_inuser(unsigned int encoded_op, u32 __user *uaddr)
+ }
+ 
+ static inline int
+-futex_atomic_cmpxchg_inatomic(u32 *uval, u32 __user *uaddr,
++futex_atomic_cmpxchg_inatomic(u32 *uval, u32 __user *_uaddr,
+ 			      u32 oldval, u32 newval)
+ {
+ 	int ret = 0;
+ 	u32 val, tmp;
++	u32 __user *uaddr;
+ 
+-	if (!access_ok(VERIFY_WRITE, uaddr, sizeof(u32)))
++	if (!access_ok(VERIFY_WRITE, _uaddr, sizeof(u32)))
+ 		return -EFAULT;
+ 
++	uaddr = __uaccess_mask_ptr(_uaddr);
+ 	asm volatile("// futex_atomic_cmpxchg_inatomic\n"
+ ALTERNATIVE("nop", SET_PSTATE_PAN(0), ARM64_HAS_PAN, CONFIG_ARM64_PAN)
+ "	prfm	pstl1strm, %2\n"
+diff --git a/arch/arm64/include/asm/kvm_host.h b/arch/arm64/include/asm/kvm_host.h
+index e5050388e062..37d56e85036e 100644
+--- a/arch/arm64/include/asm/kvm_host.h
++++ b/arch/arm64/include/asm/kvm_host.h
+@@ -393,4 +393,9 @@ static inline void __cpu_init_stage2(void)
+ 		  "PARange is %d bits, unsupported configuration!", parange);
+ }
+ 
++static inline bool kvm_arm_harden_branch_predictor(void)
++{
++	return cpus_have_cap(ARM64_HARDEN_BRANCH_PREDICTOR);
++}
++
+ #endif /* __ARM64_KVM_HOST_H__ */
+diff --git a/arch/arm64/include/asm/kvm_mmu.h b/arch/arm64/include/asm/kvm_mmu.h
+index 6d22017ebbad..80bf33715ecb 100644
+--- a/arch/arm64/include/asm/kvm_mmu.h
++++ b/arch/arm64/include/asm/kvm_mmu.h
+@@ -313,5 +313,43 @@ static inline unsigned int kvm_get_vmid_bits(void)
+ 	return (cpuid_feature_extract_unsigned_field(reg, ID_AA64MMFR1_VMIDBITS_SHIFT) == 2) ? 16 : 8;
+ }
+ 
++#ifdef CONFIG_HARDEN_BRANCH_PREDICTOR
++#include <asm/mmu.h>
++
++static inline void *kvm_get_hyp_vector(void)
++{
++	struct bp_hardening_data *data = arm64_get_bp_hardening_data();
++	void *vect = kvm_ksym_ref(__kvm_hyp_vector);
++
++	if (data->fn) {
++		vect = __bp_harden_hyp_vecs_start +
++		       data->hyp_vectors_slot * SZ_2K;
++
++		if (!cpus_have_cap(ARM64_HAS_VIRT_HOST_EXTN))
++			vect = lm_alias(vect);
++	}
++
++	return vect;
++}
++
++static inline int kvm_map_vectors(void)
++{
++	return create_hyp_mappings(kvm_ksym_ref(__bp_harden_hyp_vecs_start),
++				   kvm_ksym_ref(__bp_harden_hyp_vecs_end),
++				   PAGE_HYP_EXEC);
++}
++
++#else
++static inline void *kvm_get_hyp_vector(void)
++{
++	return kvm_ksym_ref(__kvm_hyp_vector);
++}
++
++static inline int kvm_map_vectors(void)
++{
++	return 0;
++}
++#endif
++
+ #endif /* __ASSEMBLY__ */
+ #endif /* __ARM64_KVM_MMU_H__ */
+diff --git a/arch/arm64/include/asm/kvm_psci.h b/arch/arm64/include/asm/kvm_psci.h
+deleted file mode 100644
+index bc39e557c56c..000000000000
+--- a/arch/arm64/include/asm/kvm_psci.h
++++ /dev/null
+@@ -1,27 +0,0 @@
+-/*
+- * Copyright (C) 2012,2013 - ARM Ltd
+- * Author: Marc Zyngier <marc.zyngier@arm.com>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+- */
+-
+-#ifndef __ARM64_KVM_PSCI_H__
+-#define __ARM64_KVM_PSCI_H__
+-
+-#define KVM_ARM_PSCI_0_1	1
+-#define KVM_ARM_PSCI_0_2	2
+-
+-int kvm_psci_version(struct kvm_vcpu *vcpu);
+-int kvm_psci_call(struct kvm_vcpu *vcpu);
+-
+-#endif /* __ARM64_KVM_PSCI_H__ */
+diff --git a/arch/arm64/include/asm/memory.h b/arch/arm64/include/asm/memory.h
+index 5e3faba689e0..ba917be5565a 100644
+--- a/arch/arm64/include/asm/memory.h
++++ b/arch/arm64/include/asm/memory.h
+@@ -60,8 +60,6 @@
+  * KIMAGE_VADDR - the virtual address of the start of the kernel image
+  * VA_BITS - the maximum number of bits for virtual addresses.
+  * VA_START - the first kernel virtual address.
+- * TASK_SIZE - the maximum size of a user space task.
+- * TASK_UNMAPPED_BASE - the lower boundary of the mmap VM area.
+  */
+ #define VA_BITS			(CONFIG_ARM64_VA_BITS)
+ #define VA_START		(UL(0xffffffffffffffff) - \
+@@ -76,19 +74,6 @@
+ #define PCI_IO_END		(VMEMMAP_START - SZ_2M)
+ #define PCI_IO_START		(PCI_IO_END - PCI_IO_SIZE)
+ #define FIXADDR_TOP		(PCI_IO_START - SZ_2M)
+-#define TASK_SIZE_64		(UL(1) << VA_BITS)
+-
+-#ifdef CONFIG_COMPAT
+-#define TASK_SIZE_32		UL(0x100000000)
+-#define TASK_SIZE		(test_thread_flag(TIF_32BIT) ? \
+-				TASK_SIZE_32 : TASK_SIZE_64)
+-#define TASK_SIZE_OF(tsk)	(test_tsk_thread_flag(tsk, TIF_32BIT) ? \
+-				TASK_SIZE_32 : TASK_SIZE_64)
+-#else
+-#define TASK_SIZE		TASK_SIZE_64
+-#endif /* CONFIG_COMPAT */
+-
+-#define TASK_UNMAPPED_BASE	(PAGE_ALIGN(TASK_SIZE / 4))
+ 
+ #define KERNEL_START      _text
+ #define KERNEL_END        _end
+diff --git a/arch/arm64/include/asm/mmu.h b/arch/arm64/include/asm/mmu.h
+index a813edf28737..d51158a61892 100644
+--- a/arch/arm64/include/asm/mmu.h
++++ b/arch/arm64/include/asm/mmu.h
+@@ -20,6 +20,8 @@
+ 
+ #ifndef __ASSEMBLY__
+ 
++#include <linux/percpu.h>
++
+ typedef struct {
+ 	atomic64_t	id;
+ 	void		*vdso;
+@@ -38,6 +40,43 @@ static inline bool arm64_kernel_unmapped_at_el0(void)
+ 	       cpus_have_cap(ARM64_UNMAP_KERNEL_AT_EL0);
+ }
+ 
++typedef void (*bp_hardening_cb_t)(void);
++
++struct bp_hardening_data {
++	int			hyp_vectors_slot;
++	bp_hardening_cb_t	fn;
++};
++
++#ifdef CONFIG_HARDEN_BRANCH_PREDICTOR
++extern char __bp_harden_hyp_vecs_start[], __bp_harden_hyp_vecs_end[];
++
++DECLARE_PER_CPU_READ_MOSTLY(struct bp_hardening_data, bp_hardening_data);
++
++static inline struct bp_hardening_data *arm64_get_bp_hardening_data(void)
++{
++	return this_cpu_ptr(&bp_hardening_data);
++}
++
++static inline void arm64_apply_bp_hardening(void)
++{
++	struct bp_hardening_data *d;
++
++	if (!cpus_have_cap(ARM64_HARDEN_BRANCH_PREDICTOR))
++		return;
++
++	d = arm64_get_bp_hardening_data();
++	if (d->fn)
++		d->fn();
++}
++#else
++static inline struct bp_hardening_data *arm64_get_bp_hardening_data(void)
++{
++	return NULL;
++}
++
++static inline void arm64_apply_bp_hardening(void)	{ }
++#endif	/* CONFIG_HARDEN_BRANCH_PREDICTOR */
++
+ extern void paging_init(void);
+ extern void bootmem_init(void);
+ extern void __iomem *early_io_map(phys_addr_t phys, unsigned long virt);
+diff --git a/arch/arm64/include/asm/processor.h b/arch/arm64/include/asm/processor.h
+index 60e34824e18c..5917147af0c4 100644
+--- a/arch/arm64/include/asm/processor.h
++++ b/arch/arm64/include/asm/processor.h
+@@ -19,6 +19,13 @@
+ #ifndef __ASM_PROCESSOR_H
+ #define __ASM_PROCESSOR_H
+ 
++#define TASK_SIZE_64		(UL(1) << VA_BITS)
++
++#define KERNEL_DS	UL(-1)
++#define USER_DS		(TASK_SIZE_64 - 1)
++
++#ifndef __ASSEMBLY__
++
+ /*
+  * Default implementation of macro that returns current
+  * instruction pointer ("program counter").
+@@ -37,6 +44,22 @@
+ #include <asm/ptrace.h>
+ #include <asm/types.h>
+ 
++/*
++ * TASK_SIZE - the maximum size of a user space task.
++ * TASK_UNMAPPED_BASE - the lower boundary of the mmap VM area.
++ */
++#ifdef CONFIG_COMPAT
++#define TASK_SIZE_32		UL(0x100000000)
++#define TASK_SIZE		(test_thread_flag(TIF_32BIT) ? \
++				TASK_SIZE_32 : TASK_SIZE_64)
++#define TASK_SIZE_OF(tsk)	(test_tsk_thread_flag(tsk, TIF_32BIT) ? \
++				TASK_SIZE_32 : TASK_SIZE_64)
++#else
++#define TASK_SIZE		TASK_SIZE_64
++#endif /* CONFIG_COMPAT */
++
++#define TASK_UNMAPPED_BASE	(PAGE_ALIGN(TASK_SIZE / 4))
++
+ #define STACK_TOP_MAX		TASK_SIZE_64
+ #ifdef CONFIG_COMPAT
+ #define AARCH32_VECTORS_BASE	0xffff0000
+@@ -192,4 +215,5 @@ int cpu_enable_pan(void *__unused);
+ int cpu_enable_uao(void *__unused);
+ int cpu_enable_cache_maint_trap(void *__unused);
+ 
++#endif /* __ASSEMBLY__ */
+ #endif /* __ASM_PROCESSOR_H */
+diff --git a/arch/arm64/include/asm/sysreg.h b/arch/arm64/include/asm/sysreg.h
+index 7cb7f7cdcfbc..88bbe364b6ae 100644
+--- a/arch/arm64/include/asm/sysreg.h
++++ b/arch/arm64/include/asm/sysreg.h
+@@ -118,6 +118,8 @@
+ 
+ /* id_aa64pfr0 */
+ #define ID_AA64PFR0_CSV3_SHIFT		60
++#define ID_AA64PFR0_CSV2_SHIFT		56
++#define ID_AA64PFR0_SVE_SHIFT		32
+ #define ID_AA64PFR0_GIC_SHIFT		24
+ #define ID_AA64PFR0_ASIMD_SHIFT		20
+ #define ID_AA64PFR0_FP_SHIFT		16
+diff --git a/arch/arm64/include/asm/uaccess.h b/arch/arm64/include/asm/uaccess.h
+index 811cf16a65f9..1d047d6c421b 100644
+--- a/arch/arm64/include/asm/uaccess.h
++++ b/arch/arm64/include/asm/uaccess.h
+@@ -28,6 +28,7 @@
+ 
+ #include <asm/alternative.h>
+ #include <asm/cpufeature.h>
++#include <asm/processor.h>
+ #include <asm/ptrace.h>
+ #include <asm/sysreg.h>
+ #include <asm/errno.h>
+@@ -59,16 +60,20 @@ struct exception_table_entry
+ 
+ extern int fixup_exception(struct pt_regs *regs);
+ 
+-#define KERNEL_DS	(-1UL)
+ #define get_ds()	(KERNEL_DS)
+-
+-#define USER_DS		TASK_SIZE_64
+ #define get_fs()	(current_thread_info()->addr_limit)
+ 
+ static inline void set_fs(mm_segment_t fs)
+ {
+ 	current_thread_info()->addr_limit = fs;
+ 
++	/*
++	 * Prevent a mispredicted conditional call to set_fs from forwarding
++	 * the wrong address limit to access_ok under speculation.
++	 */
++	dsb(nsh);
++	isb();
++
+ 	/*
+ 	 * Enable/disable UAO so that copy_to_user() etc can access
+ 	 * kernel memory with the unprivileged instructions.
+@@ -87,22 +92,32 @@ static inline void set_fs(mm_segment_t fs)
+  * Returns 1 if the range is valid, 0 otherwise.
+  *
+  * This is equivalent to the following test:
+- * (u65)addr + (u65)size <= current->addr_limit
+- *
+- * This needs 65-bit arithmetic.
++ * (u65)addr + (u65)size <= (u65)current->addr_limit + 1
+  */
+-#define __range_ok(addr, size)						\
+-({									\
+-	unsigned long __addr = (unsigned long __force)(addr);		\
+-	unsigned long flag, roksum;					\
+-	__chk_user_ptr(addr);						\
+-	asm("adds %1, %1, %3; ccmp %1, %4, #2, cc; cset %0, ls"		\
+-		: "=&r" (flag), "=&r" (roksum)				\
+-		: "1" (__addr), "Ir" (size),				\
+-		  "r" (current_thread_info()->addr_limit)		\
+-		: "cc");						\
+-	flag;								\
+-})
++static inline unsigned long __range_ok(unsigned long addr, unsigned long size)
++{
++	unsigned long limit = current_thread_info()->addr_limit;
++
++	__chk_user_ptr(addr);
++	asm volatile(
++	// A + B <= C + 1 for all A,B,C, in four easy steps:
++	// 1: X = A + B; X' = X % 2^64
++	"	adds	%0, %0, %2\n"
++	// 2: Set C = 0 if X > 2^64, to guarantee X' > C in step 4
++	"	csel	%1, xzr, %1, hi\n"
++	// 3: Set X' = ~0 if X >= 2^64. For X == 2^64, this decrements X'
++	//    to compensate for the carry flag being set in step 4. For
++	//    X > 2^64, X' merely has to remain nonzero, which it does.
++	"	csinv	%0, %0, xzr, cc\n"
++	// 4: For X < 2^64, this gives us X' - C - 1 <= 0, where the -1
++	//    comes from the carry in being clear. Otherwise, we are
++	//    testing X' - C == 0, subject to the previous adjustments.
++	"	sbcs	xzr, %0, %1\n"
++	"	cset	%0, ls\n"
++	: "+r" (addr), "+r" (limit) : "Ir" (size) : "cc");
++
++	return addr;
++}
+ 
+ /*
+  * When dealing with data aborts, watchpoints, or instruction traps we may end
+@@ -111,7 +126,7 @@ static inline void set_fs(mm_segment_t fs)
+  */
+ #define untagged_addr(addr)		sign_extend64(addr, 55)
+ 
+-#define access_ok(type, addr, size)	__range_ok(addr, size)
++#define access_ok(type, addr, size)	__range_ok((unsigned long)(addr), size)
+ #define user_addr_max			get_fs
+ 
+ #define _ASM_EXTABLE(from, to)						\
+@@ -120,6 +135,26 @@ static inline void set_fs(mm_segment_t fs)
+ 	"	.long		(" #from " - .), (" #to " - .)\n"	\
+ 	"	.popsection\n"
+ 
++/*
++ * Sanitise a uaccess pointer such that it becomes NULL if above the
++ * current addr_limit.
++ */
++#define uaccess_mask_ptr(ptr) (__typeof__(ptr))__uaccess_mask_ptr(ptr)
++static inline void __user *__uaccess_mask_ptr(const void __user *ptr)
++{
++	void __user *safe_ptr;
++
++	asm volatile(
++	"	bics	xzr, %1, %2\n"
++	"	csel	%0, %1, xzr, eq\n"
++	: "=&r" (safe_ptr)
++	: "r" (ptr), "r" (current_thread_info()->addr_limit)
++	: "cc");
++
++	csdb();
++	return safe_ptr;
++}
++
+ /*
+  * The "__xxx" versions of the user access functions do not verify the address
+  * space - it must have been done previously with a separate "access_ok()"
+@@ -174,30 +209,35 @@ do {									\
+ 			CONFIG_ARM64_PAN));				\
+ } while (0)
+ 
+-#define __get_user(x, ptr)						\
++#define __get_user_check(x, ptr, err)					\
+ ({									\
+-	int __gu_err = 0;						\
+-	__get_user_err((x), (ptr), __gu_err);				\
+-	__gu_err;							\
++	__typeof__(*(ptr)) __user *__p = (ptr);				\
++	might_fault();							\
++	if (access_ok(VERIFY_READ, __p, sizeof(*__p))) {		\
++		__p = uaccess_mask_ptr(__p);				\
++		__get_user_err((x), __p, (err));			\
++	} else {							\
++		(x) = 0; (err) = -EFAULT;				\
++	}								\
+ })
+ 
+ #define __get_user_error(x, ptr, err)					\
+ ({									\
+-	__get_user_err((x), (ptr), (err));				\
++	__get_user_check((x), (ptr), (err));				\
+ 	(void)0;							\
+ })
+ 
+-#define __get_user_unaligned __get_user
+-
+-#define get_user(x, ptr)						\
++#define __get_user(x, ptr)						\
+ ({									\
+-	__typeof__(*(ptr)) __user *__p = (ptr);				\
+-	might_fault();							\
+-	access_ok(VERIFY_READ, __p, sizeof(*__p)) ?			\
+-		__get_user((x), __p) :					\
+-		((x) = 0, -EFAULT);					\
++	int __gu_err = 0;						\
++	__get_user_check((x), (ptr), __gu_err);				\
++	__gu_err;							\
+ })
+ 
++#define __get_user_unaligned __get_user
++
++#define get_user	__get_user
++
+ #define __put_user_asm(instr, alt_instr, reg, x, addr, err, feature)	\
+ 	asm volatile(							\
+ 	"1:"ALTERNATIVE(instr "     " reg "1, [%2]\n",			\
+@@ -242,47 +282,51 @@ do {									\
+ 			CONFIG_ARM64_PAN));				\
+ } while (0)
+ 
+-#define __put_user(x, ptr)						\
++#define __put_user_check(x, ptr, err)					\
+ ({									\
+-	int __pu_err = 0;						\
+-	__put_user_err((x), (ptr), __pu_err);				\
+-	__pu_err;							\
++	__typeof__(*(ptr)) __user *__p = (ptr);				\
++	might_fault();							\
++	if (access_ok(VERIFY_WRITE, __p, sizeof(*__p))) {		\
++		__p = uaccess_mask_ptr(__p);				\
++		__put_user_err((x), __p, (err));			\
++	} else	{							\
++		(err) = -EFAULT;					\
++	}								\
+ })
+ 
+ #define __put_user_error(x, ptr, err)					\
+ ({									\
+-	__put_user_err((x), (ptr), (err));				\
++	__put_user_check((x), (ptr), (err));				\
+ 	(void)0;							\
+ })
+ 
+-#define __put_user_unaligned __put_user
+-
+-#define put_user(x, ptr)						\
++#define __put_user(x, ptr)						\
+ ({									\
+-	__typeof__(*(ptr)) __user *__p = (ptr);				\
+-	might_fault();							\
+-	access_ok(VERIFY_WRITE, __p, sizeof(*__p)) ?			\
+-		__put_user((x), __p) :					\
+-		-EFAULT;						\
++	int __pu_err = 0;						\
++	__put_user_check((x), (ptr), __pu_err);				\
++	__pu_err;							\
+ })
+ 
++#define __put_user_unaligned __put_user
++
++#define put_user	__put_user
++
+ extern unsigned long __must_check __arch_copy_from_user(void *to, const void __user *from, unsigned long n);
+ extern unsigned long __must_check __arch_copy_to_user(void __user *to, const void *from, unsigned long n);
+-extern unsigned long __must_check __copy_in_user(void __user *to, const void __user *from, unsigned long n);
+-extern unsigned long __must_check __clear_user(void __user *addr, unsigned long n);
++extern unsigned long __must_check __arch_copy_in_user(void __user *to, const void __user *from, unsigned long n);
+ 
+ static inline unsigned long __must_check __copy_from_user(void *to, const void __user *from, unsigned long n)
+ {
+ 	kasan_check_write(to, n);
+ 	check_object_size(to, n, false);
+-	return __arch_copy_from_user(to, from, n);
++	return __arch_copy_from_user(to, __uaccess_mask_ptr(from), n);
+ }
+ 
+ static inline unsigned long __must_check __copy_to_user(void __user *to, const void *from, unsigned long n)
+ {
+ 	kasan_check_read(from, n);
+ 	check_object_size(from, n, true);
+-	return __arch_copy_to_user(to, from, n);
++	return __arch_copy_to_user(__uaccess_mask_ptr(to), from, n);
+ }
+ 
+ static inline unsigned long __must_check copy_from_user(void *to, const void __user *from, unsigned long n)
+@@ -310,22 +354,25 @@ static inline unsigned long __must_check copy_to_user(void __user *to, const voi
+ 	return n;
+ }
+ 
+-static inline unsigned long __must_check copy_in_user(void __user *to, const void __user *from, unsigned long n)
++static inline unsigned long __must_check __copy_in_user(void __user *to, const void __user *from, unsigned long n)
+ {
+ 	if (access_ok(VERIFY_READ, from, n) && access_ok(VERIFY_WRITE, to, n))
+-		n = __copy_in_user(to, from, n);
++		n = __arch_copy_in_user(__uaccess_mask_ptr(to), __uaccess_mask_ptr(from), n);
+ 	return n;
+ }
++#define copy_in_user __copy_in_user
+ 
+ #define __copy_to_user_inatomic __copy_to_user
+ #define __copy_from_user_inatomic __copy_from_user
+ 
+-static inline unsigned long __must_check clear_user(void __user *to, unsigned long n)
++extern unsigned long __must_check __arch_clear_user(void __user *to, unsigned long n);
++static inline unsigned long __must_check __clear_user(void __user *to, unsigned long n)
+ {
+ 	if (access_ok(VERIFY_WRITE, to, n))
+-		n = __clear_user(to, n);
++		n = __arch_clear_user(__uaccess_mask_ptr(to), n);
+ 	return n;
+ }
++#define clear_user	__clear_user
+ 
+ extern long strncpy_from_user(char *dest, const char __user *src, long count);
+ 
+diff --git a/arch/arm64/kernel/Makefile b/arch/arm64/kernel/Makefile
+index 7d66bbaafc0c..74b8fd860714 100644
+--- a/arch/arm64/kernel/Makefile
++++ b/arch/arm64/kernel/Makefile
+@@ -51,6 +51,10 @@ arm64-obj-$(CONFIG_HIBERNATION)		+= hibernate.o hibernate-asm.o
+ arm64-obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o	\
+ 					   cpu-reset.o
+ 
++ifeq ($(CONFIG_KVM),y)
++arm64-obj-$(CONFIG_HARDEN_BRANCH_PREDICTOR)	+= bpi.o
++endif
++
+ obj-y					+= $(arm64-obj-y) vdso/ probes/
+ obj-m					+= $(arm64-obj-m)
+ head-y					:= head.o
+diff --git a/arch/arm64/kernel/arm64ksyms.c b/arch/arm64/kernel/arm64ksyms.c
+index e9c4dc9e0ada..66be504edb6c 100644
+--- a/arch/arm64/kernel/arm64ksyms.c
++++ b/arch/arm64/kernel/arm64ksyms.c
+@@ -37,8 +37,8 @@ EXPORT_SYMBOL(clear_page);
+ 	/* user mem (segment) */
+ EXPORT_SYMBOL(__arch_copy_from_user);
+ EXPORT_SYMBOL(__arch_copy_to_user);
+-EXPORT_SYMBOL(__clear_user);
+-EXPORT_SYMBOL(__copy_in_user);
++EXPORT_SYMBOL(__arch_clear_user);
++EXPORT_SYMBOL(__arch_copy_in_user);
+ 
+ 	/* physical memory */
+ EXPORT_SYMBOL(memstart_addr);
+diff --git a/arch/arm64/kernel/bpi.S b/arch/arm64/kernel/bpi.S
+new file mode 100644
+index 000000000000..dc4eb154e33b
+--- /dev/null
++++ b/arch/arm64/kernel/bpi.S
+@@ -0,0 +1,75 @@
++/*
++ * Contains CPU specific branch predictor invalidation sequences
++ *
++ * Copyright (C) 2018 ARM Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <linux/linkage.h>
++#include <linux/arm-smccc.h>
++
++.macro ventry target
++	.rept 31
++	nop
++	.endr
++	b	\target
++.endm
++
++.macro vectors target
++	ventry \target + 0x000
++	ventry \target + 0x080
++	ventry \target + 0x100
++	ventry \target + 0x180
++
++	ventry \target + 0x200
++	ventry \target + 0x280
++	ventry \target + 0x300
++	ventry \target + 0x380
++
++	ventry \target + 0x400
++	ventry \target + 0x480
++	ventry \target + 0x500
++	ventry \target + 0x580
++
++	ventry \target + 0x600
++	ventry \target + 0x680
++	ventry \target + 0x700
++	ventry \target + 0x780
++.endm
++
++	.align	11
++ENTRY(__bp_harden_hyp_vecs_start)
++	.rept 4
++	vectors __kvm_hyp_vector
++	.endr
++ENTRY(__bp_harden_hyp_vecs_end)
++
++.macro smccc_workaround_1 inst
++	sub	sp, sp, #(8 * 4)
++	stp	x2, x3, [sp, #(8 * 0)]
++	stp	x0, x1, [sp, #(8 * 2)]
++	mov	w0, #ARM_SMCCC_ARCH_WORKAROUND_1
++	\inst	#0
++	ldp	x2, x3, [sp, #(8 * 0)]
++	ldp	x0, x1, [sp, #(8 * 2)]
++	add	sp, sp, #(8 * 4)
++.endm
++
++ENTRY(__smccc_workaround_1_smc_start)
++	smccc_workaround_1	smc
++ENTRY(__smccc_workaround_1_smc_end)
++
++ENTRY(__smccc_workaround_1_hvc_start)
++	smccc_workaround_1	hvc
++ENTRY(__smccc_workaround_1_hvc_end)
+diff --git a/arch/arm64/kernel/cpu_errata.c b/arch/arm64/kernel/cpu_errata.c
+index b75e917aac46..74107134cc30 100644
+--- a/arch/arm64/kernel/cpu_errata.c
++++ b/arch/arm64/kernel/cpu_errata.c
+@@ -46,6 +46,147 @@ static int cpu_enable_trap_ctr_access(void *__unused)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_HARDEN_BRANCH_PREDICTOR
++#include <asm/mmu_context.h>
++#include <asm/cacheflush.h>
++
++DEFINE_PER_CPU_READ_MOSTLY(struct bp_hardening_data, bp_hardening_data);
++
++#ifdef CONFIG_KVM
++extern char __smccc_workaround_1_smc_start[];
++extern char __smccc_workaround_1_smc_end[];
++extern char __smccc_workaround_1_hvc_start[];
++extern char __smccc_workaround_1_hvc_end[];
++
++static void __copy_hyp_vect_bpi(int slot, const char *hyp_vecs_start,
++				const char *hyp_vecs_end)
++{
++	void *dst = __bp_harden_hyp_vecs_start + slot * SZ_2K;
++	int i;
++
++	for (i = 0; i < SZ_2K; i += 0x80)
++		memcpy(dst + i, hyp_vecs_start, hyp_vecs_end - hyp_vecs_start);
++
++	flush_icache_range((uintptr_t)dst, (uintptr_t)dst + SZ_2K);
++}
++
++static void __install_bp_hardening_cb(bp_hardening_cb_t fn,
++				      const char *hyp_vecs_start,
++				      const char *hyp_vecs_end)
++{
++	static int last_slot = -1;
++	static DEFINE_SPINLOCK(bp_lock);
++	int cpu, slot = -1;
++
++	spin_lock(&bp_lock);
++	for_each_possible_cpu(cpu) {
++		if (per_cpu(bp_hardening_data.fn, cpu) == fn) {
++			slot = per_cpu(bp_hardening_data.hyp_vectors_slot, cpu);
++			break;
++		}
++	}
++
++	if (slot == -1) {
++		last_slot++;
++		BUG_ON(((__bp_harden_hyp_vecs_end - __bp_harden_hyp_vecs_start)
++			/ SZ_2K) <= last_slot);
++		slot = last_slot;
++		__copy_hyp_vect_bpi(slot, hyp_vecs_start, hyp_vecs_end);
++	}
++
++	__this_cpu_write(bp_hardening_data.hyp_vectors_slot, slot);
++	__this_cpu_write(bp_hardening_data.fn, fn);
++	spin_unlock(&bp_lock);
++}
++#else
++#define __smccc_workaround_1_smc_start		NULL
++#define __smccc_workaround_1_smc_end		NULL
++#define __smccc_workaround_1_hvc_start		NULL
++#define __smccc_workaround_1_hvc_end		NULL
++
++static void __install_bp_hardening_cb(bp_hardening_cb_t fn,
++				      const char *hyp_vecs_start,
++				      const char *hyp_vecs_end)
++{
++	__this_cpu_write(bp_hardening_data.fn, fn);
++}
++#endif	/* CONFIG_KVM */
++
++static void  install_bp_hardening_cb(const struct arm64_cpu_capabilities *entry,
++				     bp_hardening_cb_t fn,
++				     const char *hyp_vecs_start,
++				     const char *hyp_vecs_end)
++{
++	u64 pfr0;
++
++	if (!entry->matches(entry, SCOPE_LOCAL_CPU))
++		return;
++
++	pfr0 = read_cpuid(ID_AA64PFR0_EL1);
++	if (cpuid_feature_extract_unsigned_field(pfr0, ID_AA64PFR0_CSV2_SHIFT))
++		return;
++
++	__install_bp_hardening_cb(fn, hyp_vecs_start, hyp_vecs_end);
++}
++
++#include <uapi/linux/psci.h>
++#include <linux/arm-smccc.h>
++#include <linux/psci.h>
++
++static void call_smc_arch_workaround_1(void)
++{
++	arm_smccc_1_1_smc(ARM_SMCCC_ARCH_WORKAROUND_1, NULL);
++}
++
++static void call_hvc_arch_workaround_1(void)
++{
++	arm_smccc_1_1_hvc(ARM_SMCCC_ARCH_WORKAROUND_1, NULL);
++}
++
++static int enable_smccc_arch_workaround_1(void *data)
++{
++	const struct arm64_cpu_capabilities *entry = data;
++	bp_hardening_cb_t cb;
++	void *smccc_start, *smccc_end;
++	struct arm_smccc_res res;
++
++	if (!entry->matches(entry, SCOPE_LOCAL_CPU))
++		return 0;
++
++	if (psci_ops.smccc_version == SMCCC_VERSION_1_0)
++		return 0;
++
++	switch (psci_ops.conduit) {
++	case PSCI_CONDUIT_HVC:
++		arm_smccc_1_1_hvc(ARM_SMCCC_ARCH_FEATURES_FUNC_ID,
++				  ARM_SMCCC_ARCH_WORKAROUND_1, &res);
++		if (res.a0)
++			return 0;
++		cb = call_hvc_arch_workaround_1;
++		smccc_start = __smccc_workaround_1_hvc_start;
++		smccc_end = __smccc_workaround_1_hvc_end;
++		break;
++
++	case PSCI_CONDUIT_SMC:
++		arm_smccc_1_1_smc(ARM_SMCCC_ARCH_FEATURES_FUNC_ID,
++				  ARM_SMCCC_ARCH_WORKAROUND_1, &res);
++		if (res.a0)
++			return 0;
++		cb = call_smc_arch_workaround_1;
++		smccc_start = __smccc_workaround_1_smc_start;
++		smccc_end = __smccc_workaround_1_smc_end;
++		break;
++
++	default:
++		return 0;
++	}
++
++	install_bp_hardening_cb(entry, cb, smccc_start, smccc_end);
++
++	return 0;
++}
++#endif	/* CONFIG_HARDEN_BRANCH_PREDICTOR */
++
+ #define MIDR_RANGE(model, min, max) \
+ 	.def_scope = SCOPE_LOCAL_CPU, \
+ 	.matches = is_affected_midr_range, \
+@@ -53,6 +194,13 @@ static int cpu_enable_trap_ctr_access(void *__unused)
+ 	.midr_range_min = min, \
+ 	.midr_range_max = max
+ 
++#define MIDR_ALL_VERSIONS(model) \
++	.def_scope = SCOPE_LOCAL_CPU, \
++	.matches = is_affected_midr_range, \
++	.midr_model = model, \
++	.midr_range_min = 0, \
++	.midr_range_max = (MIDR_VARIANT_MASK | MIDR_REVISION_MASK)
++
+ const struct arm64_cpu_capabilities arm64_errata[] = {
+ #if	defined(CONFIG_ARM64_ERRATUM_826319) || \
+ 	defined(CONFIG_ARM64_ERRATUM_827319) || \
+@@ -130,6 +278,38 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
+ 		.def_scope = SCOPE_LOCAL_CPU,
+ 		.enable = cpu_enable_trap_ctr_access,
+ 	},
++#ifdef CONFIG_HARDEN_BRANCH_PREDICTOR
++	{
++		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
++		MIDR_ALL_VERSIONS(MIDR_CORTEX_A57),
++		.enable = enable_smccc_arch_workaround_1,
++	},
++	{
++		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
++		MIDR_ALL_VERSIONS(MIDR_CORTEX_A72),
++		.enable = enable_smccc_arch_workaround_1,
++	},
++	{
++		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
++		MIDR_ALL_VERSIONS(MIDR_CORTEX_A73),
++		.enable = enable_smccc_arch_workaround_1,
++	},
++	{
++		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
++		MIDR_ALL_VERSIONS(MIDR_CORTEX_A75),
++		.enable = enable_smccc_arch_workaround_1,
++	},
++	{
++		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
++		MIDR_ALL_VERSIONS(MIDR_BRCM_VULCAN),
++		.enable = enable_smccc_arch_workaround_1,
++	},
++	{
++		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
++		MIDR_ALL_VERSIONS(MIDR_CAVIUM_THUNDERX2),
++		.enable = enable_smccc_arch_workaround_1,
++	},
++#endif
+ 	{
+ 	}
+ };
+@@ -143,15 +323,18 @@ void verify_local_cpu_errata_workarounds(void)
+ {
+ 	const struct arm64_cpu_capabilities *caps = arm64_errata;
+ 
+-	for (; caps->matches; caps++)
+-		if (!cpus_have_cap(caps->capability) &&
+-			caps->matches(caps, SCOPE_LOCAL_CPU)) {
++	for (; caps->matches; caps++) {
++		if (cpus_have_cap(caps->capability)) {
++			if (caps->enable)
++				caps->enable((void *)caps);
++		} else if (caps->matches(caps, SCOPE_LOCAL_CPU)) {
+ 			pr_crit("CPU%d: Requires work around for %s, not detected"
+ 					" at boot time\n",
+ 				smp_processor_id(),
+ 				caps->desc ? : "an erratum");
+ 			cpu_die_early();
+ 		}
++	}
+ }
+ 
+ void update_cpu_errata_workarounds(void)
+diff --git a/arch/arm64/kernel/cpufeature.c b/arch/arm64/kernel/cpufeature.c
+index 5056fc597ae9..a0ee01202503 100644
+--- a/arch/arm64/kernel/cpufeature.c
++++ b/arch/arm64/kernel/cpufeature.c
+@@ -94,7 +94,8 @@ static const struct arm64_ftr_bits ftr_id_aa64isar0[] = {
+ 
+ static const struct arm64_ftr_bits ftr_id_aa64pfr0[] = {
+ 	ARM64_FTR_BITS(FTR_NONSTRICT, FTR_LOWER_SAFE, ID_AA64PFR0_CSV3_SHIFT, 4, 0),
+-	ARM64_FTR_BITS(FTR_STRICT, FTR_EXACT, 32, 28, 0),
++	ARM64_FTR_BITS(FTR_NONSTRICT, FTR_LOWER_SAFE, ID_AA64PFR0_CSV2_SHIFT, 4, 0),
++	ARM64_FTR_BITS(FTR_STRICT, FTR_EXACT, 32, 24, 0),
+ 	ARM64_FTR_BITS(FTR_STRICT, FTR_EXACT, 28, 4, 0),
+ 	ARM64_FTR_BITS(FTR_STRICT, FTR_EXACT, ID_AA64PFR0_GIC_SHIFT, 4, 0),
+ 	S_ARM64_FTR_BITS(FTR_STRICT, FTR_LOWER_SAFE, ID_AA64PFR0_ASIMD_SHIFT, 4, ID_AA64PFR0_ASIMD_NI),
+@@ -1024,9 +1025,8 @@ static bool __this_cpu_has_cap(const struct arm64_cpu_capabilities *cap_array,
+ 	if (WARN_ON(preemptible()))
+ 		return false;
+ 
+-	for (caps = cap_array; caps->desc; caps++)
++	for (caps = cap_array; caps->matches; caps++)
+ 		if (caps->capability == cap &&
+-		    caps->matches &&
+ 		    caps->matches(caps, SCOPE_LOCAL_CPU))
+ 			return true;
+ 	return false;
+@@ -1059,7 +1059,7 @@ void __init enable_cpu_capabilities(const struct arm64_cpu_capabilities *caps)
+ 			 * uses an IPI, giving us a PSTATE that disappears when
+ 			 * we return.
+ 			 */
+-			stop_machine(caps->enable, NULL, cpu_online_mask);
++			stop_machine(caps->enable, (void *)caps, cpu_online_mask);
+ }
+ 
+ /*
+@@ -1116,7 +1116,7 @@ verify_local_cpu_features(const struct arm64_cpu_capabilities *caps_list)
+ 			cpu_die_early();
+ 		}
+ 		if (caps->enable)
+-			caps->enable(NULL);
++			caps->enable((void *)caps);
+ 	}
+ }
+ 
+diff --git a/arch/arm64/kernel/entry.S b/arch/arm64/kernel/entry.S
+index 8d1600b18562..b79e302d2a3e 100644
+--- a/arch/arm64/kernel/entry.S
++++ b/arch/arm64/kernel/entry.S
+@@ -30,6 +30,7 @@
+ #include <asm/irq.h>
+ #include <asm/memory.h>
+ #include <asm/mmu.h>
++#include <asm/processor.h>
+ #include <asm/thread_info.h>
+ #include <asm/asm-uaccess.h>
+ #include <asm/unistd.h>
+@@ -125,10 +126,10 @@ alternative_else_nop_endif
+ 	.else
+ 	add	x21, sp, #S_FRAME_SIZE
+ 	get_thread_info tsk
+-	/* Save the task's original addr_limit and set USER_DS (TASK_SIZE_64) */
++	/* Save the task's original addr_limit and set USER_DS */
+ 	ldr	x20, [tsk, #TI_ADDR_LIMIT]
+ 	str	x20, [sp, #S_ORIG_ADDR_LIMIT]
+-	mov	x20, #TASK_SIZE_64
++	mov	x20, #USER_DS
+ 	str	x20, [tsk, #TI_ADDR_LIMIT]
+ 	/* No need to reset PSTATE.UAO, hardware's already set it to 0 for us */
+ 	.endif /* \el == 0 */
+@@ -588,13 +589,15 @@ el0_ia:
+ 	 * Instruction abort handling
+ 	 */
+ 	mrs	x26, far_el1
+-	// enable interrupts before calling the main handler
+-	enable_dbg_and_irq
++	msr     daifclr, #(8 | 4 | 1)
++#ifdef CONFIG_TRACE_IRQFLAGS
++	bl	trace_hardirqs_off
++#endif
+ 	ct_user_exit
+ 	mov	x0, x26
+ 	mov	x1, x25
+ 	mov	x2, sp
+-	bl	do_mem_abort
++	bl	do_el0_ia_bp_hardening
+ 	b	ret_to_user
+ el0_fpsimd_acc:
+ 	/*
+@@ -621,8 +624,10 @@ el0_sp_pc:
+ 	 * Stack or PC alignment exception handling
+ 	 */
+ 	mrs	x26, far_el1
+-	// enable interrupts before calling the main handler
+-	enable_dbg_and_irq
++	enable_dbg
++#ifdef CONFIG_TRACE_IRQFLAGS
++	bl	trace_hardirqs_off
++#endif
+ 	ct_user_exit
+ 	mov	x0, x26
+ 	mov	x1, x25
+@@ -681,6 +686,11 @@ el0_irq_naked:
+ #endif
+ 
+ 	ct_user_exit
++#ifdef CONFIG_HARDEN_BRANCH_PREDICTOR
++	tbz	x22, #55, 1f
++	bl	do_el0_irq_bp_hardening
++1:
++#endif
+ 	irq_handler
+ 
+ #ifdef CONFIG_TRACE_IRQFLAGS
+@@ -794,6 +804,7 @@ el0_svc_naked:					// compat entry point
+ 	b.ne	__sys_trace
+ 	cmp     scno, sc_nr                     // check upper syscall limit
+ 	b.hs	ni_sys
++	mask_nospec64 scno, sc_nr, x19	// enforce bounds for syscall number
+ 	ldr	x16, [stbl, scno, lsl #3]	// address in the syscall table
+ 	blr	x16				// call sys_* routine
+ 	b	ret_fast_syscall
+diff --git a/arch/arm64/kvm/handle_exit.c b/arch/arm64/kvm/handle_exit.c
+index 2e6e9e99977b..efe43c5f2dc1 100644
+--- a/arch/arm64/kvm/handle_exit.c
++++ b/arch/arm64/kvm/handle_exit.c
+@@ -22,12 +22,15 @@
+ #include <linux/kvm.h>
+ #include <linux/kvm_host.h>
+ 
++#include <kvm/arm_psci.h>
++
+ #include <asm/esr.h>
+ #include <asm/kvm_asm.h>
+ #include <asm/kvm_coproc.h>
+ #include <asm/kvm_emulate.h>
+ #include <asm/kvm_mmu.h>
+-#include <asm/kvm_psci.h>
++#include <asm/debug-monitors.h>
++#include <asm/traps.h>
+ 
+ #define CREATE_TRACE_POINTS
+ #include "trace.h"
+@@ -42,7 +45,7 @@ static int handle_hvc(struct kvm_vcpu *vcpu, struct kvm_run *run)
+ 			    kvm_vcpu_hvc_get_imm(vcpu));
+ 	vcpu->stat.hvc_exit_stat++;
+ 
+-	ret = kvm_psci_call(vcpu);
++	ret = kvm_hvc_call_handler(vcpu);
+ 	if (ret < 0) {
+ 		vcpu_set_reg(vcpu, 0, ~0UL);
+ 		return 1;
+@@ -53,7 +56,16 @@ static int handle_hvc(struct kvm_vcpu *vcpu, struct kvm_run *run)
+ 
+ static int handle_smc(struct kvm_vcpu *vcpu, struct kvm_run *run)
+ {
++	/*
++	 * "If an SMC instruction executed at Non-secure EL1 is
++	 * trapped to EL2 because HCR_EL2.TSC is 1, the exception is a
++	 * Trap exception, not a Secure Monitor Call exception [...]"
++	 *
++	 * We need to advance the PC after the trap, as it would
++	 * otherwise return to the same address...
++	 */
+ 	vcpu_set_reg(vcpu, 0, ~0UL);
++	kvm_skip_instr(vcpu, kvm_vcpu_trap_il_is32bit(vcpu));
+ 	return 1;
+ }
+ 
+diff --git a/arch/arm64/kvm/hyp/hyp-entry.S b/arch/arm64/kvm/hyp/hyp-entry.S
+index 4e92399f7105..4e9d50c3e658 100644
+--- a/arch/arm64/kvm/hyp/hyp-entry.S
++++ b/arch/arm64/kvm/hyp/hyp-entry.S
+@@ -15,6 +15,7 @@
+  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  */
+ 
++#include <linux/arm-smccc.h>
+ #include <linux/linkage.h>
+ 
+ #include <asm/alternative.h>
+@@ -79,10 +80,11 @@ alternative_endif
+ 	lsr	x0, x1, #ESR_ELx_EC_SHIFT
+ 
+ 	cmp	x0, #ESR_ELx_EC_HVC64
++	ccmp	x0, #ESR_ELx_EC_HVC32, #4, ne
+ 	b.ne	el1_trap
+ 
+-	mrs	x1, vttbr_el2		// If vttbr is valid, the 64bit guest
+-	cbnz	x1, el1_trap		// called HVC
++	mrs	x1, vttbr_el2		// If vttbr is valid, the guest
++	cbnz	x1, el1_hvc_guest	// called HVC
+ 
+ 	/* Here, we're pretty sure the host called HVC. */
+ 	ldp	x0, x1, [sp], #16
+@@ -101,6 +103,20 @@ alternative_endif
+ 
+ 2:	eret
+ 
++el1_hvc_guest:
++	/*
++	 * Fastest possible path for ARM_SMCCC_ARCH_WORKAROUND_1.
++	 * The workaround has already been applied on the host,
++	 * so let's quickly get back to the guest. We don't bother
++	 * restoring x1, as it can be clobbered anyway.
++	 */
++	ldr	x1, [sp]				// Guest's x0
++	eor	w1, w1, #ARM_SMCCC_ARCH_WORKAROUND_1
++	cbnz	w1, el1_trap
++	mov	x0, x1
++	add	sp, sp, #16
++	eret
++
+ el1_trap:
+ 	/*
+ 	 * x0: ESR_EC
+diff --git a/arch/arm64/kvm/hyp/switch.c b/arch/arm64/kvm/hyp/switch.c
+index 9174ba917d65..c49d09387192 100644
+--- a/arch/arm64/kvm/hyp/switch.c
++++ b/arch/arm64/kvm/hyp/switch.c
+@@ -17,6 +17,9 @@
+ 
+ #include <linux/types.h>
+ #include <linux/jump_label.h>
++#include <uapi/linux/psci.h>
++
++#include <kvm/arm_psci.h>
+ 
+ #include <asm/kvm_asm.h>
+ #include <asm/kvm_emulate.h>
+@@ -50,7 +53,7 @@ static void __hyp_text __activate_traps_vhe(void)
+ 	val &= ~CPACR_EL1_FPEN;
+ 	write_sysreg(val, cpacr_el1);
+ 
+-	write_sysreg(__kvm_hyp_vector, vbar_el1);
++	write_sysreg(kvm_get_hyp_vector(), vbar_el1);
+ }
+ 
+ static void __hyp_text __activate_traps_nvhe(void)
+diff --git a/arch/arm64/lib/clear_user.S b/arch/arm64/lib/clear_user.S
+index 5d1cad3ce6d6..efbf610eaf4e 100644
+--- a/arch/arm64/lib/clear_user.S
++++ b/arch/arm64/lib/clear_user.S
+@@ -24,7 +24,7 @@
+ 
+ 	.text
+ 
+-/* Prototype: int __clear_user(void *addr, size_t sz)
++/* Prototype: int __arch_clear_user(void *addr, size_t sz)
+  * Purpose  : clear some user memory
+  * Params   : addr - user memory address to clear
+  *          : sz   - number of bytes to clear
+@@ -32,7 +32,7 @@
+  *
+  * Alignment fixed up by hardware.
+  */
+-ENTRY(__clear_user)
++ENTRY(__arch_clear_user)
+ ALTERNATIVE("nop", __stringify(SET_PSTATE_PAN(0)), ARM64_ALT_PAN_NOT_UAO, \
+ 	    CONFIG_ARM64_PAN)
+ 	mov	x2, x1			// save the size for fixup return
+@@ -57,7 +57,7 @@ uao_user_alternative 9f, strb, sttrb, wzr, x0, 0
+ ALTERNATIVE("nop", __stringify(SET_PSTATE_PAN(1)), ARM64_ALT_PAN_NOT_UAO, \
+ 	    CONFIG_ARM64_PAN)
+ 	ret
+-ENDPROC(__clear_user)
++ENDPROC(__arch_clear_user)
+ 
+ 	.section .fixup,"ax"
+ 	.align	2
+diff --git a/arch/arm64/lib/copy_in_user.S b/arch/arm64/lib/copy_in_user.S
+index f7292dd08c84..841bf8f7fab7 100644
+--- a/arch/arm64/lib/copy_in_user.S
++++ b/arch/arm64/lib/copy_in_user.S
+@@ -67,7 +67,7 @@
+ 	.endm
+ 
+ end	.req	x5
+-ENTRY(__copy_in_user)
++ENTRY(__arch_copy_in_user)
+ ALTERNATIVE("nop", __stringify(SET_PSTATE_PAN(0)), ARM64_ALT_PAN_NOT_UAO, \
+ 	    CONFIG_ARM64_PAN)
+ 	add	end, x0, x2
+@@ -76,7 +76,7 @@ ALTERNATIVE("nop", __stringify(SET_PSTATE_PAN(1)), ARM64_ALT_PAN_NOT_UAO, \
+ 	    CONFIG_ARM64_PAN)
+ 	mov	x0, #0
+ 	ret
+-ENDPROC(__copy_in_user)
++ENDPROC(__arch_copy_in_user)
+ 
+ 	.section .fixup,"ax"
+ 	.align	2
+diff --git a/arch/arm64/mm/context.c b/arch/arm64/mm/context.c
+index f00f5eeb556f..62d976e843fc 100644
+--- a/arch/arm64/mm/context.c
++++ b/arch/arm64/mm/context.c
+@@ -230,9 +230,21 @@ void check_and_switch_context(struct mm_struct *mm, unsigned int cpu)
+ 	raw_spin_unlock_irqrestore(&cpu_asid_lock, flags);
+ 
+ switch_mm_fastpath:
++
++	arm64_apply_bp_hardening();
++
+ 	cpu_switch_mm(mm->pgd, mm);
+ }
+ 
++/* Errata workaround post TTBRx_EL1 update. */
++asmlinkage void post_ttbr_update_workaround(void)
++{
++	asm(ALTERNATIVE("nop; nop; nop",
++			"ic iallu; dsb nsh; isb",
++			ARM64_WORKAROUND_CAVIUM_27456,
++			CONFIG_CAVIUM_ERRATUM_27456));
++}
++
+ static int asids_init(void)
+ {
+ 	asid_bits = get_cpu_asid_bits();
+diff --git a/arch/arm64/mm/fault.c b/arch/arm64/mm/fault.c
+index 403fe9e57135..ad49ae8f3967 100644
+--- a/arch/arm64/mm/fault.c
++++ b/arch/arm64/mm/fault.c
+@@ -332,7 +332,7 @@ static int __kprobes do_page_fault(unsigned long addr, unsigned int esr,
+ 		mm_flags |= FAULT_FLAG_WRITE;
+ 	}
+ 
+-	if (is_permission_fault(esr) && (addr < USER_DS)) {
++	if (is_permission_fault(esr) && (addr < TASK_SIZE)) {
+ 		/* regs->orig_addr_limit may be 0 if we entered from EL0 */
+ 		if (regs->orig_addr_limit == KERNEL_DS)
+ 			die("Accessing user space memory with fs=KERNEL_DS", regs, esr);
+@@ -590,6 +590,29 @@ asmlinkage void __exception do_mem_abort(unsigned long addr, unsigned int esr,
+ 	arm64_notify_die("", regs, &info, esr);
+ }
+ 
++asmlinkage void __exception do_el0_irq_bp_hardening(void)
++{
++	/* PC has already been checked in entry.S */
++	arm64_apply_bp_hardening();
++}
++
++asmlinkage void __exception do_el0_ia_bp_hardening(unsigned long addr,
++						   unsigned int esr,
++						   struct pt_regs *regs)
++{
++	/*
++	 * We've taken an instruction abort from userspace and not yet
++	 * re-enabled IRQs. If the address is a kernel address, apply
++	 * BP hardening prior to enabling IRQs and pre-emption.
++	 */
++	if (addr > TASK_SIZE)
++		arm64_apply_bp_hardening();
++
++	local_irq_enable();
++	do_mem_abort(addr, esr, regs);
++}
++
++
+ /*
+  * Handle stack alignment exceptions.
+  */
+@@ -600,6 +623,12 @@ asmlinkage void __exception do_sp_pc_abort(unsigned long addr,
+ 	struct siginfo info;
+ 	struct task_struct *tsk = current;
+ 
++	if (user_mode(regs)) {
++		if (instruction_pointer(regs) > TASK_SIZE)
++			arm64_apply_bp_hardening();
++		local_irq_enable();
++	}
++
+ 	if (show_unhandled_signals && unhandled_signal(tsk, SIGBUS))
+ 		pr_info_ratelimited("%s[%d]: %s exception: pc=%p sp=%p\n",
+ 				    tsk->comm, task_pid_nr(tsk),
+@@ -659,6 +688,9 @@ asmlinkage int __exception do_debug_exception(unsigned long addr,
+ 	if (interrupts_enabled(regs))
+ 		trace_hardirqs_off();
+ 
++	if (user_mode(regs) && instruction_pointer(regs) > TASK_SIZE)
++		arm64_apply_bp_hardening();
++
+ 	if (!inf->fn(addr, esr, regs)) {
+ 		rv = 1;
+ 	} else {
+diff --git a/arch/arm64/mm/proc.S b/arch/arm64/mm/proc.S
+index c07d9cc057e6..619da1cbd32b 100644
+--- a/arch/arm64/mm/proc.S
++++ b/arch/arm64/mm/proc.S
+@@ -139,12 +139,7 @@ ENTRY(cpu_do_switch_mm)
+ 	isb
+ 	msr	ttbr0_el1, x0			// now update TTBR0
+ 	isb
+-alternative_if ARM64_WORKAROUND_CAVIUM_27456
+-	ic	iallu
+-	dsb	nsh
+-	isb
+-alternative_else_nop_endif
+-	ret
++	b	post_ttbr_update_workaround	// Back to C code...
+ ENDPROC(cpu_do_switch_mm)
+ 
+ 	.pushsection ".idmap.text", "awx"

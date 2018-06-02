@@ -2,12 +2,12 @@ diff --git a/drivers/firmware/psci.c b/drivers/firmware/psci.c
 index 8263429..d0ef61f 100644
 --- a/drivers/firmware/psci.c
 +++ b/drivers/firmware/psci.c
-@@ -59,7 +59,7 @@ bool psci_tos_resident_on(int cpu)
- 	return cpu == resident_cpu;
- }
- 
--struct psci_operations psci_ops;
-+struct psci_operations psci_ops __read_only;
+@@ -62,7 +62,7 @@ bool psci_tos_resident_on(int cpu)
+ struct psci_operations psci_ops = {
+ 	.conduit = PSCI_CONDUIT_NONE,
+ 	.smccc_version = SMCCC_VERSION_1_0,
+-};
++} __read_only;
  
  typedef unsigned long (psci_fn)(unsigned long, unsigned long,
  				unsigned long, unsigned long);
