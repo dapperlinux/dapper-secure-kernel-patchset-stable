@@ -38,14 +38,12 @@ index 0df2aa6..7db59f7 100644
  	{
  		.procname	= "bpf_jit_enable",
  		.data		= &bpf_jit_enable,
-@@ -428,13 +428,12 @@ static struct ctl_table netns_core_table[] = {
+@@ -436,11 +436,10 @@ static struct ctl_table netns_core_table[] = {
  
  static __net_init int sysctl_core_net_init(struct net *net)
  {
 -	struct ctl_table *tbl;
 +	ctl_table_no_const *tbl = NULL;
- 
- 	net->core.sysctl_somaxconn = SOMAXCONN;
  
 -	tbl = netns_core_table;
  	if (!net_eq(net, &init_net)) {

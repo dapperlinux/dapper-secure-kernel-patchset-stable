@@ -1,5 +1,5 @@
 diff --git a/net/x25/sysctl_net_x25.c b/net/x25/sysctl_net_x25.c
-index 4323952..a06dfe1 100644
+index 703d46a..ba078c8 100644
 --- a/net/x25/sysctl_net_x25.c
 +++ b/net/x25/sysctl_net_x25.c
 @@ -70,7 +70,7 @@ static struct ctl_table x25_table[] = {
@@ -10,4 +10,4 @@ index 4323952..a06dfe1 100644
 +	{ },
  };
  
- void __init x25_register_sysctl(void)
+ int __init x25_register_sysctl(void)
