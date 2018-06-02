@@ -1,0 +1,547 @@
+diff --git a/include/sound/control.h b/include/sound/control.h
+index 21d047f229a1..4142757080f8 100644
+--- a/include/sound/control.h
++++ b/include/sound/control.h
+@@ -22,6 +22,7 @@
+  *
+  */
+ 
++#include <linux/nospec.h>
+ #include <sound/asound.h>
+ 
+ #define snd_kcontrol_chip(kcontrol) ((kcontrol)->private_data)
+@@ -147,12 +148,14 @@ int snd_ctl_get_preferred_subdevice(struct snd_card *card, int type);
+ 
+ static inline unsigned int snd_ctl_get_ioffnum(struct snd_kcontrol *kctl, struct snd_ctl_elem_id *id)
+ {
+-	return id->numid - kctl->id.numid;
++	unsigned int ioff = id->numid - kctl->id.numid;
++	return array_index_nospec(ioff, kctl->count);
+ }
+ 
+ static inline unsigned int snd_ctl_get_ioffidx(struct snd_kcontrol *kctl, struct snd_ctl_elem_id *id)
+ {
+-	return id->index - kctl->id.index;
++	unsigned int ioff = id->index - kctl->id.index;
++	return array_index_nospec(ioff, kctl->count);
+ }
+ 
+ static inline unsigned int snd_ctl_get_ioff(struct snd_kcontrol *kctl, struct snd_ctl_elem_id *id)
+diff --git a/sound/core/seq/oss/seq_oss_event.c b/sound/core/seq/oss/seq_oss_event.c
+index c3908862bc8b..86ca584c27b2 100644
+--- a/sound/core/seq/oss/seq_oss_event.c
++++ b/sound/core/seq/oss/seq_oss_event.c
+@@ -26,6 +26,7 @@
+ #include <sound/seq_oss_legacy.h>
+ #include "seq_oss_readq.h"
+ #include "seq_oss_writeq.h"
++#include <linux/nospec.h>
+ 
+ 
+ /*
+@@ -287,10 +288,10 @@ note_on_event(struct seq_oss_devinfo *dp, int dev, int ch, int note, int vel, st
+ {
+ 	struct seq_oss_synthinfo *info;
+ 
+-	if (!snd_seq_oss_synth_is_valid(dp, dev))
++	info = snd_seq_oss_synth_info(dp, dev);
++	if (!info)
+ 		return -ENXIO;
+ 
+-	info = &dp->synths[dev];
+ 	switch (info->arg.event_passing) {
+ 	case SNDRV_SEQ_OSS_PROCESS_EVENTS:
+ 		if (! info->ch || ch < 0 || ch >= info->nr_voices) {
+@@ -298,6 +299,7 @@ note_on_event(struct seq_oss_devinfo *dp, int dev, int ch, int note, int vel, st
+ 			return set_note_event(dp, dev, SNDRV_SEQ_EVENT_NOTEON, ch, note, vel, ev);
+ 		}
+ 
++		ch = array_index_nospec(ch, info->nr_voices);
+ 		if (note == 255 && info->ch[ch].note >= 0) {
+ 			/* volume control */
+ 			int type;
+@@ -347,10 +349,10 @@ note_off_event(struct seq_oss_devinfo *dp, int dev, int ch, int note, int vel, s
+ {
+ 	struct seq_oss_synthinfo *info;
+ 
+-	if (!snd_seq_oss_synth_is_valid(dp, dev))
++	info = snd_seq_oss_synth_info(dp, dev);
++	if (!info)
+ 		return -ENXIO;
+ 
+-	info = &dp->synths[dev];
+ 	switch (info->arg.event_passing) {
+ 	case SNDRV_SEQ_OSS_PROCESS_EVENTS:
+ 		if (! info->ch || ch < 0 || ch >= info->nr_voices) {
+@@ -358,6 +360,7 @@ note_off_event(struct seq_oss_devinfo *dp, int dev, int ch, int note, int vel, s
+ 			return set_note_event(dp, dev, SNDRV_SEQ_EVENT_NOTEON, ch, note, vel, ev);
+ 		}
+ 
++		ch = array_index_nospec(ch, info->nr_voices);
+ 		if (info->ch[ch].note >= 0) {
+ 			note = info->ch[ch].note;
+ 			info->ch[ch].vel = 0;
+@@ -381,7 +384,7 @@ note_off_event(struct seq_oss_devinfo *dp, int dev, int ch, int note, int vel, s
+ static int
+ set_note_event(struct seq_oss_devinfo *dp, int dev, int type, int ch, int note, int vel, struct snd_seq_event *ev)
+ {
+-	if (! snd_seq_oss_synth_is_valid(dp, dev))
++	if (!snd_seq_oss_synth_info(dp, dev))
+ 		return -ENXIO;
+ 	
+ 	ev->type = type;
+@@ -399,7 +402,7 @@ set_note_event(struct seq_oss_devinfo *dp, int dev, int type, int ch, int note,
+ static int
+ set_control_event(struct seq_oss_devinfo *dp, int dev, int type, int ch, int param, int val, struct snd_seq_event *ev)
+ {
+-	if (! snd_seq_oss_synth_is_valid(dp, dev))
++	if (!snd_seq_oss_synth_info(dp, dev))
+ 		return -ENXIO;
+ 	
+ 	ev->type = type;
+diff --git a/sound/core/seq/oss/seq_oss_midi.c b/sound/core/seq/oss/seq_oss_midi.c
+index b30b2139e3f0..9debd1b8fd28 100644
+--- a/sound/core/seq/oss/seq_oss_midi.c
++++ b/sound/core/seq/oss/seq_oss_midi.c
+@@ -29,6 +29,7 @@
+ #include "../seq_lock.h"
+ #include <linux/init.h>
+ #include <linux/slab.h>
++#include <linux/nospec.h>
+ 
+ 
+ /*
+@@ -315,6 +316,7 @@ get_mididev(struct seq_oss_devinfo *dp, int dev)
+ {
+ 	if (dev < 0 || dev >= dp->max_mididev)
+ 		return NULL;
++	dev = array_index_nospec(dev, dp->max_mididev);
+ 	return get_mdev(dev);
+ }
+ 
+diff --git a/sound/core/seq/oss/seq_oss_synth.c b/sound/core/seq/oss/seq_oss_synth.c
+index cd0e0ebbfdb1..278ebb993122 100644
+--- a/sound/core/seq/oss/seq_oss_synth.c
++++ b/sound/core/seq/oss/seq_oss_synth.c
+@@ -26,6 +26,7 @@
+ #include <linux/init.h>
+ #include <linux/module.h>
+ #include <linux/slab.h>
++#include <linux/nospec.h>
+ 
+ /*
+  * constants
+@@ -339,17 +340,13 @@ snd_seq_oss_synth_cleanup(struct seq_oss_devinfo *dp)
+ 	dp->max_synthdev = 0;
+ }
+ 
+-/*
+- * check if the specified device is MIDI mapped device
+- */
+-static int
+-is_midi_dev(struct seq_oss_devinfo *dp, int dev)
++static struct seq_oss_synthinfo *
++get_synthinfo_nospec(struct seq_oss_devinfo *dp, int dev)
+ {
+ 	if (dev < 0 || dev >= dp->max_synthdev)
+-		return 0;
+-	if (dp->synths[dev].is_midi)
+-		return 1;
+-	return 0;
++		return NULL;
++	dev = array_index_nospec(dev, SNDRV_SEQ_OSS_MAX_SYNTH_DEVS);
++	return &dp->synths[dev];
+ }
+ 
+ /*
+@@ -359,14 +356,20 @@ static struct seq_oss_synth *
+ get_synthdev(struct seq_oss_devinfo *dp, int dev)
+ {
+ 	struct seq_oss_synth *rec;
+-	if (dev < 0 || dev >= dp->max_synthdev)
+-		return NULL;
+-	if (! dp->synths[dev].opened)
++	struct seq_oss_synthinfo *info = get_synthinfo_nospec(dp, dev);
++
++	if (!info)
+ 		return NULL;
+-	if (dp->synths[dev].is_midi)
+-		return &midi_synth_dev;
+-	if ((rec = get_sdev(dev)) == NULL)
++	if (!info->opened)
+ 		return NULL;
++	if (info->is_midi) {
++		rec = &midi_synth_dev;
++		snd_use_lock_use(&rec->use_lock);
++	} else {
++		rec = get_sdev(dev);
++		if (!rec)
++			return NULL;
++	}
+ 	if (! rec->opened) {
+ 		snd_use_lock_free(&rec->use_lock);
+ 		return NULL;
+@@ -402,10 +405,8 @@ snd_seq_oss_synth_reset(struct seq_oss_devinfo *dp, int dev)
+ 	struct seq_oss_synth *rec;
+ 	struct seq_oss_synthinfo *info;
+ 
+-	if (snd_BUG_ON(dev < 0 || dev >= dp->max_synthdev))
+-		return;
+-	info = &dp->synths[dev];
+-	if (! info->opened)
++	info = get_synthinfo_nospec(dp, dev);
++	if (!info || !info->opened)
+ 		return;
+ 	if (info->sysex)
+ 		info->sysex->len = 0; /* reset sysex */
+@@ -454,12 +455,14 @@ snd_seq_oss_synth_load_patch(struct seq_oss_devinfo *dp, int dev, int fmt,
+ 			    const char __user *buf, int p, int c)
+ {
+ 	struct seq_oss_synth *rec;
++	struct seq_oss_synthinfo *info;
+ 	int rc;
+ 
+-	if (dev < 0 || dev >= dp->max_synthdev)
++	info = get_synthinfo_nospec(dp, dev);
++	if (!info)
+ 		return -ENXIO;
+ 
+-	if (is_midi_dev(dp, dev))
++	if (info->is_midi)
+ 		return 0;
+ 	if ((rec = get_synthdev(dp, dev)) == NULL)
+ 		return -ENXIO;
+@@ -467,24 +470,25 @@ snd_seq_oss_synth_load_patch(struct seq_oss_devinfo *dp, int dev, int fmt,
+ 	if (rec->oper.load_patch == NULL)
+ 		rc = -ENXIO;
+ 	else
+-		rc = rec->oper.load_patch(&dp->synths[dev].arg, fmt, buf, p, c);
++		rc = rec->oper.load_patch(&info->arg, fmt, buf, p, c);
+ 	snd_use_lock_free(&rec->use_lock);
+ 	return rc;
+ }
+ 
+ /*
+- * check if the device is valid synth device
++ * check if the device is valid synth device and return the synth info
+  */
+-int
+-snd_seq_oss_synth_is_valid(struct seq_oss_devinfo *dp, int dev)
++struct seq_oss_synthinfo *
++snd_seq_oss_synth_info(struct seq_oss_devinfo *dp, int dev)
+ {
+ 	struct seq_oss_synth *rec;
++
+ 	rec = get_synthdev(dp, dev);
+ 	if (rec) {
+ 		snd_use_lock_free(&rec->use_lock);
+-		return 1;
++		return get_synthinfo_nospec(dp, dev);
+ 	}
+-	return 0;
++	return NULL;
+ }
+ 
+ 
+@@ -499,16 +503,18 @@ snd_seq_oss_synth_sysex(struct seq_oss_devinfo *dp, int dev, unsigned char *buf,
+ 	int i, send;
+ 	unsigned char *dest;
+ 	struct seq_oss_synth_sysex *sysex;
++	struct seq_oss_synthinfo *info;
+ 
+-	if (! snd_seq_oss_synth_is_valid(dp, dev))
++	info = snd_seq_oss_synth_info(dp, dev);
++	if (!info)
+ 		return -ENXIO;
+ 
+-	sysex = dp->synths[dev].sysex;
++	sysex = info->sysex;
+ 	if (sysex == NULL) {
+ 		sysex = kzalloc(sizeof(*sysex), GFP_KERNEL);
+ 		if (sysex == NULL)
+ 			return -ENOMEM;
+-		dp->synths[dev].sysex = sysex;
++		info->sysex = sysex;
+ 	}
+ 
+ 	send = 0;
+@@ -553,10 +559,12 @@ snd_seq_oss_synth_sysex(struct seq_oss_devinfo *dp, int dev, unsigned char *buf,
+ int
+ snd_seq_oss_synth_addr(struct seq_oss_devinfo *dp, int dev, struct snd_seq_event *ev)
+ {
+-	if (! snd_seq_oss_synth_is_valid(dp, dev))
++	struct seq_oss_synthinfo *info = snd_seq_oss_synth_info(dp, dev);
++
++	if (!info)
+ 		return -EINVAL;
+-	snd_seq_oss_fill_addr(dp, ev, dp->synths[dev].arg.addr.client,
+-			      dp->synths[dev].arg.addr.port);
++	snd_seq_oss_fill_addr(dp, ev, info->arg.addr.client,
++			      info->arg.addr.port);
+ 	return 0;
+ }
+ 
+@@ -568,16 +576,18 @@ int
+ snd_seq_oss_synth_ioctl(struct seq_oss_devinfo *dp, int dev, unsigned int cmd, unsigned long addr)
+ {
+ 	struct seq_oss_synth *rec;
++	struct seq_oss_synthinfo *info;
+ 	int rc;
+ 
+-	if (is_midi_dev(dp, dev))
++	info = get_synthinfo_nospec(dp, dev);
++	if (!info || info->is_midi)
+ 		return -ENXIO;
+ 	if ((rec = get_synthdev(dp, dev)) == NULL)
+ 		return -ENXIO;
+ 	if (rec->oper.ioctl == NULL)
+ 		rc = -ENXIO;
+ 	else
+-		rc = rec->oper.ioctl(&dp->synths[dev].arg, cmd, addr);
++		rc = rec->oper.ioctl(&info->arg, cmd, addr);
+ 	snd_use_lock_free(&rec->use_lock);
+ 	return rc;
+ }
+@@ -589,7 +599,10 @@ snd_seq_oss_synth_ioctl(struct seq_oss_devinfo *dp, int dev, unsigned int cmd, u
+ int
+ snd_seq_oss_synth_raw_event(struct seq_oss_devinfo *dp, int dev, unsigned char *data, struct snd_seq_event *ev)
+ {
+-	if (! snd_seq_oss_synth_is_valid(dp, dev) || is_midi_dev(dp, dev))
++	struct seq_oss_synthinfo *info;
++
++	info = snd_seq_oss_synth_info(dp, dev);
++	if (!info || info->is_midi)
+ 		return -ENXIO;
+ 	ev->type = SNDRV_SEQ_EVENT_OSS;
+ 	memcpy(ev->data.raw8.d, data, 8);
+diff --git a/sound/drivers/opl3/opl3_synth.c b/sound/drivers/opl3/opl3_synth.c
+index ddcc1a325a61..42920a243328 100644
+--- a/sound/drivers/opl3/opl3_synth.c
++++ b/sound/drivers/opl3/opl3_synth.c
+@@ -21,6 +21,7 @@
+ 
+ #include <linux/slab.h>
+ #include <linux/export.h>
++#include <linux/nospec.h>
+ #include <sound/opl3.h>
+ #include <sound/asound_fm.h>
+ 
+@@ -448,7 +449,7 @@ static int snd_opl3_set_voice(struct snd_opl3 * opl3, struct snd_dm_fm_voice * v
+ {
+ 	unsigned short reg_side;
+ 	unsigned char op_offset;
+-	unsigned char voice_offset;
++	unsigned char voice_offset, voice_op;
+ 
+ 	unsigned short opl3_reg;
+ 	unsigned char reg_val;
+@@ -473,7 +474,9 @@ static int snd_opl3_set_voice(struct snd_opl3 * opl3, struct snd_dm_fm_voice * v
+ 		voice_offset = voice->voice - MAX_OPL2_VOICES;
+ 	}
+ 	/* Get register offset of operator */
+-	op_offset = snd_opl3_regmap[voice_offset][voice->op];
++	voice_offset = array_index_nospec(voice_offset, MAX_OPL2_VOICES);
++	voice_op = array_index_nospec(voice->op, 4);
++	op_offset = snd_opl3_regmap[voice_offset][voice_op];
+ 
+ 	reg_val = 0x00;
+ 	/* Set amplitude modulation (tremolo) effect */
+diff --git a/sound/pci/asihpi/hpimsginit.c b/sound/pci/asihpi/hpimsginit.c
+index 7eb617175fde..a31a70dccecf 100644
+--- a/sound/pci/asihpi/hpimsginit.c
++++ b/sound/pci/asihpi/hpimsginit.c
+@@ -23,6 +23,7 @@
+ 
+ #include "hpi_internal.h"
+ #include "hpimsginit.h"
++#include <linux/nospec.h>
+ 
+ /* The actual message size for each object type */
+ static u16 msg_size[HPI_OBJ_MAXINDEX + 1] = HPI_MESSAGE_SIZE_BY_OBJECT;
+@@ -39,10 +40,12 @@ static void hpi_init_message(struct hpi_message *phm, u16 object,
+ {
+ 	u16 size;
+ 
+-	if ((object > 0) && (object <= HPI_OBJ_MAXINDEX))
++	if ((object > 0) && (object <= HPI_OBJ_MAXINDEX)) {
++		object = array_index_nospec(object, HPI_OBJ_MAXINDEX + 1);
+ 		size = msg_size[object];
+-	else
++	} else {
+ 		size = sizeof(*phm);
++	}
+ 
+ 	memset(phm, 0, size);
+ 	phm->size = size;
+@@ -66,10 +69,12 @@ void hpi_init_response(struct hpi_response *phr, u16 object, u16 function,
+ {
+ 	u16 size;
+ 
+-	if ((object > 0) && (object <= HPI_OBJ_MAXINDEX))
++	if ((object > 0) && (object <= HPI_OBJ_MAXINDEX)) {
++		object = array_index_nospec(object, HPI_OBJ_MAXINDEX + 1);
+ 		size = res_size[object];
+-	else
++	} else {
+ 		size = sizeof(*phr);
++	}
+ 
+ 	memset(phr, 0, sizeof(*phr));
+ 	phr->size = size;
+diff --git a/sound/pci/asihpi/hpioctl.c b/sound/pci/asihpi/hpioctl.c
+index 7e3aa50b21f9..3ef9af53ef49 100644
+--- a/sound/pci/asihpi/hpioctl.c
++++ b/sound/pci/asihpi/hpioctl.c
+@@ -33,6 +33,7 @@
+ #include <linux/stringify.h>
+ #include <linux/module.h>
+ #include <linux/vmalloc.h>
++#include <linux/nospec.h>
+ 
+ #ifdef MODULE_FIRMWARE
+ MODULE_FIRMWARE("asihpi/dsp5000.bin");
+@@ -182,7 +183,8 @@ long asihpi_hpi_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 		struct hpi_adapter *pa = NULL;
+ 
+ 		if (hm->h.adapter_index < ARRAY_SIZE(adapters))
+-			pa = &adapters[hm->h.adapter_index];
++			pa = &adapters[array_index_nospec(hm->h.adapter_index,
++							  ARRAY_SIZE(adapters))];
+ 
+ 		if (!pa || !pa->adapter || !pa->adapter->type) {
+ 			hpi_init_response(&hr->r0, hm->h.object,
+diff --git a/sound/pci/hda/hda_hwdep.c b/sound/pci/hda/hda_hwdep.c
+index 57df06e76968..cc009a4a3d1d 100644
+--- a/sound/pci/hda/hda_hwdep.c
++++ b/sound/pci/hda/hda_hwdep.c
+@@ -21,6 +21,7 @@
+ #include <linux/init.h>
+ #include <linux/slab.h>
+ #include <linux/compat.h>
++#include <linux/nospec.h>
+ #include <sound/core.h>
+ #include "hda_codec.h"
+ #include "hda_local.h"
+@@ -51,7 +52,16 @@ static int get_wcap_ioctl(struct hda_codec *codec,
+ 	
+ 	if (get_user(verb, &arg->verb))
+ 		return -EFAULT;
+-	res = get_wcaps(codec, verb >> 24);
++	/* open-code get_wcaps(verb>>24) with nospec */
++	verb >>= 24;
++	if (verb < codec->core.start_nid ||
++	    verb >= codec->core.start_nid + codec->core.num_nodes) {
++		res = 0;
++	} else {
++		verb -= codec->core.start_nid;
++		verb = array_index_nospec(verb, codec->core.num_nodes);
++		res = codec->wcaps[verb];
++	}
+ 	if (put_user(res, &arg->res))
+ 		return -EFAULT;
+ 	return 0;
+diff --git a/sound/pci/rme9652/hdspm.c b/sound/pci/rme9652/hdspm.c
+index 14bbf55c1ef9..9899ef4c7efa 100644
+--- a/sound/pci/rme9652/hdspm.c
++++ b/sound/pci/rme9652/hdspm.c
+@@ -137,6 +137,7 @@
+ #include <linux/pci.h>
+ #include <linux/math64.h>
+ #include <linux/io.h>
++#include <linux/nospec.h>
+ 
+ #include <sound/core.h>
+ #include <sound/control.h>
+@@ -5692,40 +5693,43 @@ static int snd_hdspm_channel_info(struct snd_pcm_substream *substream,
+ 		struct snd_pcm_channel_info *info)
+ {
+ 	struct hdspm *hdspm = snd_pcm_substream_chip(substream);
++	unsigned int channel = info->channel;
+ 
+ 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+-		if (snd_BUG_ON(info->channel >= hdspm->max_channels_out)) {
++		if (snd_BUG_ON(channel >= hdspm->max_channels_out)) {
+ 			dev_info(hdspm->card->dev,
+ 				 "snd_hdspm_channel_info: output channel out of range (%d)\n",
+-				 info->channel);
++				 channel);
+ 			return -EINVAL;
+ 		}
+ 
+-		if (hdspm->channel_map_out[info->channel] < 0) {
++		channel = array_index_nospec(channel, hdspm->max_channels_out);
++		if (hdspm->channel_map_out[channel] < 0) {
+ 			dev_info(hdspm->card->dev,
+ 				 "snd_hdspm_channel_info: output channel %d mapped out\n",
+-				 info->channel);
++				 channel);
+ 			return -EINVAL;
+ 		}
+ 
+-		info->offset = hdspm->channel_map_out[info->channel] *
++		info->offset = hdspm->channel_map_out[channel] *
+ 			HDSPM_CHANNEL_BUFFER_BYTES;
+ 	} else {
+-		if (snd_BUG_ON(info->channel >= hdspm->max_channels_in)) {
++		if (snd_BUG_ON(channel >= hdspm->max_channels_in)) {
+ 			dev_info(hdspm->card->dev,
+ 				 "snd_hdspm_channel_info: input channel out of range (%d)\n",
+-				 info->channel);
++				 channel);
+ 			return -EINVAL;
+ 		}
+ 
+-		if (hdspm->channel_map_in[info->channel] < 0) {
++		channel = array_index_nospec(channel, hdspm->max_channels_in);
++		if (hdspm->channel_map_in[channel] < 0) {
+ 			dev_info(hdspm->card->dev,
+ 				 "snd_hdspm_channel_info: input channel %d mapped out\n",
+-				 info->channel);
++				 channel);
+ 			return -EINVAL;
+ 		}
+ 
+-		info->offset = hdspm->channel_map_in[info->channel] *
++		info->offset = hdspm->channel_map_in[channel] *
+ 			HDSPM_CHANNEL_BUFFER_BYTES;
+ 	}
+ 
+diff --git a/sound/pci/rme9652/rme9652.c b/sound/pci/rme9652/rme9652.c
+index 55172c689991..a76b1f147660 100644
+--- a/sound/pci/rme9652/rme9652.c
++++ b/sound/pci/rme9652/rme9652.c
+@@ -26,6 +26,7 @@
+ #include <linux/pci.h>
+ #include <linux/module.h>
+ #include <linux/io.h>
++#include <linux/nospec.h>
+ 
+ #include <sound/core.h>
+ #include <sound/control.h>
+@@ -2036,9 +2037,10 @@ static int snd_rme9652_channel_info(struct snd_pcm_substream *substream,
+ 	if (snd_BUG_ON(info->channel >= RME9652_NCHANNELS))
+ 		return -EINVAL;
+ 
+-	if ((chn = rme9652->channel_map[info->channel]) < 0) {
++	chn = rme9652->channel_map[array_index_nospec(info->channel,
++						      RME9652_NCHANNELS)];
++	if (chn < 0)
+ 		return -EINVAL;
+-	}
+ 
+ 	info->offset = chn * RME9652_CHANNEL_BUFFER_BYTES;
+ 	info->first = 0;
+diff --git a/sound/core/seq/oss/seq_oss_synth.h b/sound/core/seq/oss/seq_oss_synth.h
+index 74ac55f166b6..a63f9e22974d 100644
+--- a/sound/core/seq/oss/seq_oss_synth.h
++++ b/sound/core/seq/oss/seq_oss_synth.h
+@@ -37,7 +37,8 @@ void snd_seq_oss_synth_cleanup(struct seq_oss_devinfo *dp);
+ void snd_seq_oss_synth_reset(struct seq_oss_devinfo *dp, int dev);
+ int snd_seq_oss_synth_load_patch(struct seq_oss_devinfo *dp, int dev, int fmt,
+ 				 const char __user *buf, int p, int c);
+-int snd_seq_oss_synth_is_valid(struct seq_oss_devinfo *dp, int dev);
++struct seq_oss_synthinfo *snd_seq_oss_synth_info(struct seq_oss_devinfo *dp,
++						 int dev);
+ int snd_seq_oss_synth_sysex(struct seq_oss_devinfo *dp, int dev, unsigned char *buf,
+ 			    struct snd_seq_event *ev);
+ int snd_seq_oss_synth_addr(struct seq_oss_devinfo *dp, int dev, struct snd_seq_event *ev);
