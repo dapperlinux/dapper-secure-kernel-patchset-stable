@@ -44,7 +44,7 @@ index b4c1f54..726053d 100644
 +		       "+m" (*(u32 __user *)____m(uaddr)), "=&r" (tem)	\
  		     : "r" (oparg), "i" (-EFAULT), "1" (0))
  
- static inline int futex_atomic_op_inuser(int encoded_op, u32 __user *uaddr)
+ static inline int arch_futex_atomic_op_inuser(int op, int oparg, int *oval,
 @@ -57,12 +57,13 @@ static inline int futex_atomic_op_inuser(int encoded_op, u32 __user *uaddr)
  
  	pagefault_disable();
