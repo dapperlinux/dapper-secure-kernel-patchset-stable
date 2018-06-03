@@ -493,7 +493,7 @@ index 0000000..7b24aea
 +	gcc_assert(report_node);
 +	frequency = compute_call_stmt_bb_frequency(current_function_decl, bb_true);
 +
-+	edge = cgraph_create_edge(get_cnode(current_function_decl), report_node, func_stmt, bb_true->count, frequency, bb_true->loop_depth);
++	edge = cgraph_create_edge(get_cnode(current_function_decl), report_node, func_stmt, bb_true->count, frequency);
 +	gcc_assert(edge != NULL);
 +}
 +

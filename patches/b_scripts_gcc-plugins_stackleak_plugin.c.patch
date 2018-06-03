@@ -61,7 +61,7 @@ index 0000000..f0fdd5e
 +	node = cgraph_get_create_node(check_function_decl);
 +	gcc_assert(node);
 +	frequency = compute_call_stmt_bb_frequency(current_function_decl, bb);
-+	cgraph_create_edge(cgraph_get_node(current_function_decl), node, check_alloca, bb->count, frequency, bb->loop_depth);
++	cgraph_create_edge(cgraph_get_node(current_function_decl), node, check_alloca, bb->count, frequency);
 +}
 +
 +static void stackleak_add_instrumentation(gimple_stmt_iterator *gsi, bool after)
@@ -85,7 +85,7 @@ index 0000000..f0fdd5e
 +	node = cgraph_get_create_node(track_function_decl);
 +	gcc_assert(node);
 +	frequency = compute_call_stmt_bb_frequency(current_function_decl, bb);
-+	cgraph_create_edge(cgraph_get_node(current_function_decl), node, track_stack, bb->count, frequency, bb->loop_depth);
++	cgraph_create_edge(cgraph_get_node(current_function_decl), node, track_stack, bb->count, frequency);
 +}
 +
 +static bool is_alloca(gimple stmt)
