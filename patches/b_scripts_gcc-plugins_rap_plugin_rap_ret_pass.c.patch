@@ -3,7 +3,7 @@ new file mode 100644
 index 0000000..690f8d3
 --- /dev/null
 +++ b/scripts/gcc-plugins/rap_plugin/rap_ret_pass.c
-@@ -0,0 +1,345 @@
+@@ -0,0 +1,347 @@
 +/*
 + * Copyright 2012-2017 by PaX Team <pageexec@freemail.hu>
 + * Licensed under the GPL v2
@@ -335,9 +335,11 @@ index 0000000..690f8d3
 +
 +		emit_label_before(label1, insn);
 +		LABEL_NUSES(label1)++;
++#if BUILDING_GCC_VERSION >= 4007 && BUILDING_GCC_VERSION < 8000
 +		do {
 +			insn = NEXT_INSN(insn);
 +		} while (GET_CODE(insn) == NOTE && NOTE_KIND(insn) == NOTE_INSN_CALL_ARG_LOCATION);
++#endif
 +		emit_label_before(label2, insn);
 +		LABEL_NUSES(label2)++;
 +	}

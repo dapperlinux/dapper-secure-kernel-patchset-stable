@@ -196,7 +196,7 @@ index 0000000..f0fdd5e
 +//		warning(0, "track_frame_size: %d %ld %d", cfun->calls_alloca, get_frame_size(), track_frame_size);
 +		// 2. delete call
 +		delete_insn_and_edges(insn);
-+#if BUILDING_GCC_VERSION >= 4007
++#if BUILDING_GCC_VERSION >= 4007 && BUILDING_GCC_VERSION < 8000
 +		if (GET_CODE(next) == NOTE && NOTE_KIND(next) == NOTE_INSN_CALL_ARG_LOCATION) {
 +			insn = next;
 +			next = NEXT_INSN(insn);
