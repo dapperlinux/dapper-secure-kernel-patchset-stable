@@ -3,7 +3,7 @@ new file mode 100644
 index 0000000..f0fdd5e
 --- /dev/null
 +++ b/scripts/gcc-plugins/stackleak_plugin.c
-@@ -0,0 +1,342 @@
+@@ -0,0 +1,351 @@
 +/*
 + * Copyright 2011-2017 by the PaX Team <pageexec@freemail.hu>
 + * Licensed under the GPL v2
@@ -162,6 +162,15 @@ index 0000000..f0fdd5e
 +	return 0;
 +}
 +
++static bool large_stack_frame(void)
++{
++#if BUILDING_GCC_VERSION >= 8000
++	return maybe_ge(get_frame_size(), track_frame_size);
++#else
++	return (get_frame_size() >= track_frame_size);
++#endif
++}
++
 +static unsigned int stackleak_final_execute(void)
 +{
 +	rtx_insn *insn, *next;
@@ -170,7 +179,7 @@ index 0000000..f0fdd5e
 +		return 0;
 +
 +	// keep calls only if function frame is big enough
-+	if (get_frame_size() >= track_frame_size)
++	if (large_stack_frame())
 +		return 0;
 +
 +	// 1. find pax_track_stack calls
