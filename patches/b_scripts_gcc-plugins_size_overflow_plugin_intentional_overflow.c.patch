@@ -3,7 +3,7 @@ new file mode 100644
 index 0000000..26899bd
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/intentional_overflow.c
-@@ -0,0 +1,1171 @@
+@@ -0,0 +1,1198 @@
 +/*
 + * Copyright 2011-2017 by Emese Revfy <re.emese@gmail.com>
 + * Licensed under the GPL v2
@@ -634,6 +634,33 @@ index 0000000..26899bd
 +	return create_assign(expand_from->visited, stmt, lhs, AFTER_STMT);
 +}
 +
++static bool compare_bitsize_le(machine_mode arg1, machine_mode arg2)
++{
++#if BUILDING_GCC_VERSION >= 8000
++	return maybe_le(GET_MODE_BITSIZE(arg1), GET_MODE_BITSIZE(arg2));
++#else
++	return (GET_MODE_BITSIZE(arg1) <= GET_MODE_BITSIZE(arg2));
++#endif
++}
++
++static bool compare_bitsize_ge(machine_mode arg1, machine_mode arg2)
++{
++#if BUILDING_GCC_VERSION >= 8000
++	return maybe_ge(GET_MODE_BITSIZE(arg1), GET_MODE_BITSIZE(arg2));
++#else
++	return (GET_MODE_BITSIZE(arg1) >= GET_MODE_BITSIZE(arg2));
++#endif
++}
++
++static bool compare_bitsize_ne(machine_mode arg1, machine_mode arg2)
++{
++#if BUILDING_GCC_VERSION >= 8000
++	return maybe_ne(GET_MODE_BITSIZE(arg1), GET_MODE_BITSIZE(arg2));
++#else
++	return (GET_MODE_BITSIZE(arg1) != GET_MODE_BITSIZE(arg2));
++#endif
++}
++
 +static bool is_subtraction_special(struct visited *visited, const gassign *stmt)
 +{
 +	gimple rhs1_def_stmt, rhs2_def_stmt;
@@ -663,9 +690,9 @@ index 0000000..26899bd
 +	rhs2_def_stmt_rhs1_mode = TYPE_MODE(TREE_TYPE(rhs2_def_stmt_rhs1));
 +	rhs1_def_stmt_lhs_mode = TYPE_MODE(TREE_TYPE(rhs1_def_stmt_lhs));
 +	rhs2_def_stmt_lhs_mode = TYPE_MODE(TREE_TYPE(rhs2_def_stmt_lhs));
-+	if (GET_MODE_BITSIZE(rhs1_def_stmt_rhs1_mode) <= GET_MODE_BITSIZE(rhs1_def_stmt_lhs_mode))
++	if (compare_bitsize_le(rhs1_def_stmt_rhs1_mode, rhs1_def_stmt_lhs_mode))
 +		return false;
-+	if (GET_MODE_BITSIZE(rhs2_def_stmt_rhs1_mode) <= GET_MODE_BITSIZE(rhs2_def_stmt_lhs_mode))
++	if (compare_bitsize_le(rhs2_def_stmt_rhs1_mode, rhs2_def_stmt_lhs_mode))
 +		return false;
 +
 +	pointer_set_insert(visited->no_cast_check, rhs1_def_stmt);
@@ -928,7 +955,7 @@ index 0000000..26899bd
 +
 +	if (!(TYPE_UNSIGNED(rhs_type) && !TYPE_UNSIGNED(lhs_type)))
 +		return;
-+	if (GET_MODE_BITSIZE(TYPE_MODE(rhs_type)) != GET_MODE_BITSIZE(TYPE_MODE(lhs_type)))
++	if (compare_bitsize_ne(TYPE_MODE(rhs_type), TYPE_MODE(lhs_type)))
 +		return;
 +	use_num = uses_num(rhs);
 +	if (use_num != 1)
@@ -977,7 +1004,7 @@ index 0000000..26899bd
 +		return false;
 +
 +	cast_rhs = gimple_assign_rhs1(cast_stmt);
-+	if (GET_MODE_BITSIZE(TYPE_MODE(TREE_TYPE(cast_rhs))) >= GET_MODE_BITSIZE(TYPE_MODE(TREE_TYPE(rhs))))
++	if (compare_bitsize_ge(TYPE_MODE(TREE_TYPE(cast_rhs)), TYPE_MODE(TREE_TYPE(rhs))))
 +		return false;
 +
 +	neg_cast_stmt = get_def_stmt(cast_rhs);
@@ -1019,7 +1046,7 @@ index 0000000..26899bd
 +	if (!cast_stmt || !gimple_assign_cast_p(cast_stmt))
 +		return false;
 +	cast_rhs = gimple_assign_rhs1(cast_stmt);
-+	if (GET_MODE_BITSIZE(TYPE_MODE(TREE_TYPE(cast_rhs))) <= GET_MODE_BITSIZE(TYPE_MODE(TREE_TYPE(rhs1))))
++	if (compare_bitsize_le(TYPE_MODE(TREE_TYPE(cast_rhs)), TYPE_MODE(TREE_TYPE(rhs1))))
 +		return false;
 +
 +	// one or two plus expressions

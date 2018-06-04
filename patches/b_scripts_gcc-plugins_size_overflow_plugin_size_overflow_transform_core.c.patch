@@ -3,7 +3,7 @@ new file mode 100644
 index 0000000..7b24aea
 --- /dev/null
 +++ b/scripts/gcc-plugins/size_overflow_plugin/size_overflow_transform_core.c
-@@ -0,0 +1,1013 @@
+@@ -0,0 +1,1029 @@
 +/*
 + * Copyright 2011-2017 by Emese Revfy <re.emese@gmail.com>
 + * Licensed under the GPL v2
@@ -637,6 +637,24 @@ index 0000000..7b24aea
 +	return true;
 +}
 +
++static bool compare_bitsize_gt(machine_mode arg1, machine_mode arg2)
++{
++#if BUILDING_GCC_VERSION >= 8000
++	return maybe_gt(GET_MODE_BITSIZE(arg1), GET_MODE_BITSIZE(arg2));
++#else
++	return (GET_MODE_BITSIZE(arg1) > GET_MODE_BITSIZE(arg2));
++#endif
++}
++
++static bool compare_bitsize_eq(machine_mode arg1, machine_mode arg2)
++{
++#if BUILDING_GCC_VERSION >= 8000
++	return maybe_eq(GET_MODE_BITSIZE(arg1), GET_MODE_BITSIZE(arg2));
++#else
++	return (GET_MODE_BITSIZE(arg1) == GET_MODE_BITSIZE(arg2));
++#endif
++}
++
 +static tree create_cast_overflow_check(interesting_stmts_t expand_from, tree new_rhs1, gassign *stmt)
 +{
 +	bool cast_lhs, cast_rhs;
@@ -646,8 +664,6 @@ index 0000000..7b24aea
 +	const_tree rhs_type = TREE_TYPE(rhs);
 +	enum machine_mode lhs_mode = TYPE_MODE(lhs_type);
 +	enum machine_mode rhs_mode = TYPE_MODE(rhs_type);
-+	unsigned int lhs_size = GET_MODE_BITSIZE(lhs_mode);
-+	unsigned int rhs_size = GET_MODE_BITSIZE(rhs_mode);
 +
 +	static bool check_lhs[3][4] = {
 +		// ss    su     us     uu
@@ -676,10 +692,10 @@ index 0000000..7b24aea
 +	if (rhs_mode == SImode && !TYPE_UNSIGNED(rhs_type) && (lhs_mode == HImode || lhs_mode == QImode))
 +		return create_assign(expand_from->visited, stmt, lhs, AFTER_STMT);
 +
-+	if (lhs_size > rhs_size) {
++	if (compare_bitsize_gt(lhs_mode, rhs_mode)) {
 +		cast_lhs = check_lhs[0][TYPE_UNSIGNED(rhs_type) + 2 * TYPE_UNSIGNED(lhs_type)];
 +		cast_rhs = check_rhs[0][TYPE_UNSIGNED(rhs_type) + 2 * TYPE_UNSIGNED(lhs_type)];
-+	} else if (lhs_size == rhs_size) {
++	} else if (compare_bitsize_eq(lhs_mode, rhs_mode)) {
 +		cast_lhs = check_lhs[1][TYPE_UNSIGNED(rhs_type) + 2 * TYPE_UNSIGNED(lhs_type)];
 +		cast_rhs = check_rhs[1][TYPE_UNSIGNED(rhs_type) + 2 * TYPE_UNSIGNED(lhs_type)];
 +	} else {
