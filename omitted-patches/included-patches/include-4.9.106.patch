@@ -10,3 +10,1115 @@ index 7d06dba3fde8..48d87e3a36c1 100644
  EXTRAVERSION =
  NAME = Roaring Lionus
  
+diff --git a/tools/include/asm-generic/bitops.h b/tools/include/asm-generic/bitops.h
+index 653d1bad77de..0304600121da 100644
+--- a/tools/include/asm-generic/bitops.h
++++ b/tools/include/asm-generic/bitops.h
+@@ -13,6 +13,7 @@
+  */
+ 
+ #include <asm-generic/bitops/__ffs.h>
++#include <asm-generic/bitops/__ffz.h>
+ #include <asm-generic/bitops/fls.h>
+ #include <asm-generic/bitops/__fls.h>
+ #include <asm-generic/bitops/fls64.h>
+diff --git a/tools/include/asm-generic/bitops/__ffz.h b/tools/include/asm-generic/bitops/__ffz.h
+new file mode 100644
+index 000000000000..6744bd4cdf46
+--- /dev/null
++++ b/tools/include/asm-generic/bitops/__ffz.h
+@@ -0,0 +1,12 @@
++#ifndef _ASM_GENERIC_BITOPS_FFZ_H_
++#define _ASM_GENERIC_BITOPS_FFZ_H_
++
++/*
++ * ffz - find first zero in word.
++ * @word: The word to search
++ *
++ * Undefined if no zero exists, so code should check against ~0UL first.
++ */
++#define ffz(x)  __ffs(~(x))
++
++#endif /* _ASM_GENERIC_BITOPS_FFZ_H_ */
+diff --git a/tools/include/asm-generic/bitops/find.h b/tools/include/asm-generic/bitops/find.h
+index 31f51547fcd4..5538ecdc964a 100644
+--- a/tools/include/asm-generic/bitops/find.h
++++ b/tools/include/asm-generic/bitops/find.h
+@@ -15,6 +15,21 @@ extern unsigned long find_next_bit(const unsigned long *addr, unsigned long
+ 		size, unsigned long offset);
+ #endif
+ 
++#ifndef find_next_zero_bit
++
++/**
++ * find_next_zero_bit - find the next cleared bit in a memory region
++ * @addr: The address to base the search on
++ * @offset: The bitnumber to start searching at
++ * @size: The bitmap size in bits
++ *
++ * Returns the bit number of the next zero bit
++ * If no bits are zero, returns @size.
++ */
++unsigned long find_next_zero_bit(const unsigned long *addr, unsigned long size,
++				 unsigned long offset);
++#endif
++
+ #ifndef find_first_bit
+ 
+ /**
+@@ -30,4 +45,17 @@ extern unsigned long find_first_bit(const unsigned long *addr,
+ 
+ #endif /* find_first_bit */
+ 
++#ifndef find_first_zero_bit
++
++/**
++ * find_first_zero_bit - find the first cleared bit in a memory region
++ * @addr: The address to start the search at
++ * @size: The maximum number of bits to search
++ *
++ * Returns the bit number of the first cleared bit.
++ * If no bits are zero, returns @size.
++ */
++unsigned long find_first_zero_bit(const unsigned long *addr, unsigned long size);
++#endif
++
+ #endif /*_TOOLS_LINUX_ASM_GENERIC_BITOPS_FIND_H_ */
+diff --git a/tools/include/linux/atomic.h b/tools/include/linux/atomic.h
+index 4e3d3d18ebab..9f21fc2b092b 100644
+--- a/tools/include/linux/atomic.h
++++ b/tools/include/linux/atomic.h
+@@ -3,4 +3,10 @@
+ 
+ #include <asm/atomic.h>
+ 
++/* atomic_cmpxchg_relaxed */
++#ifndef atomic_cmpxchg_relaxed
++#define  atomic_cmpxchg_relaxed		atomic_cmpxchg
++#define  atomic_cmpxchg_release         atomic_cmpxchg
++#endif /* atomic_cmpxchg_relaxed */
++
+ #endif /* __TOOLS_LINUX_ATOMIC_H */
+diff --git a/tools/include/linux/bitmap.h b/tools/include/linux/bitmap.h
+index 43c1c5021e4b..eef41d500e9e 100644
+--- a/tools/include/linux/bitmap.h
++++ b/tools/include/linux/bitmap.h
+@@ -35,6 +35,32 @@ static inline void bitmap_zero(unsigned long *dst, int nbits)
+ 	}
+ }
+ 
++static inline void bitmap_fill(unsigned long *dst, unsigned int nbits)
++{
++	unsigned int nlongs = BITS_TO_LONGS(nbits);
++	if (!small_const_nbits(nbits)) {
++		unsigned int len = (nlongs - 1) * sizeof(unsigned long);
++		memset(dst, 0xff,  len);
++	}
++	dst[nlongs - 1] = BITMAP_LAST_WORD_MASK(nbits);
++}
++
++static inline int bitmap_empty(const unsigned long *src, unsigned nbits)
++{
++	if (small_const_nbits(nbits))
++		return ! (*src & BITMAP_LAST_WORD_MASK(nbits));
++
++	return find_first_bit(src, nbits) == nbits;
++}
++
++static inline int bitmap_full(const unsigned long *src, unsigned int nbits)
++{
++	if (small_const_nbits(nbits))
++		return ! (~(*src) & BITMAP_LAST_WORD_MASK(nbits));
++
++	return find_first_zero_bit(src, nbits) == nbits;
++}
++
+ static inline int bitmap_weight(const unsigned long *src, int nbits)
+ {
+ 	if (small_const_nbits(nbits))
+diff --git a/tools/include/linux/bitops.h b/tools/include/linux/bitops.h
+index 49c929a104ee..fc446343ff41 100644
+--- a/tools/include/linux/bitops.h
++++ b/tools/include/linux/bitops.h
+@@ -39,6 +39,11 @@ extern unsigned long __sw_hweight64(__u64 w);
+ 	     (bit) < (size);					\
+ 	     (bit) = find_next_bit((addr), (size), (bit) + 1))
+ 
++#define for_each_clear_bit(bit, addr, size) \
++	for ((bit) = find_first_zero_bit((addr), (size));       \
++	     (bit) < (size);                                    \
++	     (bit) = find_next_zero_bit((addr), (size), (bit) + 1))
++
+ /* same as for_each_set_bit() but use bit as value to start with */
+ #define for_each_set_bit_from(bit, addr, size) \
+ 	for ((bit) = find_next_bit((addr), (size), (bit));	\
+diff --git a/tools/include/linux/refcount.h b/tools/include/linux/refcount.h
+new file mode 100644
+index 000000000000..a0177c1f55b1
+--- /dev/null
++++ b/tools/include/linux/refcount.h
+@@ -0,0 +1,151 @@
++#ifndef _TOOLS_LINUX_REFCOUNT_H
++#define _TOOLS_LINUX_REFCOUNT_H
++
++/*
++ * Variant of atomic_t specialized for reference counts.
++ *
++ * The interface matches the atomic_t interface (to aid in porting) but only
++ * provides the few functions one should use for reference counting.
++ *
++ * It differs in that the counter saturates at UINT_MAX and will not move once
++ * there. This avoids wrapping the counter and causing 'spurious'
++ * use-after-free issues.
++ *
++ * Memory ordering rules are slightly relaxed wrt regular atomic_t functions
++ * and provide only what is strictly required for refcounts.
++ *
++ * The increments are fully relaxed; these will not provide ordering. The
++ * rationale is that whatever is used to obtain the object we're increasing the
++ * reference count on will provide the ordering. For locked data structures,
++ * its the lock acquire, for RCU/lockless data structures its the dependent
++ * load.
++ *
++ * Do note that inc_not_zero() provides a control dependency which will order
++ * future stores against the inc, this ensures we'll never modify the object
++ * if we did not in fact acquire a reference.
++ *
++ * The decrements will provide release order, such that all the prior loads and
++ * stores will be issued before, it also provides a control dependency, which
++ * will order us against the subsequent free().
++ *
++ * The control dependency is against the load of the cmpxchg (ll/sc) that
++ * succeeded. This means the stores aren't fully ordered, but this is fine
++ * because the 1->0 transition indicates no concurrency.
++ *
++ * Note that the allocator is responsible for ordering things between free()
++ * and alloc().
++ *
++ */
++
++#include <linux/atomic.h>
++#include <linux/kernel.h>
++
++#ifdef NDEBUG
++#define REFCOUNT_WARN(cond, str) (void)(cond)
++#define __refcount_check
++#else
++#define REFCOUNT_WARN(cond, str) BUG_ON(cond)
++#define __refcount_check	__must_check
++#endif
++
++typedef struct refcount_struct {
++	atomic_t refs;
++} refcount_t;
++
++#define REFCOUNT_INIT(n)	{ .refs = ATOMIC_INIT(n), }
++
++static inline void refcount_set(refcount_t *r, unsigned int n)
++{
++	atomic_set(&r->refs, n);
++}
++
++static inline unsigned int refcount_read(const refcount_t *r)
++{
++	return atomic_read(&r->refs);
++}
++
++/*
++ * Similar to atomic_inc_not_zero(), will saturate at UINT_MAX and WARN.
++ *
++ * Provides no memory ordering, it is assumed the caller has guaranteed the
++ * object memory to be stable (RCU, etc.). It does provide a control dependency
++ * and thereby orders future stores. See the comment on top.
++ */
++static inline __refcount_check
++bool refcount_inc_not_zero(refcount_t *r)
++{
++	unsigned int old, new, val = atomic_read(&r->refs);
++
++	for (;;) {
++		new = val + 1;
++
++		if (!val)
++			return false;
++
++		if (unlikely(!new))
++			return true;
++
++		old = atomic_cmpxchg_relaxed(&r->refs, val, new);
++		if (old == val)
++			break;
++
++		val = old;
++	}
++
++	REFCOUNT_WARN(new == UINT_MAX, "refcount_t: saturated; leaking memory.\n");
++
++	return true;
++}
++
++/*
++ * Similar to atomic_inc(), will saturate at UINT_MAX and WARN.
++ *
++ * Provides no memory ordering, it is assumed the caller already has a
++ * reference on the object, will WARN when this is not so.
++ */
++static inline void refcount_inc(refcount_t *r)
++{
++	REFCOUNT_WARN(!refcount_inc_not_zero(r), "refcount_t: increment on 0; use-after-free.\n");
++}
++
++/*
++ * Similar to atomic_dec_and_test(), it will WARN on underflow and fail to
++ * decrement when saturated at UINT_MAX.
++ *
++ * Provides release memory ordering, such that prior loads and stores are done
++ * before, and provides a control dependency such that free() must come after.
++ * See the comment on top.
++ */
++static inline __refcount_check
++bool refcount_sub_and_test(unsigned int i, refcount_t *r)
++{
++	unsigned int old, new, val = atomic_read(&r->refs);
++
++	for (;;) {
++		if (unlikely(val == UINT_MAX))
++			return false;
++
++		new = val - i;
++		if (new > val) {
++			REFCOUNT_WARN(new > val, "refcount_t: underflow; use-after-free.\n");
++			return false;
++		}
++
++		old = atomic_cmpxchg_release(&r->refs, val, new);
++		if (old == val)
++			break;
++
++		val = old;
++	}
++
++	return !new;
++}
++
++static inline __refcount_check
++bool refcount_dec_and_test(refcount_t *r)
++{
++	return refcount_sub_and_test(1, r);
++}
++
++
++#endif /* _ATOMIC_LINUX_REFCOUNT_H */
+diff --git a/tools/include/linux/spinlock.h b/tools/include/linux/spinlock.h
+new file mode 100644
+index 000000000000..58397dcb19d6
+--- /dev/null
++++ b/tools/include/linux/spinlock.h
+@@ -0,0 +1,5 @@
++#define spinlock_t		pthread_mutex_t
++#define DEFINE_SPINLOCK(x)	pthread_mutex_t x = PTHREAD_MUTEX_INITIALIZER;
++
++#define spin_lock_irqsave(x, f)		(void)f, pthread_mutex_lock(x)
++#define spin_unlock_irqrestore(x, f)	(void)f, pthread_mutex_unlock(x)
+diff --git a/tools/include/uapi/asm-generic/mman-common.h b/tools/include/uapi/asm-generic/mman-common.h
+index 58274382a616..8c27db0c5c08 100644
+--- a/tools/include/uapi/asm-generic/mman-common.h
++++ b/tools/include/uapi/asm-generic/mman-common.h
+@@ -72,4 +72,9 @@
+ #define MAP_HUGE_SHIFT	26
+ #define MAP_HUGE_MASK	0x3f
+ 
++#define PKEY_DISABLE_ACCESS	0x1
++#define PKEY_DISABLE_WRITE	0x2
++#define PKEY_ACCESS_MASK	(PKEY_DISABLE_ACCESS |\
++				 PKEY_DISABLE_WRITE)
++
+ #endif /* __ASM_GENERIC_MMAN_COMMON_H */
+diff --git a/tools/include/uapi/linux/bpf.h b/tools/include/uapi/linux/bpf.h
+index 9e5fc168c8a3..f09c70b97eca 100644
+--- a/tools/include/uapi/linux/bpf.h
++++ b/tools/include/uapi/linux/bpf.h
+@@ -95,6 +95,7 @@ enum bpf_prog_type {
+ 	BPF_PROG_TYPE_SCHED_ACT,
+ 	BPF_PROG_TYPE_TRACEPOINT,
+ 	BPF_PROG_TYPE_XDP,
++	BPF_PROG_TYPE_PERF_EVENT,
+ };
+ 
+ #define BPF_PSEUDO_MAP_FD	1
+@@ -375,6 +376,56 @@ enum bpf_func_id {
+ 	 */
+ 	BPF_FUNC_probe_write_user,
+ 
++	/**
++	 * bpf_current_task_under_cgroup(map, index) - Check cgroup2 membership of current task
++	 * @map: pointer to bpf_map in BPF_MAP_TYPE_CGROUP_ARRAY type
++	 * @index: index of the cgroup in the bpf_map
++	 * Return:
++	 *   == 0 current failed the cgroup2 descendant test
++	 *   == 1 current succeeded the cgroup2 descendant test
++	 *    < 0 error
++	 */
++	BPF_FUNC_current_task_under_cgroup,
++
++	/**
++	 * bpf_skb_change_tail(skb, len, flags)
++	 * The helper will resize the skb to the given new size,
++	 * to be used f.e. with control messages.
++	 * @skb: pointer to skb
++	 * @len: new skb length
++	 * @flags: reserved
++	 * Return: 0 on success or negative error
++	 */
++	BPF_FUNC_skb_change_tail,
++
++	/**
++	 * bpf_skb_pull_data(skb, len)
++	 * The helper will pull in non-linear data in case the
++	 * skb is non-linear and not all of len are part of the
++	 * linear section. Only needed for read/write with direct
++	 * packet access.
++	 * @skb: pointer to skb
++	 * @len: len to make read/writeable
++	 * Return: 0 on success or negative error
++	 */
++	BPF_FUNC_skb_pull_data,
++
++	/**
++	 * bpf_csum_update(skb, csum)
++	 * Adds csum into skb->csum in case of CHECKSUM_COMPLETE.
++	 * @skb: pointer to skb
++	 * @csum: csum to add
++	 * Return: csum on success or negative error
++	 */
++	BPF_FUNC_csum_update,
++
++	/**
++	 * bpf_set_hash_invalid(skb)
++	 * Invalidate current skb>hash.
++	 * @skb: pointer to skb
++	 */
++	BPF_FUNC_set_hash_invalid,
++
+ 	__BPF_FUNC_MAX_ID,
+ };
+ 
+diff --git a/tools/lib/find_bit.c b/tools/lib/find_bit.c
+index 9122a9e80046..6d8b8f22cf55 100644
+--- a/tools/lib/find_bit.c
++++ b/tools/lib/find_bit.c
+@@ -82,3 +82,28 @@ unsigned long find_first_bit(const unsigned long *addr, unsigned long size)
+ 	return size;
+ }
+ #endif
++
++#ifndef find_first_zero_bit
++/*
++ * Find the first cleared bit in a memory region.
++ */
++unsigned long find_first_zero_bit(const unsigned long *addr, unsigned long size)
++{
++	unsigned long idx;
++
++	for (idx = 0; idx * BITS_PER_LONG < size; idx++) {
++		if (addr[idx] != ~0UL)
++			return min(idx * BITS_PER_LONG + ffz(addr[idx]), size);
++	}
++
++	return size;
++}
++#endif
++
++#ifndef find_next_zero_bit
++unsigned long find_next_zero_bit(const unsigned long *addr, unsigned long size,
++				 unsigned long offset)
++{
++	return _find_next_bit(addr, size, offset, ~0UL);
++}
++#endif
+diff --git a/tools/perf/arch/x86/entry/syscalls/syscall_64.tbl b/tools/perf/arch/x86/entry/syscalls/syscall_64.tbl
+index 555263e385c9..e93ef0b38db8 100644
+--- a/tools/perf/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/tools/perf/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -335,6 +335,9 @@
+ 326	common	copy_file_range		sys_copy_file_range
+ 327	64	preadv2			sys_preadv2
+ 328	64	pwritev2		sys_pwritev2
++329	common	pkey_mprotect		sys_pkey_mprotect
++330	common	pkey_alloc		sys_pkey_alloc
++331	common	pkey_free		sys_pkey_free
+ 
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+@@ -374,5 +377,5 @@
+ 543	x32	io_setup		compat_sys_io_setup
+ 544	x32	io_submit		compat_sys_io_submit
+ 545	x32	execveat		compat_sys_execveat/ptregs
+-534	x32	preadv2			compat_sys_preadv2
+-535	x32	pwritev2		compat_sys_pwritev2
++546	x32	preadv2			compat_sys_preadv64v2
++547	x32	pwritev2		compat_sys_pwritev64v2
+diff --git a/tools/perf/MANIFEST b/tools/perf/MANIFEST
+index 0bda2cca2b3a..a4f98e131819 100644
+--- a/tools/perf/MANIFEST
++++ b/tools/perf/MANIFEST
+@@ -51,6 +51,7 @@ tools/include/asm-generic/bitops/arch_hweight.h
+ tools/include/asm-generic/bitops/atomic.h
+ tools/include/asm-generic/bitops/const_hweight.h
+ tools/include/asm-generic/bitops/__ffs.h
++tools/include/asm-generic/bitops/__ffz.h
+ tools/include/asm-generic/bitops/__fls.h
+ tools/include/asm-generic/bitops/find.h
+ tools/include/asm-generic/bitops/fls64.h
+@@ -60,7 +61,9 @@ tools/include/asm-generic/bitops.h
+ tools/include/linux/atomic.h
+ tools/include/linux/bitops.h
+ tools/include/linux/compiler.h
++tools/include/linux/compiler-gcc.h
+ tools/include/linux/coresight-pmu.h
++tools/include/linux/bug.h
+ tools/include/linux/filter.h
+ tools/include/linux/hash.h
+ tools/include/linux/kernel.h
+@@ -70,12 +73,15 @@ tools/include/uapi/asm-generic/mman-common.h
+ tools/include/uapi/asm-generic/mman.h
+ tools/include/uapi/linux/bpf.h
+ tools/include/uapi/linux/bpf_common.h
++tools/include/uapi/linux/fcntl.h
+ tools/include/uapi/linux/hw_breakpoint.h
+ tools/include/uapi/linux/mman.h
+ tools/include/uapi/linux/perf_event.h
++tools/include/uapi/linux/stat.h
+ tools/include/linux/poison.h
+ tools/include/linux/rbtree.h
+ tools/include/linux/rbtree_augmented.h
++tools/include/linux/refcount.h
+ tools/include/linux/string.h
+ tools/include/linux/stringify.h
+ tools/include/linux/types.h
+diff --git a/tools/include/uapi/linux/stat.h b/tools/include/uapi/linux/stat.h
+new file mode 100644
+index 000000000000..7fec7e36d921
+--- /dev/null
++++ b/tools/include/uapi/linux/stat.h
+@@ -0,0 +1,45 @@
++#ifndef _UAPI_LINUX_STAT_H
++#define _UAPI_LINUX_STAT_H
++
++
++#if defined(__KERNEL__) || !defined(__GLIBC__) || (__GLIBC__ < 2)
++
++#define S_IFMT  00170000
++#define S_IFSOCK 0140000
++#define S_IFLNK	 0120000
++#define S_IFREG  0100000
++#define S_IFBLK  0060000
++#define S_IFDIR  0040000
++#define S_IFCHR  0020000
++#define S_IFIFO  0010000
++#define S_ISUID  0004000
++#define S_ISGID  0002000
++#define S_ISVTX  0001000
++
++#define S_ISLNK(m)	(((m) & S_IFMT) == S_IFLNK)
++#define S_ISREG(m)	(((m) & S_IFMT) == S_IFREG)
++#define S_ISDIR(m)	(((m) & S_IFMT) == S_IFDIR)
++#define S_ISCHR(m)	(((m) & S_IFMT) == S_IFCHR)
++#define S_ISBLK(m)	(((m) & S_IFMT) == S_IFBLK)
++#define S_ISFIFO(m)	(((m) & S_IFMT) == S_IFIFO)
++#define S_ISSOCK(m)	(((m) & S_IFMT) == S_IFSOCK)
++
++#define S_IRWXU 00700
++#define S_IRUSR 00400
++#define S_IWUSR 00200
++#define S_IXUSR 00100
++
++#define S_IRWXG 00070
++#define S_IRGRP 00040
++#define S_IWGRP 00020
++#define S_IXGRP 00010
++
++#define S_IRWXO 00007
++#define S_IROTH 00004
++#define S_IWOTH 00002
++#define S_IXOTH 00001
++
++#endif
++
++
++#endif /* _UAPI_LINUX_STAT_H */
+diff --git a/tools/include/uapi/linux/fcntl.h b/tools/include/uapi/linux/fcntl.h
+new file mode 100644
+index 000000000000..beed138bd359
+--- /dev/null
++++ b/tools/include/uapi/linux/fcntl.h
+@@ -0,0 +1,67 @@
++#ifndef _UAPI_LINUX_FCNTL_H
++#define _UAPI_LINUX_FCNTL_H
++
++#include <asm/fcntl.h>
++
++#define F_SETLEASE	(F_LINUX_SPECIFIC_BASE + 0)
++#define F_GETLEASE	(F_LINUX_SPECIFIC_BASE + 1)
++
++/*
++ * Cancel a blocking posix lock; internal use only until we expose an
++ * asynchronous lock api to userspace:
++ */
++#define F_CANCELLK	(F_LINUX_SPECIFIC_BASE + 5)
++
++/* Create a file descriptor with FD_CLOEXEC set. */
++#define F_DUPFD_CLOEXEC	(F_LINUX_SPECIFIC_BASE + 6)
++
++/*
++ * Request nofications on a directory.
++ * See below for events that may be notified.
++ */
++#define F_NOTIFY	(F_LINUX_SPECIFIC_BASE+2)
++
++/*
++ * Set and get of pipe page size array
++ */
++#define F_SETPIPE_SZ	(F_LINUX_SPECIFIC_BASE + 7)
++#define F_GETPIPE_SZ	(F_LINUX_SPECIFIC_BASE + 8)
++
++/*
++ * Set/Get seals
++ */
++#define F_ADD_SEALS	(F_LINUX_SPECIFIC_BASE + 9)
++#define F_GET_SEALS	(F_LINUX_SPECIFIC_BASE + 10)
++
++/*
++ * Types of seals
++ */
++#define F_SEAL_SEAL	0x0001	/* prevent further seals from being set */
++#define F_SEAL_SHRINK	0x0002	/* prevent file from shrinking */
++#define F_SEAL_GROW	0x0004	/* prevent file from growing */
++#define F_SEAL_WRITE	0x0008	/* prevent writes */
++/* (1U << 31) is reserved for signed error codes */
++
++/*
++ * Types of directory notifications that may be requested.
++ */
++#define DN_ACCESS	0x00000001	/* File accessed */
++#define DN_MODIFY	0x00000002	/* File modified */
++#define DN_CREATE	0x00000004	/* File created */
++#define DN_DELETE	0x00000008	/* File removed */
++#define DN_RENAME	0x00000010	/* File renamed */
++#define DN_ATTRIB	0x00000020	/* File changed attibutes */
++#define DN_MULTISHOT	0x80000000	/* Don't remove notifier */
++
++#define AT_FDCWD		-100    /* Special value used to indicate
++                                           openat should use the current
++                                           working directory. */
++#define AT_SYMLINK_NOFOLLOW	0x100   /* Do not follow symbolic links.  */
++#define AT_REMOVEDIR		0x200   /* Remove directory instead of
++                                           unlinking file.  */
++#define AT_SYMLINK_FOLLOW	0x400   /* Follow symbolic links.  */
++#define AT_NO_AUTOMOUNT		0x800	/* Suppress terminal automount traversal */
++#define AT_EMPTY_PATH		0x1000	/* Allow empty relative pathname */
++
++
++#endif /* _UAPI_LINUX_FCNTL_H */
+diff --git a/tools/perf/check-headers.sh b/tools/perf/check-headers.sh
+new file mode 100755
+index 000000000000..83fe2202382e
+--- /dev/null
++++ b/tools/perf/check-headers.sh
+@@ -0,0 +1,61 @@
++#!/bin/sh
++
++HEADERS='
++include/uapi/linux/fcntl.h
++include/uapi/linux/perf_event.h
++include/uapi/linux/stat.h
++include/linux/hash.h
++include/uapi/linux/hw_breakpoint.h
++arch/x86/include/asm/disabled-features.h
++arch/x86/include/asm/required-features.h
++arch/x86/include/asm/cpufeatures.h
++arch/arm/include/uapi/asm/perf_regs.h
++arch/arm64/include/uapi/asm/perf_regs.h
++arch/powerpc/include/uapi/asm/perf_regs.h
++arch/x86/include/uapi/asm/perf_regs.h
++arch/x86/include/uapi/asm/kvm.h
++arch/x86/include/uapi/asm/kvm_perf.h
++arch/x86/include/uapi/asm/svm.h
++arch/x86/include/uapi/asm/vmx.h
++arch/powerpc/include/uapi/asm/kvm.h
++arch/s390/include/uapi/asm/kvm.h
++arch/s390/include/uapi/asm/kvm_perf.h
++arch/s390/include/uapi/asm/sie.h
++arch/arm/include/uapi/asm/kvm.h
++arch/arm64/include/uapi/asm/kvm.h
++include/asm-generic/bitops/arch_hweight.h
++include/asm-generic/bitops/const_hweight.h
++include/asm-generic/bitops/__fls.h
++include/asm-generic/bitops/fls.h
++include/asm-generic/bitops/fls64.h
++include/linux/coresight-pmu.h
++include/uapi/asm-generic/mman-common.h
++'
++
++check () {
++  file=$1
++  opts=
++
++  shift
++  while [ -n "$*" ]; do
++    opts="$opts \"$1\""
++    shift
++  done
++
++  cmd="diff $opts ../$file ../../$file > /dev/null"
++
++  test -f ../../$file &&
++  eval $cmd || echo "Warning: $file differs from kernel" >&2
++}
++
++
++# simple diff check
++for i in $HEADERS; do
++  check $i -B
++done
++
++# diff with extra ignore lines
++check arch/x86/lib/memcpy_64.S        -B -I "^EXPORT_SYMBOL" -I "^#include <asm/export.h>"
++check arch/x86/lib/memset_64.S        -B -I "^EXPORT_SYMBOL" -I "^#include <asm/export.h>"
++check include/uapi/asm-generic/mman.h -B -I "^#include <\(uapi/\)*asm-generic/mman-common.h>"
++check include/uapi/linux/mman.h       -B -I "^#include <\(uapi/\)*asm/mman.h>"
+diff --git a/tools/perf/Makefile.perf b/tools/perf/Makefile.perf
+index 2b92ffef554b..ad3726c5754d 100644
+--- a/tools/perf/Makefile.perf
++++ b/tools/perf/Makefile.perf
+@@ -177,6 +177,36 @@ ifeq ($(filter-out $(NON_CONFIG_TARGETS),$(MAKECMDGOALS)),)
+ endif
+ endif
+ 
++# The fixdep build - we force fixdep tool to be built as
++# the first target in the separate make session not to be
++# disturbed by any parallel make jobs. Once fixdep is done
++# we issue the requested build with FIXDEP=1 variable.
++#
++# The fixdep build is disabled for $(NON_CONFIG_TARGETS)
++# targets, because it's not necessary.
++
++ifdef FIXDEP
++  force_fixdep := 0
++else
++  force_fixdep := $(config)
++endif
++
++export srctree OUTPUT RM CC CXX LD AR CFLAGS CXXFLAGS V BISON FLEX AWK
++export HOSTCC HOSTLD HOSTAR
++
++include $(srctree)/tools/build/Makefile.include
++
++ifeq ($(force_fixdep),1)
++goals := $(filter-out all sub-make, $(MAKECMDGOALS))
++
++$(goals) all: sub-make
++
++sub-make: fixdep
++	@./check-headers.sh
++	$(Q)$(MAKE) FIXDEP=1 -f Makefile.perf $(goals)
++
++else # force_fixdep
++
+ # Set FEATURE_TESTS to 'all' so all possible feature checkers are executed.
+ # Without this setting the output feature dump file misses some features, for
+ # example, liberty. Select all checkers so we won't get an incomplete feature
+@@ -348,10 +378,6 @@ strip: $(PROGRAMS) $(OUTPUT)perf
+ 
+ PERF_IN := $(OUTPUT)perf-in.o
+ 
+-export srctree OUTPUT RM CC LD AR CFLAGS V BISON FLEX AWK
+-export HOSTCC HOSTLD HOSTAR
+-include $(srctree)/tools/build/Makefile.include
+-
+ JEVENTS       := $(OUTPUT)pmu-events/jevents
+ JEVENTS_IN    := $(OUTPUT)pmu-events/jevents-in.o
+ 
+@@ -362,99 +388,6 @@ export JEVENTS
+ build := -f $(srctree)/tools/build/Makefile.build dir=. obj
+ 
+ $(PERF_IN): prepare FORCE
+-	@(test -f ../../include/uapi/linux/perf_event.h && ( \
+-        (diff -B ../include/uapi/linux/perf_event.h ../../include/uapi/linux/perf_event.h >/dev/null) \
+-        || echo "Warning: tools/include/uapi/linux/perf_event.h differs from kernel" >&2 )) || true
+-	@(test -f ../../include/linux/hash.h && ( \
+-        (diff -B ../include/linux/hash.h ../../include/linux/hash.h >/dev/null) \
+-        || echo "Warning: tools/include/linux/hash.h differs from kernel" >&2 )) || true
+-	@(test -f ../../include/uapi/linux/hw_breakpoint.h && ( \
+-        (diff -B ../include/uapi/linux/hw_breakpoint.h ../../include/uapi/linux/hw_breakpoint.h >/dev/null) \
+-        || echo "Warning: tools/include/uapi/linux/hw_breakpoint.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/x86/include/asm/disabled-features.h && ( \
+-        (diff -B ../arch/x86/include/asm/disabled-features.h ../../arch/x86/include/asm/disabled-features.h >/dev/null) \
+-        || echo "Warning: tools/arch/x86/include/asm/disabled-features.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/x86/include/asm/required-features.h && ( \
+-        (diff -B ../arch/x86/include/asm/required-features.h ../../arch/x86/include/asm/required-features.h >/dev/null) \
+-        || echo "Warning: tools/arch/x86/include/asm/required-features.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/x86/include/asm/cpufeatures.h && ( \
+-        (diff -B ../arch/x86/include/asm/cpufeatures.h ../../arch/x86/include/asm/cpufeatures.h >/dev/null) \
+-        || echo "Warning: tools/arch/x86/include/asm/cpufeatures.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/x86/lib/memcpy_64.S && ( \
+-        (diff -B ../arch/x86/lib/memcpy_64.S ../../arch/x86/lib/memcpy_64.S >/dev/null) \
+-        || echo "Warning: tools/arch/x86/lib/memcpy_64.S differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/x86/lib/memset_64.S && ( \
+-        (diff -B ../arch/x86/lib/memset_64.S ../../arch/x86/lib/memset_64.S >/dev/null) \
+-        || echo "Warning: tools/arch/x86/lib/memset_64.S differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/arm/include/uapi/asm/perf_regs.h && ( \
+-        (diff -B ../arch/arm/include/uapi/asm/perf_regs.h ../../arch/arm/include/uapi/asm/perf_regs.h >/dev/null) \
+-        || echo "Warning: tools/arch/arm/include/uapi/asm/perf_regs.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/arm64/include/uapi/asm/perf_regs.h && ( \
+-        (diff -B ../arch/arm64/include/uapi/asm/perf_regs.h ../../arch/arm64/include/uapi/asm/perf_regs.h >/dev/null) \
+-        || echo "Warning: tools/arch/arm64/include/uapi/asm/perf_regs.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/powerpc/include/uapi/asm/perf_regs.h && ( \
+-        (diff -B ../arch/powerpc/include/uapi/asm/perf_regs.h ../../arch/powerpc/include/uapi/asm/perf_regs.h >/dev/null) \
+-        || echo "Warning: tools/arch/powerpc/include/uapi/asm/perf_regs.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/x86/include/uapi/asm/perf_regs.h && ( \
+-        (diff -B ../arch/x86/include/uapi/asm/perf_regs.h ../../arch/x86/include/uapi/asm/perf_regs.h >/dev/null) \
+-        || echo "Warning: tools/arch/x86/include/uapi/asm/perf_regs.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/x86/include/uapi/asm/kvm.h && ( \
+-        (diff -B ../arch/x86/include/uapi/asm/kvm.h ../../arch/x86/include/uapi/asm/kvm.h >/dev/null) \
+-        || echo "Warning: tools/arch/x86/include/uapi/asm/kvm.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/x86/include/uapi/asm/kvm_perf.h && ( \
+-        (diff -B ../arch/x86/include/uapi/asm/kvm_perf.h ../../arch/x86/include/uapi/asm/kvm_perf.h >/dev/null) \
+-        || echo "Warning: tools/arch/x86/include/uapi/asm/kvm_perf.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/x86/include/uapi/asm/svm.h && ( \
+-        (diff -B ../arch/x86/include/uapi/asm/svm.h ../../arch/x86/include/uapi/asm/svm.h >/dev/null) \
+-        || echo "Warning: tools/arch/x86/include/uapi/asm/svm.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/x86/include/uapi/asm/vmx.h && ( \
+-        (diff -B ../arch/x86/include/uapi/asm/vmx.h ../../arch/x86/include/uapi/asm/vmx.h >/dev/null) \
+-        || echo "Warning: tools/arch/x86/include/uapi/asm/vmx.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/powerpc/include/uapi/asm/kvm.h && ( \
+-        (diff -B ../arch/powerpc/include/uapi/asm/kvm.h ../../arch/powerpc/include/uapi/asm/kvm.h >/dev/null) \
+-        || echo "Warning: tools/arch/powerpc/include/uapi/asm/kvm.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/s390/include/uapi/asm/kvm.h && ( \
+-        (diff -B ../arch/s390/include/uapi/asm/kvm.h ../../arch/s390/include/uapi/asm/kvm.h >/dev/null) \
+-        || echo "Warning: tools/arch/s390/include/uapi/asm/kvm.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/s390/include/uapi/asm/kvm_perf.h && ( \
+-        (diff -B ../arch/s390/include/uapi/asm/kvm_perf.h ../../arch/s390/include/uapi/asm/kvm_perf.h >/dev/null) \
+-        || echo "Warning: tools/arch/s390/include/uapi/asm/kvm_perf.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/s390/include/uapi/asm/sie.h && ( \
+-        (diff -B ../arch/s390/include/uapi/asm/sie.h ../../arch/s390/include/uapi/asm/sie.h >/dev/null) \
+-        || echo "Warning: tools/arch/s390/include/uapi/asm/sie.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/arm/include/uapi/asm/kvm.h && ( \
+-        (diff -B ../arch/arm/include/uapi/asm/kvm.h ../../arch/arm/include/uapi/asm/kvm.h >/dev/null) \
+-        || echo "Warning: tools/arch/arm/include/uapi/asm/kvm.h differs from kernel" >&2 )) || true
+-	@(test -f ../../arch/arm64/include/uapi/asm/kvm.h && ( \
+-        (diff -B ../arch/arm64/include/uapi/asm/kvm.h ../../arch/arm64/include/uapi/asm/kvm.h >/dev/null) \
+-        || echo "Warning: tools/arch/arm64/include/uapi/asm/kvm.h differs from kernel" >&2 )) || true
+-	@(test -f ../../include/asm-generic/bitops/arch_hweight.h && ( \
+-        (diff -B ../include/asm-generic/bitops/arch_hweight.h ../../include/asm-generic/bitops/arch_hweight.h >/dev/null) \
+-        || echo "Warning: tools/include/asm-generic/bitops/arch_hweight.h differs from kernel" >&2 )) || true
+-	@(test -f ../../include/asm-generic/bitops/const_hweight.h && ( \
+-        (diff -B ../include/asm-generic/bitops/const_hweight.h ../../include/asm-generic/bitops/const_hweight.h >/dev/null) \
+-        || echo "Warning: tools/include/asm-generic/bitops/const_hweight.h differs from kernel" >&2 )) || true
+-	@(test -f ../../include/asm-generic/bitops/__fls.h && ( \
+-        (diff -B ../include/asm-generic/bitops/__fls.h ../../include/asm-generic/bitops/__fls.h >/dev/null) \
+-        || echo "Warning: tools/include/asm-generic/bitops/__fls.h differs from kernel" >&2 )) || true
+-	@(test -f ../../include/asm-generic/bitops/fls.h && ( \
+-        (diff -B ../include/asm-generic/bitops/fls.h ../../include/asm-generic/bitops/fls.h >/dev/null) \
+-        || echo "Warning: tools/include/asm-generic/bitops/fls.h differs from kernel" >&2 )) || true
+-	@(test -f ../../include/asm-generic/bitops/fls64.h && ( \
+-        (diff -B ../include/asm-generic/bitops/fls64.h ../../include/asm-generic/bitops/fls64.h >/dev/null) \
+-        || echo "Warning: tools/include/asm-generic/bitops/fls64.h differs from kernel" >&2 )) || true
+-	@(test -f ../../include/linux/coresight-pmu.h && ( \
+-	(diff -B ../include/linux/coresight-pmu.h ../../include/linux/coresight-pmu.h >/dev/null) \
+-	|| echo "Warning: tools/include/linux/coresight-pmu.h differs from kernel" >&2 )) || true
+-	@(test -f ../../include/uapi/asm-generic/mman-common.h && ( \
+-	(diff -B ../include/uapi/asm-generic/mman-common.h ../../include/uapi/asm-generic/mman-common.h >/dev/null) \
+-	|| echo "Warning: tools/include/uapi/asm-generic/mman-common.h differs from kernel" >&2 )) || true
+-	@(test -f ../../include/uapi/asm-generic/mman.h && ( \
+-	(diff -B -I "^#include <\(uapi/\)*asm-generic/mman-common.h>$$" ../include/uapi/asm-generic/mman.h ../../include/uapi/asm-generic/mman.h >/dev/null) \
+-	|| echo "Warning: tools/include/uapi/asm-generic/mman.h differs from kernel" >&2 )) || true
+-	@(test -f ../../include/uapi/linux/mman.h && ( \
+-	(diff -B -I "^#include <\(uapi/\)*asm/mman.h>$$" ../include/uapi/linux/mman.h ../../include/uapi/linux/mman.h >/dev/null) \
+-	|| echo "Warning: tools/include/uapi/linux/mman.h differs from kernel" >&2 )) || true
+ 	$(Q)$(MAKE) $(build)=perf
+ 
+ $(JEVENTS_IN): FORCE
+@@ -470,7 +403,7 @@ $(OUTPUT)perf: $(PERFLIBS) $(PERF_IN) $(PMU_EVENTS_IN) $(LIBTRACEEVENT_DYNAMIC_L
+ 	$(QUIET_LINK)$(CC) $(CFLAGS) $(LDFLAGS) $(LIBTRACEEVENT_DYNAMIC_LIST_LDFLAGS) \
+ 		$(PERF_IN) $(PMU_EVENTS_IN) $(LIBS) -o $@
+ 
+-$(GTK_IN): fixdep FORCE
++$(GTK_IN): FORCE
+ 	$(Q)$(MAKE) $(build)=gtk
+ 
+ $(OUTPUT)libperf-gtk.so: $(GTK_IN) $(PERFLIBS)
+@@ -515,7 +448,7 @@ endif
+ __build-dir = $(subst $(OUTPUT),,$(dir $@))
+ build-dir   = $(if $(__build-dir),$(__build-dir),.)
+ 
+-prepare: $(OUTPUT)PERF-VERSION-FILE $(OUTPUT)common-cmds.h fixdep archheaders
++prepare: $(OUTPUT)PERF-VERSION-FILE $(OUTPUT)common-cmds.h archheaders
+ 
+ $(OUTPUT)%.o: %.c prepare FORCE
+ 	$(Q)$(MAKE) -f $(srctree)/tools/build/Makefile.build dir=$(build-dir) $@
+@@ -555,7 +488,7 @@ $(patsubst perf-%,%.o,$(PROGRAMS)): $(wildcard */*.h)
+ 
+ LIBPERF_IN := $(OUTPUT)libperf-in.o
+ 
+-$(LIBPERF_IN): prepare fixdep FORCE
++$(LIBPERF_IN): prepare FORCE
+ 	$(Q)$(MAKE) $(build)=libperf
+ 
+ $(LIB_FILE): $(LIBPERF_IN)
+@@ -563,10 +496,10 @@ $(LIB_FILE): $(LIBPERF_IN)
+ 
+ LIBTRACEEVENT_FLAGS += plugin_dir=$(plugindir_SQ)
+ 
+-$(LIBTRACEEVENT): fixdep FORCE
++$(LIBTRACEEVENT): FORCE
+ 	$(Q)$(MAKE) -C $(TRACE_EVENT_DIR) $(LIBTRACEEVENT_FLAGS) O=$(OUTPUT) $(OUTPUT)libtraceevent.a
+ 
+-libtraceevent_plugins: fixdep FORCE
++libtraceevent_plugins: FORCE
+ 	$(Q)$(MAKE) -C $(TRACE_EVENT_DIR) $(LIBTRACEEVENT_FLAGS) O=$(OUTPUT) plugins
+ 
+ $(LIBTRACEEVENT_DYNAMIC_LIST): libtraceevent_plugins
+@@ -579,21 +512,21 @@ $(LIBTRACEEVENT)-clean:
+ install-traceevent-plugins: libtraceevent_plugins
+ 	$(Q)$(MAKE) -C $(TRACE_EVENT_DIR) $(LIBTRACEEVENT_FLAGS) O=$(OUTPUT) install_plugins
+ 
+-$(LIBAPI): fixdep FORCE
++$(LIBAPI): FORCE
+ 	$(Q)$(MAKE) -C $(LIB_DIR) O=$(OUTPUT) $(OUTPUT)libapi.a
+ 
+ $(LIBAPI)-clean:
+ 	$(call QUIET_CLEAN, libapi)
+ 	$(Q)$(MAKE) -C $(LIB_DIR) O=$(OUTPUT) clean >/dev/null
+ 
+-$(LIBBPF): fixdep FORCE
++$(LIBBPF): FORCE
+ 	$(Q)$(MAKE) -C $(BPF_DIR) O=$(OUTPUT) $(OUTPUT)libbpf.a FEATURES_DUMP=$(FEATURE_DUMP_EXPORT)
+ 
+ $(LIBBPF)-clean:
+ 	$(call QUIET_CLEAN, libbpf)
+ 	$(Q)$(MAKE) -C $(BPF_DIR) O=$(OUTPUT) clean >/dev/null
+ 
+-$(LIBSUBCMD): fixdep FORCE
++$(LIBSUBCMD): FORCE
+ 	$(Q)$(MAKE) -C $(SUBCMD_DIR) O=$(OUTPUT) $(OUTPUT)libsubcmd.a
+ 
+ $(LIBSUBCMD)-clean:
+@@ -790,3 +723,4 @@ FORCE:
+ .PHONY: $(GIT-HEAD-PHONY) TAGS tags cscope FORCE prepare
+ .PHONY: libtraceevent_plugins archheaders
+ 
++endif # force_fixdep
+diff --git a/tools/perf/util/util.h b/tools/perf/util/util.h
+index 43899e0d6fa1..e72d370889f8 100644
+--- a/tools/perf/util/util.h
++++ b/tools/perf/util/util.h
+@@ -23,8 +23,6 @@
+ #endif
+ #endif
+ 
+-#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
+-
+ #ifdef __GNUC__
+ #define TYPEOF(x) (__typeof__(x))
+ #else
+diff --git a/tools/include/linux/hashtable.h b/tools/include/linux/hashtable.h
+index c65cc0aa2659..251eabf2a05e 100644
+--- a/tools/include/linux/hashtable.h
++++ b/tools/include/linux/hashtable.h
+@@ -13,10 +13,6 @@
+ #include <linux/hash.h>
+ #include <linux/log2.h>
+ 
+-#ifndef ARRAY_SIZE
+-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+-#endif
+-
+ #define DEFINE_HASHTABLE(name, bits)						\
+ 	struct hlist_head name[1 << (bits)] =					\
+ 			{ [0 ... ((1 << (bits)) - 1)] = HLIST_HEAD_INIT }
+diff --git a/tools/include/linux/kernel.h b/tools/include/linux/kernel.h
+index 28607db02bd3..73ccc48126bb 100644
+--- a/tools/include/linux/kernel.h
++++ b/tools/include/linux/kernel.h
+@@ -4,6 +4,11 @@
+ #include <stdarg.h>
+ #include <stddef.h>
+ #include <assert.h>
++#include <linux/compiler.h>
++
++#ifndef UINT_MAX
++#define UINT_MAX	(~0U)
++#endif
+ 
+ #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
+ 
+@@ -72,6 +77,8 @@
+ int vscnprintf(char *buf, size_t size, const char *fmt, va_list args);
+ int scnprintf(char * buf, size_t size, const char * fmt, ...);
+ 
++#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]) + __must_be_array(arr))
++
+ /*
+  * This looks more complex than it should be. But we need to
+  * get the type for the ~ right in round_down (it needs to be
+diff --git a/tools/include/linux/compiler-gcc.h b/tools/include/linux/compiler-gcc.h
+new file mode 100644
+index 000000000000..825d44f89a29
+--- /dev/null
++++ b/tools/include/linux/compiler-gcc.h
+@@ -0,0 +1,21 @@
++#ifndef _TOOLS_LINUX_COMPILER_H_
++#error "Please don't include <linux/compiler-gcc.h> directly, include <linux/compiler.h> instead."
++#endif
++
++/*
++ * Common definitions for all gcc versions go here.
++ */
++#define GCC_VERSION (__GNUC__ * 10000		\
++		     + __GNUC_MINOR__ * 100	\
++		     + __GNUC_PATCHLEVEL__)
++
++#if GCC_VERSION >= 70000 && !defined(__CHECKER__)
++# define __fallthrough __attribute__ ((fallthrough))
++#endif
++
++#if GCC_VERSION >= 40300
++# define __compiletime_error(message) __attribute__((error(message)))
++#endif /* GCC_VERSION >= 40300 */
++
++/* &a[0] degrades to a pointer: a different type from an array */
++#define __must_be_array(a)	BUILD_BUG_ON_ZERO(__same_type((a), &(a)[0]))
+diff --git a/tools/include/linux/compiler.h b/tools/include/linux/compiler.h
+index d94179f94caa..23299d7e7160 100644
+--- a/tools/include/linux/compiler.h
++++ b/tools/include/linux/compiler.h
+@@ -1,6 +1,14 @@
+ #ifndef _TOOLS_LINUX_COMPILER_H_
+ #define _TOOLS_LINUX_COMPILER_H_
+ 
++#ifdef __GNUC__
++#include <linux/compiler-gcc.h>
++#endif
++
++#ifndef __compiletime_error
++# define __compiletime_error(message)
++#endif
++
+ /* Optimization barrier */
+ /* The "volatile" is due to gcc bugs */
+ #define barrier() __asm__ __volatile__("": : :"memory")
+@@ -9,6 +17,11 @@
+ # define __always_inline	inline __attribute__((always_inline))
+ #endif
+ 
++/* Are two types/vars the same type (ignoring qualifiers)? */
++#ifndef __same_type
++# define __same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
++#endif
++
+ #ifdef __ANDROID__
+ /*
+  * FIXME: Big hammer to get rid of tons of:
+@@ -21,6 +34,8 @@
+ #endif
+ 
+ #define __user
++#define __rcu
++#define __read_mostly
+ 
+ #ifndef __attribute_const__
+ # define __attribute_const__
+@@ -50,6 +65,8 @@
+ # define unlikely(x)		__builtin_expect(!!(x), 0)
+ #endif
+ 
++#define uninitialized_var(x) x = *(&(x))
++
+ #define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
+ 
+ #include <linux/types.h>
+@@ -128,11 +145,7 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
+ 
+ 
+ #ifndef __fallthrough
+-# if defined(__GNUC__) && __GNUC__ >= 7
+-#  define __fallthrough __attribute__ ((fallthrough))
+-# else
+-#  define __fallthrough
+-# endif
++# define __fallthrough
+ #endif
+ 
+ #endif /* _TOOLS_LINUX_COMPILER_H */
+diff --git a/tools/include/linux/types.h b/tools/include/linux/types.h
+index 8ebf6278b2ef..77a28a26a670 100644
+--- a/tools/include/linux/types.h
++++ b/tools/include/linux/types.h
+@@ -7,6 +7,7 @@
+ 
+ #define __SANE_USERSPACE_TYPES__	/* For PPC64, to get LL64 types */
+ #include <asm/types.h>
++#include <asm/posix_types.h>
+ 
+ struct page;
+ struct kmem_cache;
+@@ -42,11 +43,7 @@ typedef __s8  s8;
+ #else
+ #define __bitwise__
+ #endif
+-#ifdef __CHECK_ENDIAN__
+ #define __bitwise __bitwise__
+-#else
+-#define __bitwise
+-#endif
+ 
+ #define __force
+ #define __user
+diff --git a/tools/include/linux/log2.h b/tools/include/linux/log2.h
+index d5677d39c1e4..0325cefc2220 100644
+--- a/tools/include/linux/log2.h
++++ b/tools/include/linux/log2.h
+@@ -12,6 +12,9 @@
+ #ifndef _TOOLS_LINUX_LOG2_H
+ #define _TOOLS_LINUX_LOG2_H
+ 
++#include <linux/bitops.h>
++#include <linux/types.h>
++
+ /*
+  * non-constant log of base 2 calculators
+  * - the arch may override these in asm/bitops.h if they can be implemented
+  diff --git a/tools/objtool/objtool.c b/tools/objtool/objtool.c
+index 46c326db4f46..07f329919828 100644
+--- a/tools/objtool/objtool.c
++++ b/tools/objtool/objtool.c
+@@ -31,11 +31,10 @@
+ #include <stdlib.h>
+ #include <subcmd/exec-cmd.h>
+ #include <subcmd/pager.h>
++#include <linux/kernel.h>
+ 
+ #include "builtin.h"
+ 
+-#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
+-
+ struct cmd_struct {
+ 	const char *name;
+ 	int (*fn)(int, const char **);
+diff --git a/tools/include/linux/bug.h b/tools/include/linux/bug.h
+new file mode 100644
+index 000000000000..8e4a4f49135d
+--- /dev/null
++++ b/tools/include/linux/bug.h
+@@ -0,0 +1,10 @@
++#ifndef _TOOLS_PERF_LINUX_BUG_H
++#define _TOOLS_PERF_LINUX_BUG_H
++
++/* Force a compilation error if condition is true, but also produce a
++   result (of value 0 and type size_t), so the expression can be used
++   e.g. in a structure initializer (or where-ever else comma expressions
++   aren't permitted). */
++#define BUILD_BUG_ON_ZERO(e) (sizeof(struct { int:-!!(e); }))
++
++#endif	/* _TOOLS_PERF_LINUX_BUG_H */

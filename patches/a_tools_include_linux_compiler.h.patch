@@ -2,9 +2,9 @@ diff --git a/tools/include/linux/compiler.h b/tools/include/linux/compiler.h
 index e33fc1d..b41929d 100644
 --- a/tools/include/linux/compiler.h
 +++ b/tools/include/linux/compiler.h
-@@ -50,6 +50,14 @@
- # define unlikely(x)		__builtin_expect(!!(x), 0)
- #endif
+@@ -67,6 +67,14 @@
+ 
+ #define uninitialized_var(x) x = *(&(x))
  
 +#ifndef __size_overflow
 +# define __size_overflow(...)

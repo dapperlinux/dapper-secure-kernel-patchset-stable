@@ -1,0 +1,13 @@
+diff --git a/tools/objtool/builtin-check.c b/tools/objtool/builtin-check.c
+index b8dadb0..8d8c8d2 100644
+--- a/tools/objtool/builtin-check.c
++++ b/tools/objtool/builtin-check.c
+@@ -37,8 +37,6 @@
+ 
+ #include <linux/hashtable.h>
+ 
+-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+-
+ #define STATE_FP_SAVED		0x1
+ #define STATE_FP_SETUP		0x2
+ #define STATE_FENTRY		0x4
