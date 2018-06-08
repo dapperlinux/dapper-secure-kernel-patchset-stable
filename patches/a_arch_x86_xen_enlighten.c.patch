@@ -144,7 +144,7 @@ index bdd8556..4c0b9c7 100644
  	/* Get mfn list */
  	xen_build_dynamic_phys_to_machine();
  
-@@ -1618,6 +1621,19 @@ asmlinkage __visible void __init xen_start_kernel(void)
+@@ -1635,6 +1635,19 @@ asmlinkage __visible void __init xen_start_kernel(void)
  	 */
  	xen_setup_gdt(0);
  
@@ -163,7 +163,7 @@ index bdd8556..4c0b9c7 100644
 +
  	xen_init_irq_ops();
  	xen_init_cpuid_mask();
- 
+ 	xen_init_capabilities();
 @@ -1635,13 +1651,6 @@ asmlinkage __visible void __init xen_start_kernel(void)
  
  	machine_ops = xen_machine_ops;

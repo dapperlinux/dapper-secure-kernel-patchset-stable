@@ -1,0 +1,1492 @@
+diff --git a/Makefile b/Makefile
+index 48d87e3a36c1..ac30e448e0a5 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,6 +1,6 @@
+ VERSION = 4
+ PATCHLEVEL = 9
+-SUBLEVEL = 106
++SUBLEVEL = 107
+ EXTRAVERSION =
+ NAME = Roaring Lionus
+ 
+diff --git a/arch/x86/xen/enlighten.c b/arch/x86/xen/enlighten.c
+index e3a3f5a64884..2986a13b9786 100644
+--- a/arch/x86/xen/enlighten.c
++++ b/arch/x86/xen/enlighten.c
+@@ -472,6 +472,12 @@ static void __init xen_init_cpuid_mask(void)
+ 		cpuid_leaf1_ecx_set_mask = (1 << (X86_FEATURE_MWAIT % 32));
+ }
+ 
++static void __init xen_init_capabilities(void)
++{
++	if (xen_pv_domain())
++		setup_force_cpu_cap(X86_FEATURE_XENPV);
++}
++
+ static void xen_set_debugreg(int reg, unsigned long val)
+ {
+ 	HYPERVISOR_set_debugreg(reg, val);
+@@ -1634,6 +1640,7 @@ asmlinkage __visible void __init xen_start_kernel(void)
+ 
+ 	xen_init_irq_ops();
+ 	xen_init_cpuid_mask();
++	xen_init_capabilities();
+ 
+ #ifdef CONFIG_X86_LOCAL_APIC
+ 	/*
+@@ -1978,12 +1985,6 @@ bool xen_hvm_need_lapic(void)
+ }
+ EXPORT_SYMBOL_GPL(xen_hvm_need_lapic);
+ 
+-static void xen_set_cpu_features(struct cpuinfo_x86 *c)
+-{
+-	if (xen_pv_domain())
+-		set_cpu_cap(c, X86_FEATURE_XENPV);
+-}
+-
+ static void xen_pin_vcpu(int cpu)
+ {
+ 	static bool disable_pinning;
+@@ -2030,7 +2031,6 @@ const struct hypervisor_x86 x86_hyper_xen = {
+ 	.init_platform		= xen_hvm_guest_init,
+ #endif
+ 	.x2apic_available	= xen_x2apic_para_available,
+-	.set_cpu_features       = xen_set_cpu_features,
+ 	.pin_vcpu               = xen_pin_vcpu,
+ };
+ EXPORT_SYMBOL(x86_hyper_xen);
+diff --git a/drivers/dma-buf/dma-buf.c b/drivers/dma-buf/dma-buf.c
+index 6b54e02da10c..e48140e76043 100644
+--- a/drivers/dma-buf/dma-buf.c
++++ b/drivers/dma-buf/dma-buf.c
+@@ -551,7 +551,7 @@ EXPORT_SYMBOL_GPL(dma_buf_detach);
+ struct sg_table *dma_buf_map_attachment(struct dma_buf_attachment *attach,
+ 					enum dma_data_direction direction)
+ {
+-	struct sg_table *sg_table = ERR_PTR(-EINVAL);
++	struct sg_table *sg_table;
+ 
+ 	might_sleep();
+ 
+diff --git a/drivers/gpu/drm/drm_dp_helper.c b/drivers/gpu/drm/drm_dp_helper.c
+index 3e6fe82c6d64..4d49fa0911c6 100644
+--- a/drivers/gpu/drm/drm_dp_helper.c
++++ b/drivers/gpu/drm/drm_dp_helper.c
+@@ -1065,6 +1065,7 @@ int drm_dp_psr_setup_time(const u8 psr_cap[EDP_PSR_RECEIVER_CAP_SIZE])
+ 	static const u16 psr_setup_time_us[] = {
+ 		PSR_SETUP_TIME(330),
+ 		PSR_SETUP_TIME(275),
++		PSR_SETUP_TIME(220),
+ 		PSR_SETUP_TIME(165),
+ 		PSR_SETUP_TIME(110),
+ 		PSR_SETUP_TIME(55),
+diff --git a/drivers/gpu/drm/i915/intel_lvds.c b/drivers/gpu/drm/i915/intel_lvds.c
+index 3517c0ed984a..479d64184da5 100644
+--- a/drivers/gpu/drm/i915/intel_lvds.c
++++ b/drivers/gpu/drm/i915/intel_lvds.c
+@@ -864,6 +864,14 @@ static const struct dmi_system_id intel_no_lvds[] = {
+ 			DMI_EXACT_MATCH(DMI_BOARD_NAME, "D525MW"),
+ 		},
+ 	},
++	{
++		.callback = intel_no_lvds_dmi_callback,
++		.ident = "Radiant P845",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "Radiant Systems Inc"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "P845"),
++		},
++	},
+ 
+ 	{ }	/* terminating entry */
+ };
+diff --git a/drivers/hwtracing/stm/core.c b/drivers/hwtracing/stm/core.c
+index 877a0ed76abf..c38645106783 100644
+--- a/drivers/hwtracing/stm/core.c
++++ b/drivers/hwtracing/stm/core.c
+@@ -27,6 +27,7 @@
+ #include <linux/stm.h>
+ #include <linux/fs.h>
+ #include <linux/mm.h>
++#include <linux/vmalloc.h>
+ #include "stm.h"
+ 
+ #include <uapi/linux/stm.h>
+@@ -682,7 +683,7 @@ static void stm_device_release(struct device *dev)
+ {
+ 	struct stm_device *stm = to_stm_device(dev);
+ 
+-	kfree(stm);
++	vfree(stm);
+ }
+ 
+ int stm_register_device(struct device *parent, struct stm_data *stm_data,
+@@ -699,7 +700,7 @@ int stm_register_device(struct device *parent, struct stm_data *stm_data,
+ 		return -EINVAL;
+ 
+ 	nmasters = stm_data->sw_end - stm_data->sw_start + 1;
+-	stm = kzalloc(sizeof(*stm) + nmasters * sizeof(void *), GFP_KERNEL);
++	stm = vzalloc(sizeof(*stm) + nmasters * sizeof(void *));
+ 	if (!stm)
+ 		return -ENOMEM;
+ 
+@@ -752,7 +753,7 @@ int stm_register_device(struct device *parent, struct stm_data *stm_data,
+ 	/* matches device_initialize() above */
+ 	put_device(&stm->dev);
+ err_free:
+-	kfree(stm);
++	vfree(stm);
+ 
+ 	return err;
+ }
+diff --git a/drivers/iio/buffer/kfifo_buf.c b/drivers/iio/buffer/kfifo_buf.c
+index c5b999f0c519..7ef9b13262a8 100644
+--- a/drivers/iio/buffer/kfifo_buf.c
++++ b/drivers/iio/buffer/kfifo_buf.c
+@@ -24,6 +24,13 @@ static inline int __iio_allocate_kfifo(struct iio_kfifo *buf,
+ 	if ((length == 0) || (bytes_per_datum == 0))
+ 		return -EINVAL;
+ 
++	/*
++	 * Make sure we don't overflow an unsigned int after kfifo rounds up to
++	 * the next power of 2.
++	 */
++	if (roundup_pow_of_two(length) > UINT_MAX / bytes_per_datum)
++		return -EINVAL;
++
+ 	return __kfifo_alloc((struct __kfifo *)&buf->kf, length,
+ 			     bytes_per_datum, GFP_KERNEL);
+ }
+diff --git a/drivers/infiniband/core/cache.c b/drivers/infiniband/core/cache.c
+index ae04826e82fc..a32dd851e712 100644
+--- a/drivers/infiniband/core/cache.c
++++ b/drivers/infiniband/core/cache.c
+@@ -437,7 +437,7 @@ static int __ib_cache_gid_get(struct ib_device *ib_dev, u8 port, int index,
+ 		return -EINVAL;
+ 
+ 	if (table->data_vec[index].props & GID_TABLE_ENTRY_INVALID)
+-		return -EAGAIN;
++		return -EINVAL;
+ 
+ 	memcpy(gid, &table->data_vec[index].gid, sizeof(*gid));
+ 	if (attr) {
+diff --git a/drivers/input/mouse/elan_i2c_smbus.c b/drivers/input/mouse/elan_i2c_smbus.c
+index e23b2495d52e..05b8695a6369 100644
+--- a/drivers/input/mouse/elan_i2c_smbus.c
++++ b/drivers/input/mouse/elan_i2c_smbus.c
+@@ -130,7 +130,7 @@ static int elan_smbus_get_baseline_data(struct i2c_client *client,
+ 					bool max_baseline, u8 *value)
+ {
+ 	int error;
+-	u8 val[3];
++	u8 val[I2C_SMBUS_BLOCK_MAX] = {0};
+ 
+ 	error = i2c_smbus_read_block_data(client,
+ 					  max_baseline ?
+@@ -149,7 +149,7 @@ static int elan_smbus_get_version(struct i2c_client *client,
+ 				  bool iap, u8 *version)
+ {
+ 	int error;
+-	u8 val[3];
++	u8 val[I2C_SMBUS_BLOCK_MAX] = {0};
+ 
+ 	error = i2c_smbus_read_block_data(client,
+ 					  iap ? ETP_SMBUS_IAP_VERSION_CMD :
+@@ -169,7 +169,7 @@ static int elan_smbus_get_sm_version(struct i2c_client *client,
+ 				     u8 *ic_type, u8 *version)
+ {
+ 	int error;
+-	u8 val[3];
++	u8 val[I2C_SMBUS_BLOCK_MAX] = {0};
+ 
+ 	error = i2c_smbus_read_block_data(client,
+ 					  ETP_SMBUS_SM_VERSION_CMD, val);
+@@ -186,7 +186,7 @@ static int elan_smbus_get_sm_version(struct i2c_client *client,
+ static int elan_smbus_get_product_id(struct i2c_client *client, u16 *id)
+ {
+ 	int error;
+-	u8 val[3];
++	u8 val[I2C_SMBUS_BLOCK_MAX] = {0};
+ 
+ 	error = i2c_smbus_read_block_data(client,
+ 					  ETP_SMBUS_UNIQUEID_CMD, val);
+@@ -203,7 +203,7 @@ static int elan_smbus_get_checksum(struct i2c_client *client,
+ 				   bool iap, u16 *csum)
+ {
+ 	int error;
+-	u8 val[3];
++	u8 val[I2C_SMBUS_BLOCK_MAX] = {0};
+ 
+ 	error = i2c_smbus_read_block_data(client,
+ 					  iap ? ETP_SMBUS_FW_CHECKSUM_CMD :
+@@ -224,7 +224,7 @@ static int elan_smbus_get_max(struct i2c_client *client,
+ {
+ 	int ret;
+ 	int error;
+-	u8 val[3];
++	u8 val[I2C_SMBUS_BLOCK_MAX] = {0};
+ 
+ 	ret = i2c_smbus_read_block_data(client, ETP_SMBUS_RANGE_CMD, val);
+ 	if (ret != 3) {
+@@ -244,7 +244,7 @@ static int elan_smbus_get_resolution(struct i2c_client *client,
+ {
+ 	int ret;
+ 	int error;
+-	u8 val[3];
++	u8 val[I2C_SMBUS_BLOCK_MAX] = {0};
+ 
+ 	ret = i2c_smbus_read_block_data(client, ETP_SMBUS_RESOLUTION_CMD, val);
+ 	if (ret != 3) {
+@@ -265,7 +265,7 @@ static int elan_smbus_get_num_traces(struct i2c_client *client,
+ {
+ 	int ret;
+ 	int error;
+-	u8 val[3];
++	u8 val[I2C_SMBUS_BLOCK_MAX] = {0};
+ 
+ 	ret = i2c_smbus_read_block_data(client, ETP_SMBUS_XY_TRACENUM_CMD, val);
+ 	if (ret != 3) {
+@@ -292,7 +292,7 @@ static int elan_smbus_iap_get_mode(struct i2c_client *client,
+ {
+ 	int error;
+ 	u16 constant;
+-	u8 val[3];
++	u8 val[I2C_SMBUS_BLOCK_MAX] = {0};
+ 
+ 	error = i2c_smbus_read_block_data(client, ETP_SMBUS_IAP_CTRL_CMD, val);
+ 	if (error < 0) {
+@@ -343,7 +343,7 @@ static int elan_smbus_prepare_fw_update(struct i2c_client *client)
+ 	int len;
+ 	int error;
+ 	enum tp_mode mode;
+-	u8 val[3];
++	u8 val[I2C_SMBUS_BLOCK_MAX] = {0};
+ 	u8 cmd[4] = {0x0F, 0x78, 0x00, 0x06};
+ 	u16 password;
+ 
+@@ -417,7 +417,7 @@ static int elan_smbus_write_fw_block(struct i2c_client *client,
+ 	struct device *dev = &client->dev;
+ 	int error;
+ 	u16 result;
+-	u8 val[3];
++	u8 val[I2C_SMBUS_BLOCK_MAX] = {0};
+ 
+ 	/*
+ 	 * Due to the limitation of smbus protocol limiting
+diff --git a/drivers/irqchip/irq-gic-v3.c b/drivers/irqchip/irq-gic-v3.c
+index 0b1d5bdd0862..f7b8681aed3f 100644
+--- a/drivers/irqchip/irq-gic-v3.c
++++ b/drivers/irqchip/irq-gic-v3.c
+@@ -120,11 +120,10 @@ static void gic_redist_wait_for_rwp(void)
+ }
+ 
+ #ifdef CONFIG_ARM64
+-static DEFINE_STATIC_KEY_FALSE(is_cavium_thunderx);
+ 
+ static u64 __maybe_unused gic_read_iar(void)
+ {
+-	if (static_branch_unlikely(&is_cavium_thunderx))
++	if (cpus_have_const_cap(ARM64_WORKAROUND_CAVIUM_23154))
+ 		return gic_read_iar_cavium_thunderx();
+ 	else
+ 		return gic_read_iar_common();
+@@ -908,14 +907,6 @@ static const struct irq_domain_ops partition_domain_ops = {
+ 	.select = gic_irq_domain_select,
+ };
+ 
+-static void gicv3_enable_quirks(void)
+-{
+-#ifdef CONFIG_ARM64
+-	if (cpus_have_cap(ARM64_WORKAROUND_CAVIUM_23154))
+-		static_branch_enable(&is_cavium_thunderx);
+-#endif
+-}
+-
+ static int __init gic_init_bases(void __iomem *dist_base,
+ 				 struct redist_region *rdist_regs,
+ 				 u32 nr_redist_regions,
+@@ -938,8 +929,6 @@ static int __init gic_init_bases(void __iomem *dist_base,
+ 	gic_data.nr_redist_regions = nr_redist_regions;
+ 	gic_data.redist_stride = redist_stride;
+ 
+-	gicv3_enable_quirks();
+-
+ 	/*
+ 	 * Find out how many interrupts are supported.
+ 	 * The GIC only supports up to 1020 interrupt sources (SGI+PPI+SPI)
+diff --git a/drivers/net/ethernet/mellanox/mlx4/en_rx.c b/drivers/net/ethernet/mellanox/mlx4/en_rx.c
+index bcbb80ff86a7..1a92cd719e19 100644
+--- a/drivers/net/ethernet/mellanox/mlx4/en_rx.c
++++ b/drivers/net/ethernet/mellanox/mlx4/en_rx.c
+@@ -142,16 +142,17 @@ static void mlx4_en_free_frag(struct mlx4_en_priv *priv,
+ 			      struct mlx4_en_rx_alloc *frags,
+ 			      int i)
+ {
+-	const struct mlx4_en_frag_info *frag_info = &priv->frag_info[i];
+-	u32 next_frag_end = frags[i].page_offset + 2 * frag_info->frag_stride;
+-
+-
+-	if (next_frag_end > frags[i].page_size)
+-		dma_unmap_page(priv->ddev, frags[i].dma, frags[i].page_size,
+-			       frag_info->dma_dir);
++	if (frags[i].page) {
++		const struct mlx4_en_frag_info *frag_info = &priv->frag_info[i];
++		u32 next_frag_end = frags[i].page_offset +
++				2 * frag_info->frag_stride;
+ 
+-	if (frags[i].page)
++		if (next_frag_end > frags[i].page_size) {
++			dma_unmap_page(priv->ddev, frags[i].dma,
++				       frags[i].page_size, frag_info->dma_dir);
++		}
+ 		put_page(frags[i].page);
++	}
+ }
+ 
+ static int mlx4_en_init_allocator(struct mlx4_en_priv *priv,
+@@ -586,21 +587,28 @@ static int mlx4_en_complete_rx_desc(struct mlx4_en_priv *priv,
+ 				    int length)
+ {
+ 	struct skb_frag_struct *skb_frags_rx = skb_shinfo(skb)->frags;
+-	struct mlx4_en_frag_info *frag_info;
+ 	int nr;
+ 	dma_addr_t dma;
+ 
+ 	/* Collect used fragments while replacing them in the HW descriptors */
+ 	for (nr = 0; nr < priv->num_frags; nr++) {
+-		frag_info = &priv->frag_info[nr];
++		struct mlx4_en_frag_info *frag_info = &priv->frag_info[nr];
++		u32 next_frag_end = frags[nr].page_offset +
++				2 * frag_info->frag_stride;
++
+ 		if (length <= frag_info->frag_prefix_size)
+ 			break;
+ 		if (unlikely(!frags[nr].page))
+ 			goto fail;
+ 
+ 		dma = be64_to_cpu(rx_desc->data[nr].addr);
+-		dma_sync_single_for_cpu(priv->ddev, dma, frag_info->frag_size,
+-					DMA_FROM_DEVICE);
++		if (next_frag_end > frags[nr].page_size)
++			dma_unmap_page(priv->ddev, frags[nr].dma,
++				       frags[nr].page_size, frag_info->dma_dir);
++		else
++			dma_sync_single_for_cpu(priv->ddev, dma,
++						frag_info->frag_size,
++						DMA_FROM_DEVICE);
+ 
+ 		/* Save page reference in skb */
+ 		__skb_frag_set_page(&skb_frags_rx[nr], frags[nr].page);
+diff --git a/drivers/net/wireless/realtek/rtlwifi/rtl8192cu/rf.c b/drivers/net/wireless/realtek/rtlwifi/rtl8192cu/rf.c
+index ec2ea56f7933..fdbd35954d15 100644
+--- a/drivers/net/wireless/realtek/rtlwifi/rtl8192cu/rf.c
++++ b/drivers/net/wireless/realtek/rtlwifi/rtl8192cu/rf.c
+@@ -304,9 +304,6 @@ static void _rtl92c_get_txpower_writeval_by_regulatory(struct ieee80211_hw *hw,
+ 			writeVal = 0x00000000;
+ 		if (rtlpriv->dm.dynamic_txhighpower_lvl == TXHIGHPWRLEVEL_BT1)
+ 			writeVal = writeVal - 0x06060606;
+-		else if (rtlpriv->dm.dynamic_txhighpower_lvl ==
+-			 TXHIGHPWRLEVEL_BT2)
+-			writeVal = writeVal;
+ 		*(p_outwriteval + rf) = writeVal;
+ 	}
+ }
+diff --git a/drivers/pinctrl/qcom/pinctrl-msm.c b/drivers/pinctrl/qcom/pinctrl-msm.c
+index 056845bdf67b..bedce3453dd3 100644
+--- a/drivers/pinctrl/qcom/pinctrl-msm.c
++++ b/drivers/pinctrl/qcom/pinctrl-msm.c
+@@ -790,7 +790,7 @@ static int msm_gpio_init(struct msm_pinctrl *pctrl)
+ 		return -EINVAL;
+ 
+ 	chip = &pctrl->chip;
+-	chip->base = -1;
++	chip->base = 0;
+ 	chip->ngpio = ngpio;
+ 	chip->label = dev_name(pctrl->dev);
+ 	chip->parent = pctrl->dev;
+diff --git a/drivers/platform/chrome/cros_ec_lpc.c b/drivers/platform/chrome/cros_ec_lpc.c
+index f9a245465fd0..6a25bfd4541e 100644
+--- a/drivers/platform/chrome/cros_ec_lpc.c
++++ b/drivers/platform/chrome/cros_ec_lpc.c
+@@ -49,7 +49,6 @@ static int ec_response_timed_out(void)
+ static int cros_ec_pkt_xfer_lpc(struct cros_ec_device *ec,
+ 				struct cros_ec_command *msg)
+ {
+-	struct ec_host_request *request;
+ 	struct ec_host_response response;
+ 	u8 sum = 0;
+ 	int i;
+@@ -62,8 +61,6 @@ static int cros_ec_pkt_xfer_lpc(struct cros_ec_device *ec,
+ 	for (i = 0; i < ret; i++)
+ 		outb(ec->dout[i], EC_LPC_ADDR_HOST_PACKET + i);
+ 
+-	request = (struct ec_host_request *)ec->dout;
+-
+ 	/* Here we go */
+ 	outb(EC_COMMAND_PROTOCOL_3, EC_LPC_ADDR_HOST_CMD);
+ 
+diff --git a/drivers/scsi/scsi_transport_srp.c b/drivers/scsi/scsi_transport_srp.c
+index e3cd3ece4412..c3d1891d2d3f 100644
+--- a/drivers/scsi/scsi_transport_srp.c
++++ b/drivers/scsi/scsi_transport_srp.c
+@@ -52,6 +52,8 @@ struct srp_internal {
+ 	struct transport_container rport_attr_cont;
+ };
+ 
++static int scsi_is_srp_rport(const struct device *dev);
++
+ #define to_srp_internal(tmpl) container_of(tmpl, struct srp_internal, t)
+ 
+ #define	dev_to_rport(d)	container_of(d, struct srp_rport, dev)
+@@ -61,9 +63,24 @@ static inline struct Scsi_Host *rport_to_shost(struct srp_rport *r)
+ 	return dev_to_shost(r->dev.parent);
+ }
+ 
++static int find_child_rport(struct device *dev, void *data)
++{
++	struct device **child = data;
++
++	if (scsi_is_srp_rport(dev)) {
++		WARN_ON_ONCE(*child);
++		*child = dev;
++	}
++	return 0;
++}
++
+ static inline struct srp_rport *shost_to_rport(struct Scsi_Host *shost)
+ {
+-	return transport_class_to_srp_rport(&shost->shost_gendev);
++	struct device *child = NULL;
++
++	WARN_ON_ONCE(device_for_each_child(&shost->shost_gendev, &child,
++					   find_child_rport) < 0);
++	return child ? dev_to_rport(child) : NULL;
+ }
+ 
+ /**
+@@ -637,7 +654,8 @@ static enum blk_eh_timer_return srp_timed_out(struct scsi_cmnd *scmd)
+ 	struct srp_rport *rport = shost_to_rport(shost);
+ 
+ 	pr_debug("timeout for sdev %s\n", dev_name(&sdev->sdev_gendev));
+-	return rport->fast_io_fail_tmo < 0 && rport->dev_loss_tmo < 0 &&
++	return rport && rport->fast_io_fail_tmo < 0 &&
++		rport->dev_loss_tmo < 0 &&
+ 		i->f->reset_timer_if_blocked && scsi_device_blocked(sdev) ?
+ 		BLK_EH_RESET_TIMER : BLK_EH_NOT_HANDLED;
+ }
+diff --git a/drivers/scsi/ufs/ufs.h b/drivers/scsi/ufs/ufs.h
+index 845b874e2977..5bb2316f60bf 100644
+--- a/drivers/scsi/ufs/ufs.h
++++ b/drivers/scsi/ufs/ufs.h
+@@ -145,7 +145,7 @@ enum attr_idn {
+ /* Descriptor idn for Query requests */
+ enum desc_idn {
+ 	QUERY_DESC_IDN_DEVICE		= 0x0,
+-	QUERY_DESC_IDN_CONFIGURAION	= 0x1,
++	QUERY_DESC_IDN_CONFIGURATION	= 0x1,
+ 	QUERY_DESC_IDN_UNIT		= 0x2,
+ 	QUERY_DESC_IDN_RFU_0		= 0x3,
+ 	QUERY_DESC_IDN_INTERCONNECT	= 0x4,
+@@ -161,19 +161,13 @@ enum desc_header_offset {
+ 	QUERY_DESC_DESC_TYPE_OFFSET	= 0x01,
+ };
+ 
+-enum ufs_desc_max_size {
+-	QUERY_DESC_DEVICE_MAX_SIZE		= 0x1F,
+-	QUERY_DESC_CONFIGURAION_MAX_SIZE	= 0x90,
+-	QUERY_DESC_UNIT_MAX_SIZE		= 0x23,
+-	QUERY_DESC_INTERCONNECT_MAX_SIZE	= 0x06,
+-	/*
+-	 * Max. 126 UNICODE characters (2 bytes per character) plus 2 bytes
+-	 * of descriptor header.
+-	 */
+-	QUERY_DESC_STRING_MAX_SIZE		= 0xFE,
+-	QUERY_DESC_GEOMETRY_MAX_SIZE		= 0x44,
+-	QUERY_DESC_POWER_MAX_SIZE		= 0x62,
+-	QUERY_DESC_RFU_MAX_SIZE			= 0x00,
++enum ufs_desc_def_size {
++	QUERY_DESC_DEVICE_DEF_SIZE		= 0x40,
++	QUERY_DESC_CONFIGURATION_DEF_SIZE	= 0x90,
++	QUERY_DESC_UNIT_DEF_SIZE		= 0x23,
++	QUERY_DESC_INTERCONNECT_DEF_SIZE	= 0x06,
++	QUERY_DESC_GEOMETRY_DEF_SIZE		= 0x44,
++	QUERY_DESC_POWER_DEF_SIZE		= 0x62,
+ };
+ 
+ /* Unit descriptor parameters offsets in bytes*/
+@@ -522,4 +516,16 @@ struct ufs_dev_info {
+ 	bool is_lu_power_on_wp;
+ };
+ 
++#define MAX_MODEL_LEN 16
++/**
++ * ufs_dev_desc - ufs device details from the device descriptor
++ *
++ * @wmanufacturerid: card details
++ * @model: card model
++ */
++struct ufs_dev_desc {
++	u16 wmanufacturerid;
++	char model[MAX_MODEL_LEN + 1];
++};
++
+ #endif /* End of Header */
+diff --git a/drivers/scsi/ufs/ufs_quirks.h b/drivers/scsi/ufs/ufs_quirks.h
+index 08b799d4efcc..71f73d1d1ad1 100644
+--- a/drivers/scsi/ufs/ufs_quirks.h
++++ b/drivers/scsi/ufs/ufs_quirks.h
+@@ -21,41 +21,28 @@
+ #define UFS_ANY_VENDOR 0xFFFF
+ #define UFS_ANY_MODEL  "ANY_MODEL"
+ 
+-#define MAX_MODEL_LEN 16
+-
+ #define UFS_VENDOR_TOSHIBA     0x198
+ #define UFS_VENDOR_SAMSUNG     0x1CE
+ #define UFS_VENDOR_SKHYNIX     0x1AD
+ 
+-/**
+- * ufs_device_info - ufs device details
+- * @wmanufacturerid: card details
+- * @model: card model
+- */
+-struct ufs_device_info {
+-	u16 wmanufacturerid;
+-	char model[MAX_MODEL_LEN + 1];
+-};
+-
+ /**
+  * ufs_dev_fix - ufs device quirk info
+  * @card: ufs card details
+  * @quirk: device quirk
+  */
+ struct ufs_dev_fix {
+-	struct ufs_device_info card;
++	struct ufs_dev_desc card;
+ 	unsigned int quirk;
+ };
+ 
+ #define END_FIX { { 0 }, 0 }
+ 
+ /* add specific device quirk */
+-#define UFS_FIX(_vendor, _model, _quirk) \
+-		{					  \
+-			.card.wmanufacturerid = (_vendor),\
+-			.card.model = (_model),		  \
+-			.quirk = (_quirk),		  \
+-		}
++#define UFS_FIX(_vendor, _model, _quirk) { \
++	.card.wmanufacturerid = (_vendor),\
++	.card.model = (_model),		   \
++	.quirk = (_quirk),		   \
++}
+ 
+ /*
+  * If UFS device is having issue in processing LCC (Line Control
+@@ -144,7 +131,4 @@ struct ufs_dev_fix {
+  */
+ #define UFS_DEVICE_QUIRK_HOST_PA_SAVECONFIGTIME	(1 << 8)
+ 
+-struct ufs_hba;
+-void ufs_advertise_fixup_device(struct ufs_hba *hba);
+-
+ #endif /* UFS_QUIRKS_H_ */
+diff --git a/drivers/scsi/ufs/ufshcd.c b/drivers/scsi/ufs/ufshcd.c
+index 98a7111dd53f..86a3110c6d75 100644
+--- a/drivers/scsi/ufs/ufshcd.c
++++ b/drivers/scsi/ufs/ufshcd.c
+@@ -98,19 +98,6 @@
+ 		_ret;                                                   \
+ 	})
+ 
+-static u32 ufs_query_desc_max_size[] = {
+-	QUERY_DESC_DEVICE_MAX_SIZE,
+-	QUERY_DESC_CONFIGURAION_MAX_SIZE,
+-	QUERY_DESC_UNIT_MAX_SIZE,
+-	QUERY_DESC_RFU_MAX_SIZE,
+-	QUERY_DESC_INTERCONNECT_MAX_SIZE,
+-	QUERY_DESC_STRING_MAX_SIZE,
+-	QUERY_DESC_RFU_MAX_SIZE,
+-	QUERY_DESC_GEOMETRY_MAX_SIZE,
+-	QUERY_DESC_POWER_MAX_SIZE,
+-	QUERY_DESC_RFU_MAX_SIZE,
+-};
+-
+ enum {
+ 	UFSHCD_MAX_CHANNEL	= 0,
+ 	UFSHCD_MAX_ID		= 1,
+@@ -1961,7 +1948,7 @@ static int __ufshcd_query_descriptor(struct ufs_hba *hba,
+ 		goto out;
+ 	}
+ 
+-	if (*buf_len <= QUERY_DESC_MIN_SIZE || *buf_len > QUERY_DESC_MAX_SIZE) {
++	if (*buf_len < QUERY_DESC_MIN_SIZE || *buf_len > QUERY_DESC_MAX_SIZE) {
+ 		dev_err(hba->dev, "%s: descriptor buffer size (%d) is out of range\n",
+ 				__func__, *buf_len);
+ 		err = -EINVAL;
+@@ -2040,6 +2027,92 @@ int ufshcd_query_descriptor_retry(struct ufs_hba *hba,
+ }
+ EXPORT_SYMBOL(ufshcd_query_descriptor_retry);
+ 
++/**
++ * ufshcd_read_desc_length - read the specified descriptor length from header
++ * @hba: Pointer to adapter instance
++ * @desc_id: descriptor idn value
++ * @desc_index: descriptor index
++ * @desc_length: pointer to variable to read the length of descriptor
++ *
++ * Return 0 in case of success, non-zero otherwise
++ */
++static int ufshcd_read_desc_length(struct ufs_hba *hba,
++	enum desc_idn desc_id,
++	int desc_index,
++	int *desc_length)
++{
++	int ret;
++	u8 header[QUERY_DESC_HDR_SIZE];
++	int header_len = QUERY_DESC_HDR_SIZE;
++
++	if (desc_id >= QUERY_DESC_IDN_MAX)
++		return -EINVAL;
++
++	ret = ufshcd_query_descriptor_retry(hba, UPIU_QUERY_OPCODE_READ_DESC,
++					desc_id, desc_index, 0, header,
++					&header_len);
++
++	if (ret) {
++		dev_err(hba->dev, "%s: Failed to get descriptor header id %d",
++			__func__, desc_id);
++		return ret;
++	} else if (desc_id != header[QUERY_DESC_DESC_TYPE_OFFSET]) {
++		dev_warn(hba->dev, "%s: descriptor header id %d and desc_id %d mismatch",
++			__func__, header[QUERY_DESC_DESC_TYPE_OFFSET],
++			desc_id);
++		ret = -EINVAL;
++	}
++
++	*desc_length = header[QUERY_DESC_LENGTH_OFFSET];
++	return ret;
++
++}
++
++/**
++ * ufshcd_map_desc_id_to_length - map descriptor IDN to its length
++ * @hba: Pointer to adapter instance
++ * @desc_id: descriptor idn value
++ * @desc_len: mapped desc length (out)
++ *
++ * Return 0 in case of success, non-zero otherwise
++ */
++int ufshcd_map_desc_id_to_length(struct ufs_hba *hba,
++	enum desc_idn desc_id, int *desc_len)
++{
++	switch (desc_id) {
++	case QUERY_DESC_IDN_DEVICE:
++		*desc_len = hba->desc_size.dev_desc;
++		break;
++	case QUERY_DESC_IDN_POWER:
++		*desc_len = hba->desc_size.pwr_desc;
++		break;
++	case QUERY_DESC_IDN_GEOMETRY:
++		*desc_len = hba->desc_size.geom_desc;
++		break;
++	case QUERY_DESC_IDN_CONFIGURATION:
++		*desc_len = hba->desc_size.conf_desc;
++		break;
++	case QUERY_DESC_IDN_UNIT:
++		*desc_len = hba->desc_size.unit_desc;
++		break;
++	case QUERY_DESC_IDN_INTERCONNECT:
++		*desc_len = hba->desc_size.interc_desc;
++		break;
++	case QUERY_DESC_IDN_STRING:
++		*desc_len = QUERY_DESC_MAX_SIZE;
++		break;
++	case QUERY_DESC_IDN_RFU_0:
++	case QUERY_DESC_IDN_RFU_1:
++		*desc_len = 0;
++		break;
++	default:
++		*desc_len = 0;
++		return -EINVAL;
++	}
++	return 0;
++}
++EXPORT_SYMBOL(ufshcd_map_desc_id_to_length);
++
+ /**
+  * ufshcd_read_desc_param - read the specified descriptor parameter
+  * @hba: Pointer to adapter instance
+@@ -2054,50 +2127,64 @@ EXPORT_SYMBOL(ufshcd_query_descriptor_retry);
+ static int ufshcd_read_desc_param(struct ufs_hba *hba,
+ 				  enum desc_idn desc_id,
+ 				  int desc_index,
+-				  u32 param_offset,
++				  u8 param_offset,
+ 				  u8 *param_read_buf,
+-				  u32 param_size)
++				  u8 param_size)
+ {
+ 	int ret;
+ 	u8 *desc_buf;
+-	u32 buff_len;
++	int buff_len;
+ 	bool is_kmalloc = true;
+ 
+-	/* safety checks */
+-	if (desc_id >= QUERY_DESC_IDN_MAX)
++	/* Safety check */
++	if (desc_id >= QUERY_DESC_IDN_MAX || !param_size)
+ 		return -EINVAL;
+ 
+-	buff_len = ufs_query_desc_max_size[desc_id];
+-	if ((param_offset + param_size) > buff_len)
+-		return -EINVAL;
++	/* Get the max length of descriptor from structure filled up at probe
++	 * time.
++	 */
++	ret = ufshcd_map_desc_id_to_length(hba, desc_id, &buff_len);
+ 
+-	if (!param_offset && (param_size == buff_len)) {
+-		/* memory space already available to hold full descriptor */
+-		desc_buf = param_read_buf;
+-		is_kmalloc = false;
+-	} else {
+-		/* allocate memory to hold full descriptor */
++	/* Sanity checks */
++	if (ret || !buff_len) {
++		dev_err(hba->dev, "%s: Failed to get full descriptor length",
++			__func__);
++		return ret;
++	}
++
++	/* Check whether we need temp memory */
++	if (param_offset != 0 || param_size < buff_len) {
+ 		desc_buf = kmalloc(buff_len, GFP_KERNEL);
+ 		if (!desc_buf)
+ 			return -ENOMEM;
++	} else {
++		desc_buf = param_read_buf;
++		is_kmalloc = false;
+ 	}
+ 
++	/* Request for full descriptor */
+ 	ret = ufshcd_query_descriptor_retry(hba, UPIU_QUERY_OPCODE_READ_DESC,
+-					desc_id, desc_index, 0, desc_buf,
+-					&buff_len);
+-
+-	if (ret || (buff_len < ufs_query_desc_max_size[desc_id]) ||
+-	    (desc_buf[QUERY_DESC_LENGTH_OFFSET] !=
+-	     ufs_query_desc_max_size[desc_id])
+-	    || (desc_buf[QUERY_DESC_DESC_TYPE_OFFSET] != desc_id)) {
+-		dev_err(hba->dev, "%s: Failed reading descriptor. desc_id %d param_offset %d buff_len %d ret %d",
+-			__func__, desc_id, param_offset, buff_len, ret);
+-		if (!ret)
+-			ret = -EINVAL;
++					desc_id, desc_index, 0,
++					desc_buf, &buff_len);
++
++	if (ret) {
++		dev_err(hba->dev, "%s: Failed reading descriptor. desc_id %d, desc_index %d, param_offset %d, ret %d",
++			__func__, desc_id, desc_index, param_offset, ret);
++		goto out;
++	}
+ 
++	/* Sanity check */
++	if (desc_buf[QUERY_DESC_DESC_TYPE_OFFSET] != desc_id) {
++		dev_err(hba->dev, "%s: invalid desc_id %d in descriptor header",
++			__func__, desc_buf[QUERY_DESC_DESC_TYPE_OFFSET]);
++		ret = -EINVAL;
+ 		goto out;
+ 	}
+ 
++	/* Check wherher we will not copy more data, than available */
++	if (is_kmalloc && param_size > buff_len)
++		param_size = buff_len;
++
+ 	if (is_kmalloc)
+ 		memcpy(param_read_buf, &desc_buf[param_offset], param_size);
+ out:
+@@ -4789,8 +4876,8 @@ static u32 ufshcd_find_max_sup_active_icc_level(struct ufs_hba *hba,
+ static void ufshcd_init_icc_levels(struct ufs_hba *hba)
+ {
+ 	int ret;
+-	int buff_len = QUERY_DESC_POWER_MAX_SIZE;
+-	u8 desc_buf[QUERY_DESC_POWER_MAX_SIZE];
++	int buff_len = hba->desc_size.pwr_desc;
++	u8 desc_buf[hba->desc_size.pwr_desc];
+ 
+ 	ret = ufshcd_read_power_desc(hba, desc_buf, buff_len);
+ 	if (ret) {
+@@ -4883,16 +4970,15 @@ static int ufshcd_scsi_add_wlus(struct ufs_hba *hba)
+ 	return ret;
+ }
+ 
+-static int ufs_get_device_info(struct ufs_hba *hba,
+-				struct ufs_device_info *card_data)
++static int ufs_get_device_desc(struct ufs_hba *hba,
++			       struct ufs_dev_desc *dev_desc)
+ {
+ 	int err;
+ 	u8 model_index;
+-	u8 str_desc_buf[QUERY_DESC_STRING_MAX_SIZE + 1] = {0};
+-	u8 desc_buf[QUERY_DESC_DEVICE_MAX_SIZE];
++	u8 str_desc_buf[QUERY_DESC_MAX_SIZE + 1] = {0};
++	u8 desc_buf[hba->desc_size.dev_desc];
+ 
+-	err = ufshcd_read_device_desc(hba, desc_buf,
+-					QUERY_DESC_DEVICE_MAX_SIZE);
++	err = ufshcd_read_device_desc(hba, desc_buf, hba->desc_size.dev_desc);
+ 	if (err) {
+ 		dev_err(hba->dev, "%s: Failed reading Device Desc. err = %d\n",
+ 			__func__, err);
+@@ -4903,50 +4989,40 @@ static int ufs_get_device_info(struct ufs_hba *hba,
+ 	 * getting vendor (manufacturerID) and Bank Index in big endian
+ 	 * format
+ 	 */
+-	card_data->wmanufacturerid = desc_buf[DEVICE_DESC_PARAM_MANF_ID] << 8 |
++	dev_desc->wmanufacturerid = desc_buf[DEVICE_DESC_PARAM_MANF_ID] << 8 |
+ 				     desc_buf[DEVICE_DESC_PARAM_MANF_ID + 1];
+ 
+ 	model_index = desc_buf[DEVICE_DESC_PARAM_PRDCT_NAME];
+ 
+ 	err = ufshcd_read_string_desc(hba, model_index, str_desc_buf,
+-					QUERY_DESC_STRING_MAX_SIZE, ASCII_STD);
++				QUERY_DESC_MAX_SIZE, ASCII_STD);
+ 	if (err) {
+ 		dev_err(hba->dev, "%s: Failed reading Product Name. err = %d\n",
+ 			__func__, err);
+ 		goto out;
+ 	}
+ 
+-	str_desc_buf[QUERY_DESC_STRING_MAX_SIZE] = '\0';
+-	strlcpy(card_data->model, (str_desc_buf + QUERY_DESC_HDR_SIZE),
++	str_desc_buf[QUERY_DESC_MAX_SIZE] = '\0';
++	strlcpy(dev_desc->model, (str_desc_buf + QUERY_DESC_HDR_SIZE),
+ 		min_t(u8, str_desc_buf[QUERY_DESC_LENGTH_OFFSET],
+ 		      MAX_MODEL_LEN));
+ 
+ 	/* Null terminate the model string */
+-	card_data->model[MAX_MODEL_LEN] = '\0';
++	dev_desc->model[MAX_MODEL_LEN] = '\0';
+ 
+ out:
+ 	return err;
+ }
+ 
+-void ufs_advertise_fixup_device(struct ufs_hba *hba)
++static void ufs_fixup_device_setup(struct ufs_hba *hba,
++				   struct ufs_dev_desc *dev_desc)
+ {
+-	int err;
+ 	struct ufs_dev_fix *f;
+-	struct ufs_device_info card_data;
+-
+-	card_data.wmanufacturerid = 0;
+-
+-	err = ufs_get_device_info(hba, &card_data);
+-	if (err) {
+-		dev_err(hba->dev, "%s: Failed getting device info. err = %d\n",
+-			__func__, err);
+-		return;
+-	}
+ 
+ 	for (f = ufs_fixups; f->quirk; f++) {
+-		if (((f->card.wmanufacturerid == card_data.wmanufacturerid) ||
+-		    (f->card.wmanufacturerid == UFS_ANY_VENDOR)) &&
+-		    (STR_PRFX_EQUAL(f->card.model, card_data.model) ||
++		if ((f->card.wmanufacturerid == dev_desc->wmanufacturerid ||
++		     f->card.wmanufacturerid == UFS_ANY_VENDOR) &&
++		    (STR_PRFX_EQUAL(f->card.model, dev_desc->model) ||
+ 		     !strcmp(f->card.model, UFS_ANY_MODEL)))
+ 			hba->dev_quirks |= f->quirk;
+ 	}
+@@ -5116,6 +5192,51 @@ static void ufshcd_tune_unipro_params(struct ufs_hba *hba)
+ 	ufshcd_vops_apply_dev_quirks(hba);
+ }
+ 
++static void ufshcd_init_desc_sizes(struct ufs_hba *hba)
++{
++	int err;
++
++	err = ufshcd_read_desc_length(hba, QUERY_DESC_IDN_DEVICE, 0,
++		&hba->desc_size.dev_desc);
++	if (err)
++		hba->desc_size.dev_desc = QUERY_DESC_DEVICE_DEF_SIZE;
++
++	err = ufshcd_read_desc_length(hba, QUERY_DESC_IDN_POWER, 0,
++		&hba->desc_size.pwr_desc);
++	if (err)
++		hba->desc_size.pwr_desc = QUERY_DESC_POWER_DEF_SIZE;
++
++	err = ufshcd_read_desc_length(hba, QUERY_DESC_IDN_INTERCONNECT, 0,
++		&hba->desc_size.interc_desc);
++	if (err)
++		hba->desc_size.interc_desc = QUERY_DESC_INTERCONNECT_DEF_SIZE;
++
++	err = ufshcd_read_desc_length(hba, QUERY_DESC_IDN_CONFIGURATION, 0,
++		&hba->desc_size.conf_desc);
++	if (err)
++		hba->desc_size.conf_desc = QUERY_DESC_CONFIGURATION_DEF_SIZE;
++
++	err = ufshcd_read_desc_length(hba, QUERY_DESC_IDN_UNIT, 0,
++		&hba->desc_size.unit_desc);
++	if (err)
++		hba->desc_size.unit_desc = QUERY_DESC_UNIT_DEF_SIZE;
++
++	err = ufshcd_read_desc_length(hba, QUERY_DESC_IDN_GEOMETRY, 0,
++		&hba->desc_size.geom_desc);
++	if (err)
++		hba->desc_size.geom_desc = QUERY_DESC_GEOMETRY_DEF_SIZE;
++}
++
++static void ufshcd_def_desc_sizes(struct ufs_hba *hba)
++{
++	hba->desc_size.dev_desc = QUERY_DESC_DEVICE_DEF_SIZE;
++	hba->desc_size.pwr_desc = QUERY_DESC_POWER_DEF_SIZE;
++	hba->desc_size.interc_desc = QUERY_DESC_INTERCONNECT_DEF_SIZE;
++	hba->desc_size.conf_desc = QUERY_DESC_CONFIGURATION_DEF_SIZE;
++	hba->desc_size.unit_desc = QUERY_DESC_UNIT_DEF_SIZE;
++	hba->desc_size.geom_desc = QUERY_DESC_GEOMETRY_DEF_SIZE;
++}
++
+ /**
+  * ufshcd_probe_hba - probe hba to detect device and initialize
+  * @hba: per-adapter instance
+@@ -5124,6 +5245,7 @@ static void ufshcd_tune_unipro_params(struct ufs_hba *hba)
+  */
+ static int ufshcd_probe_hba(struct ufs_hba *hba)
+ {
++	struct ufs_dev_desc card = {0};
+ 	int ret;
+ 
+ 	ret = ufshcd_link_startup(hba);
+@@ -5147,7 +5269,17 @@ static int ufshcd_probe_hba(struct ufs_hba *hba)
+ 	if (ret)
+ 		goto out;
+ 
+-	ufs_advertise_fixup_device(hba);
++	/* Init check for device descriptor sizes */
++	ufshcd_init_desc_sizes(hba);
++
++	ret = ufs_get_device_desc(hba, &card);
++	if (ret) {
++		dev_err(hba->dev, "%s: Failed getting device info. err = %d\n",
++			__func__, ret);
++		goto out;
++	}
++
++	ufs_fixup_device_setup(hba, &card);
+ 	ufshcd_tune_unipro_params(hba);
+ 
+ 	ret = ufshcd_set_vccq_rail_unused(hba,
+@@ -5173,6 +5305,7 @@ static int ufshcd_probe_hba(struct ufs_hba *hba)
+ 
+ 	/* set the state as operational after switching to desired gear */
+ 	hba->ufshcd_state = UFSHCD_STATE_OPERATIONAL;
++
+ 	/*
+ 	 * If we are in error handling context or in power management callbacks
+ 	 * context, no need to scan the host
+@@ -6549,6 +6682,9 @@ int ufshcd_init(struct ufs_hba *hba, void __iomem *mmio_base, unsigned int irq)
+ 	hba->mmio_base = mmio_base;
+ 	hba->irq = irq;
+ 
++	/* Set descriptor lengths to specification defaults */
++	ufshcd_def_desc_sizes(hba);
++
+ 	err = ufshcd_hba_init(hba);
+ 	if (err)
+ 		goto out_error;
+diff --git a/drivers/scsi/ufs/ufshcd.h b/drivers/scsi/ufs/ufshcd.h
+index f2170d5058a8..6dbd2e176333 100644
+--- a/drivers/scsi/ufs/ufshcd.h
++++ b/drivers/scsi/ufs/ufshcd.h
+@@ -205,6 +205,15 @@ struct ufs_dev_cmd {
+ 	struct ufs_query query;
+ };
+ 
++struct ufs_desc_size {
++	int dev_desc;
++	int pwr_desc;
++	int geom_desc;
++	int interc_desc;
++	int unit_desc;
++	int conf_desc;
++};
++
+ /**
+  * struct ufs_clk_info - UFS clock related info
+  * @list: list headed by hba->clk_list_head
+@@ -388,6 +397,7 @@ struct ufs_init_prefetch {
+  * @clk_list_head: UFS host controller clocks list node head
+  * @pwr_info: holds current power mode
+  * @max_pwr_info: keeps the device max valid pwm
++ * @desc_size: descriptor sizes reported by device
+  * @urgent_bkops_lvl: keeps track of urgent bkops level for device
+  * @is_urgent_bkops_lvl_checked: keeps track if the urgent bkops level for
+  *  device is known or not.
+@@ -563,6 +573,8 @@ struct ufs_hba {
+ 
+ 	enum bkops_status urgent_bkops_lvl;
+ 	bool is_urgent_bkops_lvl_checked;
++
++	struct ufs_desc_size desc_size;
+ };
+ 
+ /* Returns true if clocks can be gated. Otherwise false */
+@@ -736,6 +748,10 @@ int ufshcd_query_flag(struct ufs_hba *hba, enum query_opcode opcode,
+ 	enum flag_idn idn, bool *flag_res);
+ int ufshcd_hold(struct ufs_hba *hba, bool async);
+ void ufshcd_release(struct ufs_hba *hba);
++
++int ufshcd_map_desc_id_to_length(struct ufs_hba *hba, enum desc_idn desc_id,
++	int *desc_length);
++
+ u32 ufshcd_get_local_unipro_ver(struct ufs_hba *hba);
+ 
+ /* Wrapper functions for safely calling variant operations */
+diff --git a/drivers/tty/serial/amba-pl011.c b/drivers/tty/serial/amba-pl011.c
+index b42d7f1c9089..6b1863293fe1 100644
+--- a/drivers/tty/serial/amba-pl011.c
++++ b/drivers/tty/serial/amba-pl011.c
+@@ -2320,12 +2320,67 @@ static int __init pl011_console_setup(struct console *co, char *options)
+ 	return uart_set_options(&uap->port, co, baud, parity, bits, flow);
+ }
+ 
++/**
++ *	pl011_console_match - non-standard console matching
++ *	@co:	  registering console
++ *	@name:	  name from console command line
++ *	@idx:	  index from console command line
++ *	@options: ptr to option string from console command line
++ *
++ *	Only attempts to match console command lines of the form:
++ *	    console=pl011,mmio|mmio32,<addr>[,<options>]
++ *	    console=pl011,0x<addr>[,<options>]
++ *	This form is used to register an initial earlycon boot console and
++ *	replace it with the amba_console at pl011 driver init.
++ *
++ *	Performs console setup for a match (as required by interface)
++ *	If no <options> are specified, then assume the h/w is already setup.
++ *
++ *	Returns 0 if console matches; otherwise non-zero to use default matching
++ */
++static int __init pl011_console_match(struct console *co, char *name, int idx,
++				      char *options)
++{
++	unsigned char iotype;
++	resource_size_t addr;
++	int i;
++
++	if (strcmp(name, "pl011") != 0)
++		return -ENODEV;
++
++	if (uart_parse_earlycon(options, &iotype, &addr, &options))
++		return -ENODEV;
++
++	if (iotype != UPIO_MEM && iotype != UPIO_MEM32)
++		return -ENODEV;
++
++	/* try to match the port specified on the command line */
++	for (i = 0; i < ARRAY_SIZE(amba_ports); i++) {
++		struct uart_port *port;
++
++		if (!amba_ports[i])
++			continue;
++
++		port = &amba_ports[i]->port;
++
++		if (port->mapbase != addr)
++			continue;
++
++		co->index = i;
++		port->cons = co;
++		return pl011_console_setup(co, options);
++	}
++
++	return -ENODEV;
++}
++
+ static struct uart_driver amba_reg;
+ static struct console amba_console = {
+ 	.name		= "ttyAMA",
+ 	.write		= pl011_console_write,
+ 	.device		= uart_console_device,
+ 	.setup		= pl011_console_setup,
++	.match		= pl011_console_match,
+ 	.flags		= CON_PRINTBUFFER,
+ 	.index		= -1,
+ 	.data		= &amba_reg,
+diff --git a/drivers/usb/serial/cp210x.c b/drivers/usb/serial/cp210x.c
+index d98531823998..46b4dea7a0ec 100644
+--- a/drivers/usb/serial/cp210x.c
++++ b/drivers/usb/serial/cp210x.c
+@@ -33,7 +33,7 @@ static int cp210x_open(struct tty_struct *tty, struct usb_serial_port *);
+ static void cp210x_close(struct usb_serial_port *);
+ static void cp210x_get_termios(struct tty_struct *, struct usb_serial_port *);
+ static void cp210x_get_termios_port(struct usb_serial_port *port,
+-	unsigned int *cflagp, unsigned int *baudp);
++	tcflag_t *cflagp, unsigned int *baudp);
+ static void cp210x_change_speed(struct tty_struct *, struct usb_serial_port *,
+ 							struct ktermios *);
+ static void cp210x_set_termios(struct tty_struct *, struct usb_serial_port *,
+@@ -728,7 +728,7 @@ static void cp210x_get_termios(struct tty_struct *tty,
+ 			&tty->termios.c_cflag, &baud);
+ 		tty_encode_baud_rate(tty, baud, baud);
+ 	} else {
+-		unsigned int cflag;
++		tcflag_t cflag;
+ 		cflag = 0;
+ 		cp210x_get_termios_port(port, &cflag, &baud);
+ 	}
+@@ -739,10 +739,10 @@ static void cp210x_get_termios(struct tty_struct *tty,
+  * This is the heart of cp210x_get_termios which always uses a &usb_serial_port.
+  */
+ static void cp210x_get_termios_port(struct usb_serial_port *port,
+-	unsigned int *cflagp, unsigned int *baudp)
++	tcflag_t *cflagp, unsigned int *baudp)
+ {
+ 	struct device *dev = &port->dev;
+-	unsigned int cflag;
++	tcflag_t cflag;
+ 	struct cp210x_flow_ctl flow_ctl;
+ 	u32 baud;
+ 	u16 bits;
+diff --git a/fs/aio.c b/fs/aio.c
+index 42d8c09311d1..b1170a7affe2 100644
+--- a/fs/aio.c
++++ b/fs/aio.c
+@@ -636,9 +636,8 @@ static void free_ioctx_users(struct percpu_ref *ref)
+ 	while (!list_empty(&ctx->active_reqs)) {
+ 		req = list_first_entry(&ctx->active_reqs,
+ 				       struct aio_kiocb, ki_list);
+-
+-		list_del_init(&req->ki_list);
+ 		kiocb_cancel(req);
++		list_del_init(&req->ki_list);
+ 	}
+ 
+ 	spin_unlock_irq(&ctx->ctx_lock);
+diff --git a/fs/xfs/libxfs/xfs_alloc.c b/fs/xfs/libxfs/xfs_alloc.c
+index c3702cda010a..e567551402a6 100644
+--- a/fs/xfs/libxfs/xfs_alloc.c
++++ b/fs/xfs/libxfs/xfs_alloc.c
+@@ -2034,6 +2034,93 @@ xfs_alloc_space_available(
+ 	return true;
+ }
+ 
++/*
++ * Check the agfl fields of the agf for inconsistency or corruption. The purpose
++ * is to detect an agfl header padding mismatch between current and early v5
++ * kernels. This problem manifests as a 1-slot size difference between the
++ * on-disk flcount and the active [first, last] range of a wrapped agfl. This
++ * may also catch variants of agfl count corruption unrelated to padding. Either
++ * way, we'll reset the agfl and warn the user.
++ *
++ * Return true if a reset is required before the agfl can be used, false
++ * otherwise.
++ */
++static bool
++xfs_agfl_needs_reset(
++	struct xfs_mount	*mp,
++	struct xfs_agf		*agf)
++{
++	uint32_t		f = be32_to_cpu(agf->agf_flfirst);
++	uint32_t		l = be32_to_cpu(agf->agf_fllast);
++	uint32_t		c = be32_to_cpu(agf->agf_flcount);
++	int			agfl_size = XFS_AGFL_SIZE(mp);
++	int			active;
++
++	/* no agfl header on v4 supers */
++	if (!xfs_sb_version_hascrc(&mp->m_sb))
++		return false;
++
++	/*
++	 * The agf read verifier catches severe corruption of these fields.
++	 * Repeat some sanity checks to cover a packed -> unpacked mismatch if
++	 * the verifier allows it.
++	 */
++	if (f >= agfl_size || l >= agfl_size)
++		return true;
++	if (c > agfl_size)
++		return true;
++
++	/*
++	 * Check consistency between the on-disk count and the active range. An
++	 * agfl padding mismatch manifests as an inconsistent flcount.
++	 */
++	if (c && l >= f)
++		active = l - f + 1;
++	else if (c)
++		active = agfl_size - f + l + 1;
++	else
++		active = 0;
++
++	return active != c;
++}
++
++/*
++ * Reset the agfl to an empty state. Ignore/drop any existing blocks since the
++ * agfl content cannot be trusted. Warn the user that a repair is required to
++ * recover leaked blocks.
++ *
++ * The purpose of this mechanism is to handle filesystems affected by the agfl
++ * header padding mismatch problem. A reset keeps the filesystem online with a
++ * relatively minor free space accounting inconsistency rather than suffer the
++ * inevitable crash from use of an invalid agfl block.
++ */
++static void
++xfs_agfl_reset(
++	struct xfs_trans	*tp,
++	struct xfs_buf		*agbp,
++	struct xfs_perag	*pag)
++{
++	struct xfs_mount	*mp = tp->t_mountp;
++	struct xfs_agf		*agf = XFS_BUF_TO_AGF(agbp);
++
++	ASSERT(pag->pagf_agflreset);
++	trace_xfs_agfl_reset(mp, agf, 0, _RET_IP_);
++
++	xfs_warn(mp,
++	       "WARNING: Reset corrupted AGFL on AG %u. %d blocks leaked. "
++	       "Please unmount and run xfs_repair.",
++	         pag->pag_agno, pag->pagf_flcount);
++
++	agf->agf_flfirst = 0;
++	agf->agf_fllast = cpu_to_be32(XFS_AGFL_SIZE(mp) - 1);
++	agf->agf_flcount = 0;
++	xfs_alloc_log_agf(tp, agbp, XFS_AGF_FLFIRST | XFS_AGF_FLLAST |
++				    XFS_AGF_FLCOUNT);
++
++	pag->pagf_flcount = 0;
++	pag->pagf_agflreset = false;
++}
++
+ /*
+  * Decide whether to use this allocation group for this allocation.
+  * If so, fix up the btree freelist's size.
+@@ -2095,6 +2182,10 @@ xfs_alloc_fix_freelist(
+ 		}
+ 	}
+ 
++	/* reset a padding mismatched agfl before final free space check */
++	if (pag->pagf_agflreset)
++		xfs_agfl_reset(tp, agbp, pag);
++
+ 	/* If there isn't enough total space or single-extent, reject it. */
+ 	need = xfs_alloc_min_freelist(mp, pag);
+ 	if (!xfs_alloc_space_available(args, need, flags))
+@@ -2251,6 +2342,7 @@ xfs_alloc_get_freelist(
+ 		agf->agf_flfirst = 0;
+ 
+ 	pag = xfs_perag_get(mp, be32_to_cpu(agf->agf_seqno));
++	ASSERT(!pag->pagf_agflreset);
+ 	be32_add_cpu(&agf->agf_flcount, -1);
+ 	xfs_trans_agflist_delta(tp, -1);
+ 	pag->pagf_flcount--;
+@@ -2362,6 +2454,7 @@ xfs_alloc_put_freelist(
+ 		agf->agf_fllast = 0;
+ 
+ 	pag = xfs_perag_get(mp, be32_to_cpu(agf->agf_seqno));
++	ASSERT(!pag->pagf_agflreset);
+ 	be32_add_cpu(&agf->agf_flcount, 1);
+ 	xfs_trans_agflist_delta(tp, 1);
+ 	pag->pagf_flcount++;
+@@ -2568,6 +2661,7 @@ xfs_alloc_read_agf(
+ 		pag->pagb_count = 0;
+ 		pag->pagb_tree = RB_ROOT;
+ 		pag->pagf_init = 1;
++		pag->pagf_agflreset = xfs_agfl_needs_reset(mp, agf);
+ 	}
+ #ifdef DEBUG
+ 	else if (!XFS_FORCED_SHUTDOWN(mp)) {
+diff --git a/fs/xfs/xfs_mount.h b/fs/xfs/xfs_mount.h
+index 5415f9031ef8..7cb099e1c84c 100644
+--- a/fs/xfs/xfs_mount.h
++++ b/fs/xfs/xfs_mount.h
+@@ -368,6 +368,7 @@ typedef struct xfs_perag {
+ 	char		pagi_inodeok;	/* The agi is ok for inodes */
+ 	__uint8_t	pagf_levels[XFS_BTNUM_AGF];
+ 					/* # of levels in bno & cnt btree */
++	bool		pagf_agflreset; /* agfl requires reset before use */
+ 	__uint32_t	pagf_flcount;	/* count of blocks in freelist */
+ 	xfs_extlen_t	pagf_freeblks;	/* total free blocks */
+ 	xfs_extlen_t	pagf_longest;	/* longest free space */
+diff --git a/fs/xfs/xfs_trace.h b/fs/xfs/xfs_trace.h
+index bdf69e1c7410..42a7c0da898f 100644
+--- a/fs/xfs/xfs_trace.h
++++ b/fs/xfs/xfs_trace.h
+@@ -1516,7 +1516,7 @@ TRACE_EVENT(xfs_trans_commit_lsn,
+ 		  __entry->lsn)
+ );
+ 
+-TRACE_EVENT(xfs_agf,
++DECLARE_EVENT_CLASS(xfs_agf_class,
+ 	TP_PROTO(struct xfs_mount *mp, struct xfs_agf *agf, int flags,
+ 		 unsigned long caller_ip),
+ 	TP_ARGS(mp, agf, flags, caller_ip),
+@@ -1572,6 +1572,13 @@ TRACE_EVENT(xfs_agf,
+ 		  __entry->longest,
+ 		  (void *)__entry->caller_ip)
+ );
++#define DEFINE_AGF_EVENT(name) \
++DEFINE_EVENT(xfs_agf_class, name, \
++	TP_PROTO(struct xfs_mount *mp, struct xfs_agf *agf, int flags, \
++		 unsigned long caller_ip), \
++	TP_ARGS(mp, agf, flags, caller_ip))
++DEFINE_AGF_EVENT(xfs_agf);
++DEFINE_AGF_EVENT(xfs_agfl_reset);
+ 
+ TRACE_EVENT(xfs_free_extent,
+ 	TP_PROTO(struct xfs_mount *mp, xfs_agnumber_t agno, xfs_agblock_t agbno,
+diff --git a/include/linux/tcp.h b/include/linux/tcp.h
+index f50b717ce644..d0c3615f9050 100644
+--- a/include/linux/tcp.h
++++ b/include/linux/tcp.h
+@@ -337,7 +337,7 @@ struct tcp_sock {
+ 
+ /* Receiver queue space */
+ 	struct {
+-		int	space;
++		u32	space;
+ 		u32	seq;
+ 		u32	time;
+ 	} rcvq_space;
+diff --git a/include/uapi/linux/nl80211.h b/include/uapi/linux/nl80211.h
+index 7290eacc8cee..b902f106f69a 100644
+--- a/include/uapi/linux/nl80211.h
++++ b/include/uapi/linux/nl80211.h
+@@ -2379,7 +2379,7 @@ enum nl80211_attrs {
+ #define NL80211_ATTR_KEYS NL80211_ATTR_KEYS
+ #define NL80211_ATTR_FEATURE_FLAGS NL80211_ATTR_FEATURE_FLAGS
+ 
+-#define NL80211_WIPHY_NAME_MAXLEN		128
++#define NL80211_WIPHY_NAME_MAXLEN		64
+ 
+ #define NL80211_MAX_SUPP_RATES			32
+ #define NL80211_MAX_SUPP_HT_RATES		77
+diff --git a/kernel/trace/trace_events_trigger.c b/kernel/trace/trace_events_trigger.c
+index 6721a1e89f39..88f398af57fa 100644
+--- a/kernel/trace/trace_events_trigger.c
++++ b/kernel/trace/trace_events_trigger.c
+@@ -481,9 +481,10 @@ clear_event_triggers(struct trace_array *tr)
+ 	struct trace_event_file *file;
+ 
+ 	list_for_each_entry(file, &tr->events, list) {
+-		struct event_trigger_data *data;
+-		list_for_each_entry_rcu(data, &file->triggers, list) {
++		struct event_trigger_data *data, *n;
++		list_for_each_entry_safe(data, n, &file->triggers, list) {
+ 			trace_event_trigger_enable_disable(file, 0);
++			list_del_rcu(&data->list);
+ 			if (data->ops->free)
+ 				data->ops->free(data->ops, data);
+ 		}
+diff --git a/mm/vmscan.c b/mm/vmscan.c
+index 2d4b6478237b..f03ca5ab86b1 100644
+--- a/mm/vmscan.c
++++ b/mm/vmscan.c
+@@ -1393,7 +1393,7 @@ int __isolate_lru_page(struct page *page, isolate_mode_t mode)
+ 				return ret;
+ 
+ 			mapping = page_mapping(page);
+-			migrate_dirty = mapping && mapping->a_ops->migratepage;
++			migrate_dirty = !mapping || mapping->a_ops->migratepage;
+ 			unlock_page(page);
+ 			if (!migrate_dirty)
+ 				return ret;
+diff --git a/net/ipv4/tcp_input.c b/net/ipv4/tcp_input.c
+index 52b0a84be765..94a55b83e48c 100644
+--- a/net/ipv4/tcp_input.c
++++ b/net/ipv4/tcp_input.c
+@@ -581,8 +581,8 @@ static inline void tcp_rcv_rtt_measure_ts(struct sock *sk,
+ void tcp_rcv_space_adjust(struct sock *sk)
+ {
+ 	struct tcp_sock *tp = tcp_sk(sk);
++	u32 copied;
+ 	int time;
+-	int copied;
+ 
+ 	time = tcp_time_stamp - tp->rcvq_space.time;
+ 	if (time < (tp->rcv_rtt_est.rtt >> 3) || tp->rcv_rtt_est.rtt == 0)
+@@ -604,12 +604,13 @@ void tcp_rcv_space_adjust(struct sock *sk)
+ 
+ 	if (sysctl_tcp_moderate_rcvbuf &&
+ 	    !(sk->sk_userlocks & SOCK_RCVBUF_LOCK)) {
+-		int rcvwin, rcvmem, rcvbuf;
++		int rcvmem, rcvbuf;
++		u64 rcvwin;
+ 
+ 		/* minimal window to cope with packet losses, assuming
+ 		 * steady state. Add some cushion because of small variations.
+ 		 */
+-		rcvwin = (copied << 1) + 16 * tp->advmss;
++		rcvwin = ((u64)copied << 1) + 16 * tp->advmss;
+ 
+ 		/* If rate increased by 25%,
+ 		 *	assume slow start, rcvwin = 3 * copied
+@@ -629,7 +630,8 @@ void tcp_rcv_space_adjust(struct sock *sk)
+ 		while (tcp_win_from_space(rcvmem) < tp->advmss)
+ 			rcvmem += 128;
+ 
+-		rcvbuf = min(rcvwin / tp->advmss * rcvmem, sysctl_tcp_rmem[2]);
++		do_div(rcvwin, tp->advmss);
++		rcvbuf = min_t(u64, rcvwin * rcvmem, sysctl_tcp_rmem[2]);
+ 		if (rcvbuf > sk->sk_rcvbuf) {
+ 			sk->sk_rcvbuf = rcvbuf;
+ 
+diff --git a/security/integrity/ima/ima_appraise.c b/security/integrity/ima/ima_appraise.c
+index 7bf8b005a178..1e6f23f77f15 100644
+--- a/security/integrity/ima/ima_appraise.c
++++ b/security/integrity/ima/ima_appraise.c
+@@ -389,14 +389,10 @@ int ima_inode_setxattr(struct dentry *dentry, const char *xattr_name,
+ 	result = ima_protect_xattr(dentry, xattr_name, xattr_value,
+ 				   xattr_value_len);
+ 	if (result == 1) {
+-		bool digsig;
+-
+ 		if (!xattr_value_len || (xvalue->type >= IMA_XATTR_LAST))
+ 			return -EINVAL;
+-		digsig = (xvalue->type == EVM_IMA_XATTR_DIGSIG);
+-		if (!digsig && (ima_appraise & IMA_APPRAISE_ENFORCE))
+-			return -EPERM;
+-		ima_reset_appraise_flags(d_backing_inode(dentry), digsig);
++		ima_reset_appraise_flags(d_backing_inode(dentry),
++			 (xvalue->type == EVM_IMA_XATTR_DIGSIG) ? 1 : 0);
+ 		result = 0;
+ 	}
+ 	return result;
+diff --git a/security/selinux/ss/services.c b/security/selinux/ss/services.c
+index d656b7c98394..bfc4ffa1fa1a 100644
+--- a/security/selinux/ss/services.c
++++ b/security/selinux/ss/services.c
+@@ -1435,7 +1435,7 @@ static int security_context_to_sid_core(const char *scontext, u32 scontext_len,
+ 				      scontext_len, &context, def_sid);
+ 	if (rc == -EINVAL && force) {
+ 		context.str = str;
+-		context.len = scontext_len;
++		context.len = strlen(str) + 1;
+ 		str = NULL;
+ 	} else if (rc)
+ 		goto out_unlock;
+diff --git a/sound/soc/intel/common/sst-firmware.c b/sound/soc/intel/common/sst-firmware.c
+index a086c35f91bb..79a9fdf94d38 100644
+--- a/sound/soc/intel/common/sst-firmware.c
++++ b/sound/soc/intel/common/sst-firmware.c
+@@ -274,7 +274,6 @@ int sst_dma_new(struct sst_dsp *sst)
+ 	struct sst_pdata *sst_pdata = sst->pdata;
+ 	struct sst_dma *dma;
+ 	struct resource mem;
+-	const char *dma_dev_name;
+ 	int ret = 0;
+ 
+ 	if (sst->pdata->resindex_dma_base == -1)
+@@ -285,7 +284,6 @@ int sst_dma_new(struct sst_dsp *sst)
+ 	* is attached to the ADSP IP. */
+ 	switch (sst->pdata->dma_engine) {
+ 	case SST_DMA_TYPE_DW:
+-		dma_dev_name = "dw_dmac";
+ 		break;
+ 	default:
+ 		dev_err(sst->dev, "error: invalid DMA engine %d\n",
