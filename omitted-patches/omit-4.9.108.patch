@@ -1,0 +1,39 @@
+diff --git a/arch/x86/kernel/vmlinux.lds.S b/arch/x86/kernel/vmlinux.lds.S
+index 4ef267fb635a..e783a5daaab2 100644
+--- a/arch/x86/kernel/vmlinux.lds.S
++++ b/arch/x86/kernel/vmlinux.lds.S
+@@ -352,8 +352,6 @@ SECTIONS
+ 	DISCARDS
+ 	/DISCARD/ : {
+ 		*(.eh_frame)
+-		*(__func_stack_frame_non_standard)
+-		*(__unreachable)
+ 	}
+ }
+ 
+diff --git a/arch/x86/kvm/cpuid.h b/arch/x86/kvm/cpuid.h
+index c38369781239..8a841b9d8f84 100644
+--- a/arch/x86/kvm/cpuid.h
++++ b/arch/x86/kvm/cpuid.h
+@@ -179,7 +179,7 @@ static inline bool guest_cpuid_has_spec_ctrl(struct kvm_vcpu *vcpu)
+ 	if (best && (best->ebx & bit(X86_FEATURE_AMD_IBRS)))
+ 		return true;
+ 	best = kvm_find_cpuid_entry(vcpu, 7, 0);
+-	return best && (best->edx & (bit(X86_FEATURE_SPEC_CTRL) | bit(X86_FEATURE_SSBD)));
++	return best && (best->edx & (bit(X86_FEATURE_SPEC_CTRL) | bit(X86_FEATURE_SPEC_CTRL_SSBD)));
+ }
+ 
+ static inline bool guest_cpuid_has_arch_capabilities(struct kvm_vcpu *vcpu)
+diff --git a/include/linux/compiler-gcc.h b/include/linux/compiler-gcc.h
+index 2214b2f9c73c..ad793c69cc46 100644
+--- a/include/linux/compiler-gcc.h
++++ b/include/linux/compiler-gcc.h
+@@ -206,7 +206,7 @@
+ #ifdef CONFIG_STACK_VALIDATION
+ #define annotate_unreachable() ({					\
+ 	asm("1:\t\n"							\
+-	    ".pushsection __unreachable, \"a\"\t\n"			\
++	    ".pushsection .discard.unreachable\t\n"			\
+ 	    ".long 1b\t\n"						\
+ 	    ".popsection\t\n");						\
+ })
