@@ -1,0 +1,42 @@
+diff --git a/arch/arm64/kernel/cpufeature.c b/arch/arm64/kernel/cpufeature.c
+index 7959d2c92010..625c2b240ffb 100644
+--- a/arch/arm64/kernel/cpufeature.c
++++ b/arch/arm64/kernel/cpufeature.c
+@@ -826,7 +826,7 @@ static int __init parse_kpti(char *str)
+ 	__kpti_forced = enabled ? 1 : -1;
+ 	return 0;
+ }
+-__setup("kpti=", parse_kpti);
++early_param("kpti", parse_kpti);
+ #endif	/* CONFIG_UNMAP_KERNEL_AT_EL0 */
+ 
+ static const struct arm64_cpu_capabilities arm64_features[] = {
+diff --git a/arch/x86/include/asm/barrier.h b/arch/x86/include/asm/barrier.h
+index 78d1c6a3d221..eb53c2c78a1f 100644
+--- a/arch/x86/include/asm/barrier.h
++++ b/arch/x86/include/asm/barrier.h
+@@ -37,7 +37,7 @@ static inline unsigned long array_index_mask_nospec(unsigned long index,
+ {
+ 	unsigned long mask;
+ 
+-	asm ("cmp %1,%2; sbb %0,%0;"
++	asm volatile ("cmp %1,%2; sbb %0,%0;"
+ 			:"=r" (mask)
+ 			:"g"(size),"r" (index)
+ 			:"cc");
+diff --git a/arch/arm64/mm/proc.S b/arch/arm64/mm/proc.S
+index 66cce2138f95..18d96d349a8b 100644
+--- a/arch/arm64/mm/proc.S
++++ b/arch/arm64/mm/proc.S
+@@ -186,8 +186,9 @@ ENDPROC(idmap_cpu_replace_ttbr1)
+ 
+ 	.macro __idmap_kpti_put_pgtable_ent_ng, type
+ 	orr	\type, \type, #PTE_NG		// Same bit for blocks and pages
+-	str	\type, [cur_\()\type\()p]	// Update the entry and ensure it
+-	dc	civac, cur_\()\type\()p		// is visible to all CPUs.
++	str	\type, [cur_\()\type\()p]	// Update the entry and ensure
++	dmb	sy				// that it is visible to all
++	dc	civac, cur_\()\type\()p		// CPUs.
+ 	.endm
+ 
+ /*
