@@ -1,0 +1,1691 @@
+diff --git a/drivers/atm/zatm.c b/drivers/atm/zatm.c
+index d0fac641e717..a0b88f148990 100644
+--- a/drivers/atm/zatm.c
++++ b/drivers/atm/zatm.c
+@@ -1483,6 +1483,8 @@ static int zatm_ioctl(struct atm_dev *dev,unsigned int cmd,void __user *arg)
+ 					return -EFAULT;
+ 				if (pool < 0 || pool > ZATM_LAST_POOL)
+ 					return -EINVAL;
++				pool = array_index_nospec(pool,
++							  ZATM_LAST_POOL + 1);
+ 				if (copy_from_user(&info,
+ 				    &((struct zatm_pool_req __user *) arg)->info,
+ 				    sizeof(info))) return -EFAULT;
+diff --git a/drivers/net/ethernet/chelsio/cxgb3/cxgb3_main.c b/drivers/net/ethernet/chelsio/cxgb3/cxgb3_main.c
+index 43da891fab97..dc0efbd91c32 100644
+--- a/drivers/net/ethernet/chelsio/cxgb3/cxgb3_main.c
++++ b/drivers/net/ethernet/chelsio/cxgb3/cxgb3_main.c
+@@ -50,6 +50,7 @@
+ #include <linux/stringify.h>
+ #include <linux/sched.h>
+ #include <linux/slab.h>
++#include <linux/nospec.h>
+ #include <asm/uaccess.h>
+ 
+ #include "common.h"
+@@ -2259,6 +2260,7 @@ static int cxgb_extension_ioctl(struct net_device *dev, void __user *useraddr)
+ 
+ 		if (t.qset_idx >= nqsets)
+ 			return -EINVAL;
++		t.qset_idx = array_index_nospec(t.qset_idx, nqsets);
+ 
+ 		q = &adapter->params.sge.qset[q1 + t.qset_idx];
+ 		t.rspq_size = q->rspq_size;
+diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
+index 52240a63132e..a16f87e4dd10 100644
+--- a/Documentation/kernel-parameters.txt
++++ b/Documentation/kernel-parameters.txt
+@@ -4023,6 +4023,23 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+ 	spia_pedr=
+ 	spia_peddr=
+ 
++	ssbd=		[ARM64,HW]
++			Speculative Store Bypass Disable control
++
++			On CPUs that are vulnerable to the Speculative
++			Store Bypass vulnerability and offer a
++			firmware based mitigation, this parameter
++			indicates how the mitigation should be used:
++
++			force-on:  Unconditionally enable mitigation for
++				   for both kernel and userspace
++			force-off: Unconditionally disable mitigation for
++				   for both kernel and userspace
++			kernel:    Always enable mitigation in the
++				   kernel, and offer a prctl interface
++				   to allow userspace to register its
++				   interest in being mitigated too.
++
+ 	stack_guard_gap=	[MM]
+ 			override the default stack gap protection. The value
+ 			is in page units and it defines how many pages prior
+diff --git a/arch/arm/include/asm/kvm_host.h b/arch/arm/include/asm/kvm_host.h
+index f4dab20ac9f3..0833d8a1dbbb 100644
+--- a/arch/arm/include/asm/kvm_host.h
++++ b/arch/arm/include/asm/kvm_host.h
+@@ -327,4 +327,16 @@ static inline bool kvm_arm_harden_branch_predictor(void)
+ 	return false;
+ }
+ 
++#define KVM_SSBD_UNKNOWN		-1
++#define KVM_SSBD_FORCE_DISABLE		0
++#define KVM_SSBD_KERNEL		1
++#define KVM_SSBD_FORCE_ENABLE		2
++#define KVM_SSBD_MITIGATED		3
++
++static inline int kvm_arm_have_ssbd(void)
++{
++	/* No way to detect it yet, pretend it is not there. */
++	return KVM_SSBD_UNKNOWN;
++}
++
+ #endif /* __ARM_KVM_HOST_H__ */
+diff --git a/arch/arm/include/asm/kvm_mmu.h b/arch/arm/include/asm/kvm_mmu.h
+index 7f66b1b3aca1..e2f05cedaf97 100644
+--- a/arch/arm/include/asm/kvm_mmu.h
++++ b/arch/arm/include/asm/kvm_mmu.h
+@@ -28,6 +28,13 @@
+  */
+ #define kern_hyp_va(kva)	(kva)
+ 
++/* Contrary to arm64, there is no need to generate a PC-relative address */
++#define hyp_symbol_addr(s)						\
++	({								\
++		typeof(s) *addr = &(s);					\
++		addr;							\
++	})
++
+ /*
+  * KVM_MMU_CACHE_MIN_PAGES is the number of stage2 page table translation levels.
+  */
+@@ -249,6 +256,11 @@ static inline int kvm_map_vectors(void)
+ 	return 0;
+ }
+ 
++static inline int hyp_map_aux_data(void)
++{
++	return 0;
++}
++
+ #endif	/* !__ASSEMBLY__ */
+ 
+ #endif /* __ARM_KVM_MMU_H__ */
+diff --git a/arch/arm/kvm/arm.c b/arch/arm/kvm/arm.c
+index ef6595c7d697..20436972537f 100644
+--- a/arch/arm/kvm/arm.c
++++ b/arch/arm/kvm/arm.c
+@@ -51,8 +51,8 @@
+ __asm__(".arch_extension	virt");
+ #endif
+ 
++DEFINE_PER_CPU(kvm_cpu_context_t, kvm_host_cpu_state);
+ static DEFINE_PER_CPU(unsigned long, kvm_arm_hyp_stack_page);
+-static kvm_cpu_context_t __percpu *kvm_host_cpu_state;
+ static unsigned long hyp_default_vectors;
+ 
+ /* Per-CPU variable containing the currently running vcpu. */
+@@ -338,7 +338,7 @@ void kvm_arch_vcpu_load(struct kvm_vcpu *vcpu, int cpu)
+ 	}
+ 
+ 	vcpu->cpu = cpu;
+-	vcpu->arch.host_cpu_context = this_cpu_ptr(kvm_host_cpu_state);
++	vcpu->arch.host_cpu_context = this_cpu_ptr(&kvm_host_cpu_state);
+ 
+ 	kvm_arm_set_running_vcpu(vcpu);
+ }
+@@ -1199,19 +1199,8 @@ static inline void hyp_cpu_pm_exit(void)
+ }
+ #endif
+ 
+-static void teardown_common_resources(void)
+-{
+-	free_percpu(kvm_host_cpu_state);
+-}
+-
+ static int init_common_resources(void)
+ {
+-	kvm_host_cpu_state = alloc_percpu(kvm_cpu_context_t);
+-	if (!kvm_host_cpu_state) {
+-		kvm_err("Cannot allocate host CPU state\n");
+-		return -ENOMEM;
+-	}
+-
+ 	/* set size of VMID supported by CPU */
+ 	kvm_vmid_bits = kvm_get_vmid_bits();
+ 	kvm_info("%d-bit VMID\n", kvm_vmid_bits);
+@@ -1369,7 +1358,7 @@ static int init_hyp_mode(void)
+ 	for_each_possible_cpu(cpu) {
+ 		kvm_cpu_context_t *cpu_ctxt;
+ 
+-		cpu_ctxt = per_cpu_ptr(kvm_host_cpu_state, cpu);
++		cpu_ctxt = per_cpu_ptr(&kvm_host_cpu_state, cpu);
+ 		err = create_hyp_mappings(cpu_ctxt, cpu_ctxt + 1, PAGE_HYP);
+ 
+ 		if (err) {
+@@ -1378,6 +1367,12 @@ static int init_hyp_mode(void)
+ 		}
+ 	}
+ 
++	err = hyp_map_aux_data();
++	if (err) {
++		kvm_err("Cannot map host auxilary data: %d\n", err);
++		goto out_err;
++	}
++
+ 	kvm_info("Hyp mode initialized successfully\n");
+ 
+ 	return 0;
+@@ -1447,7 +1442,6 @@ int kvm_arch_init(void *opaque)
+ out_hyp:
+ 	teardown_hyp_mode();
+ out_err:
+-	teardown_common_resources();
+ 	return err;
+ }
+ 
+diff --git a/arch/arm/kvm/psci.c b/arch/arm/kvm/psci.c
+index 8a9c654f4f87..83365bec04b6 100644
+--- a/arch/arm/kvm/psci.c
++++ b/arch/arm/kvm/psci.c
+@@ -403,7 +403,7 @@ static int kvm_psci_call(struct kvm_vcpu *vcpu)
+ int kvm_hvc_call_handler(struct kvm_vcpu *vcpu)
+ {
+ 	u32 func_id = smccc_get_function(vcpu);
+-	u32 val = PSCI_RET_NOT_SUPPORTED;
++	u32 val = SMCCC_RET_NOT_SUPPORTED;
+ 	u32 feature;
+ 
+ 	switch (func_id) {
+@@ -415,7 +415,21 @@ int kvm_hvc_call_handler(struct kvm_vcpu *vcpu)
+ 		switch(feature) {
+ 		case ARM_SMCCC_ARCH_WORKAROUND_1:
+ 			if (kvm_arm_harden_branch_predictor())
+-				val = 0;
++				val = SMCCC_RET_SUCCESS;
++			break;
++		case ARM_SMCCC_ARCH_WORKAROUND_2:
++			switch (kvm_arm_have_ssbd()) {
++			case KVM_SSBD_FORCE_DISABLE:
++			case KVM_SSBD_UNKNOWN:
++				break;
++			case KVM_SSBD_KERNEL:
++				val = SMCCC_RET_SUCCESS;
++				break;
++			case KVM_SSBD_FORCE_ENABLE:
++			case KVM_SSBD_MITIGATED:
++				val = SMCCC_RET_NOT_REQUIRED;
++				break;
++			}
+ 			break;
+ 		}
+ 		break;
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index d0df3611d1e2..3e43874568f9 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -776,6 +776,15 @@ config HARDEN_BRANCH_PREDICTOR
+ 
+ 	  If unsure, say Y.
+ 
++config ARM64_SSBD
++	bool "Speculative Store Bypass Disable" if EXPERT
++	default y
++	help
++	  This enables mitigation of the bypassing of previous stores
++	  by speculative loads.
++
++	  If unsure, say Y.
++
+ menuconfig ARMV8_DEPRECATED
+ 	bool "Emulate deprecated/obsolete ARMv8 instructions"
+ 	depends on COMPAT
+diff --git a/arch/arm64/include/asm/alternative.h b/arch/arm64/include/asm/alternative.h
+index 6e1cb8c5af4d..7e842dcae450 100644
+--- a/arch/arm64/include/asm/alternative.h
++++ b/arch/arm64/include/asm/alternative.h
+@@ -4,6 +4,8 @@
+ #include <asm/cpucaps.h>
+ #include <asm/insn.h>
+ 
++#define ARM64_CB_PATCH ARM64_NCAPS
++
+ #ifndef __ASSEMBLY__
+ 
+ #include <linux/init.h>
+@@ -11,6 +13,8 @@
+ #include <linux/stddef.h>
+ #include <linux/stringify.h>
+ 
++extern int alternatives_applied;
++
+ struct alt_instr {
+ 	s32 orig_offset;	/* offset to original instruction */
+ 	s32 alt_offset;		/* offset to replacement instruction */
+@@ -19,12 +23,19 @@ struct alt_instr {
+ 	u8  alt_len;		/* size of new instruction(s), <= orig_len */
+ };
+ 
++typedef void (*alternative_cb_t)(struct alt_instr *alt,
++				 __le32 *origptr, __le32 *updptr, int nr_inst);
++
+ void __init apply_alternatives_all(void);
+ void apply_alternatives(void *start, size_t length);
+ 
+-#define ALTINSTR_ENTRY(feature)						      \
++#define ALTINSTR_ENTRY(feature,cb)					      \
+ 	" .word 661b - .\n"				/* label           */ \
++	" .if " __stringify(cb) " == 0\n"				      \
+ 	" .word 663f - .\n"				/* new instruction */ \
++	" .else\n"							      \
++	" .word " __stringify(cb) "- .\n"		/* callback */	      \
++	" .endif\n"							      \
+ 	" .hword " __stringify(feature) "\n"		/* feature bit     */ \
+ 	" .byte 662b-661b\n"				/* source len      */ \
+ 	" .byte 664f-663f\n"				/* replacement len */
+@@ -42,15 +53,18 @@ void apply_alternatives(void *start, size_t length);
+  * but most assemblers die if insn1 or insn2 have a .inst. This should
+  * be fixed in a binutils release posterior to 2.25.51.0.2 (anything
+  * containing commit 4e4d08cf7399b606 or c1baaddf8861).
++ *
++ * Alternatives with callbacks do not generate replacement instructions.
+  */
+-#define __ALTERNATIVE_CFG(oldinstr, newinstr, feature, cfg_enabled)	\
++#define __ALTERNATIVE_CFG(oldinstr, newinstr, feature, cfg_enabled, cb)	\
+ 	".if "__stringify(cfg_enabled)" == 1\n"				\
+ 	"661:\n\t"							\
+ 	oldinstr "\n"							\
+ 	"662:\n"							\
+ 	".pushsection .altinstructions,\"a\"\n"				\
+-	ALTINSTR_ENTRY(feature)						\
++	ALTINSTR_ENTRY(feature,cb)					\
+ 	".popsection\n"							\
++	" .if " __stringify(cb) " == 0\n"				\
+ 	".pushsection .altinstr_replacement, \"a\"\n"			\
+ 	"663:\n\t"							\
+ 	newinstr "\n"							\
+@@ -58,11 +72,17 @@ void apply_alternatives(void *start, size_t length);
+ 	".popsection\n\t"						\
+ 	".org	. - (664b-663b) + (662b-661b)\n\t"			\
+ 	".org	. - (662b-661b) + (664b-663b)\n"			\
++	".else\n\t"							\
++	"663:\n\t"							\
++	"664:\n\t"							\
++	".endif\n"							\
+ 	".endif\n"
+ 
+ #define _ALTERNATIVE_CFG(oldinstr, newinstr, feature, cfg, ...)	\
+-	__ALTERNATIVE_CFG(oldinstr, newinstr, feature, IS_ENABLED(cfg))
++	__ALTERNATIVE_CFG(oldinstr, newinstr, feature, IS_ENABLED(cfg), 0)
+ 
++#define ALTERNATIVE_CB(oldinstr, cb) \
++	__ALTERNATIVE_CFG(oldinstr, "NOT_AN_INSTRUCTION", ARM64_CB_PATCH, 1, cb)
+ #else
+ 
+ #include <asm/assembler.h>
+@@ -129,6 +149,14 @@ void apply_alternatives(void *start, size_t length);
+ 661:
+ .endm
+ 
++.macro alternative_cb cb
++	.set .Lasm_alt_mode, 0
++	.pushsection .altinstructions, "a"
++	altinstruction_entry 661f, \cb, ARM64_CB_PATCH, 662f-661f, 0
++	.popsection
++661:
++.endm
++
+ /*
+  * Provide the other half of the alternative code sequence.
+  */
+@@ -154,6 +182,13 @@ void apply_alternatives(void *start, size_t length);
+ 	.org	. - (662b-661b) + (664b-663b)
+ .endm
+ 
++/*
++ * Callback-based alternative epilogue
++ */
++.macro alternative_cb_end
++662:
++.endm
++
+ /*
+  * Provides a trivial alternative or default sequence consisting solely
+  * of NOPs. The number of NOPs is chosen automatically to match the
+diff --git a/arch/arm64/include/asm/assembler.h b/arch/arm64/include/asm/assembler.h
+index bfcfec3590f6..3f85bbcd7e40 100644
+--- a/arch/arm64/include/asm/assembler.h
++++ b/arch/arm64/include/asm/assembler.h
+@@ -239,14 +239,33 @@ lr	.req	x30		// link register
+ 	.endm
+ 
+ 	/*
++	 * @dst: Result of per_cpu(sym, smp_processor_id())
+ 	 * @sym: The name of the per-cpu variable
+-	 * @reg: Result of per_cpu(sym, smp_processor_id())
+ 	 * @tmp: scratch register
+ 	 */
+-	.macro this_cpu_ptr, sym, reg, tmp
+-	adr_l	\reg, \sym
++	.macro adr_this_cpu, dst, sym, tmp
++	adr_l	\dst, \sym
++alternative_if_not ARM64_HAS_VIRT_HOST_EXTN
+ 	mrs	\tmp, tpidr_el1
+-	add	\reg, \reg, \tmp
++alternative_else
++	mrs	\tmp, tpidr_el2
++alternative_endif
++	add	\dst, \dst, \tmp
++	.endm
++
++	/*
++	 * @dst: Result of READ_ONCE(per_cpu(sym, smp_processor_id()))
++	 * @sym: The name of the per-cpu variable
++	 * @tmp: scratch register
++	 */
++	.macro ldr_this_cpu dst, sym, tmp
++	adr_l	\dst, \sym
++alternative_if_not ARM64_HAS_VIRT_HOST_EXTN
++	mrs	\tmp, tpidr_el1
++alternative_else
++	mrs	\tmp, tpidr_el2
++alternative_endif
++	ldr	\dst, [\dst, \tmp]
+ 	.endm
+ 
+ /*
+diff --git a/arch/arm64/include/asm/cpucaps.h b/arch/arm64/include/asm/cpucaps.h
+index ce67bf6a0886..7010779a1429 100644
+--- a/arch/arm64/include/asm/cpucaps.h
++++ b/arch/arm64/include/asm/cpucaps.h
+@@ -36,7 +36,8 @@
+ #define ARM64_MISMATCHED_CACHE_LINE_SIZE	15
+ #define ARM64_UNMAP_KERNEL_AT_EL0		16
+ #define ARM64_HARDEN_BRANCH_PREDICTOR		17
++#define ARM64_SSBD				18
+ 
+-#define ARM64_NCAPS				18
++#define ARM64_NCAPS				19
+ 
+ #endif /* __ASM_CPUCAPS_H */
+diff --git a/arch/arm64/include/asm/cpufeature.h b/arch/arm64/include/asm/cpufeature.h
+index 4ea85ebdf4df..15868eca58de 100644
+--- a/arch/arm64/include/asm/cpufeature.h
++++ b/arch/arm64/include/asm/cpufeature.h
+@@ -221,6 +221,28 @@ static inline bool system_supports_mixed_endian_el0(void)
+ 	return id_aa64mmfr0_mixed_endian_el0(read_system_reg(SYS_ID_AA64MMFR0_EL1));
+ }
+ 
++#define ARM64_SSBD_UNKNOWN		-1
++#define ARM64_SSBD_FORCE_DISABLE	0
++#define ARM64_SSBD_KERNEL		1
++#define ARM64_SSBD_FORCE_ENABLE		2
++#define ARM64_SSBD_MITIGATED		3
++
++static inline int arm64_get_ssbd_state(void)
++{
++#ifdef CONFIG_ARM64_SSBD
++	extern int ssbd_state;
++	return ssbd_state;
++#else
++	return ARM64_SSBD_UNKNOWN;
++#endif
++}
++
++#ifdef CONFIG_ARM64_SSBD
++void arm64_set_ssbd_mitigation(bool state);
++#else
++static inline void arm64_set_ssbd_mitigation(bool state) {}
++#endif
++
+ #endif /* __ASSEMBLY__ */
+ 
+ #endif
+diff --git a/arch/arm64/include/asm/kvm_asm.h b/arch/arm64/include/asm/kvm_asm.h
+index ec3553eb9349..8f5cf83b2339 100644
+--- a/arch/arm64/include/asm/kvm_asm.h
++++ b/arch/arm64/include/asm/kvm_asm.h
+@@ -33,6 +33,10 @@
+ #define KVM_ARM64_DEBUG_DIRTY_SHIFT	0
+ #define KVM_ARM64_DEBUG_DIRTY		(1 << KVM_ARM64_DEBUG_DIRTY_SHIFT)
+ 
++#define	VCPU_WORKAROUND_2_FLAG_SHIFT	0
++#define	VCPU_WORKAROUND_2_FLAG		(_AC(1, UL) << VCPU_WORKAROUND_2_FLAG_SHIFT)
++
++/* Translate a kernel address of @sym into its equivalent linear mapping */
+ #define kvm_ksym_ref(sym)						\
+ 	({								\
+ 		void *val = &sym;					\
+@@ -65,6 +69,43 @@ extern u32 __kvm_get_mdcr_el2(void);
+ 
+ extern u32 __init_stage2_translation(void);
+ 
++/* Home-grown __this_cpu_{ptr,read} variants that always work at HYP */
++#define __hyp_this_cpu_ptr(sym)						\
++	({								\
++		void *__ptr = hyp_symbol_addr(sym);			\
++		__ptr += read_sysreg(tpidr_el2);			\
++		(typeof(&sym))__ptr;					\
++	 })
++
++#define __hyp_this_cpu_read(sym)					\
++	({								\
++		*__hyp_this_cpu_ptr(sym);				\
++	 })
++
++#else /* __ASSEMBLY__ */
++
++.macro hyp_adr_this_cpu reg, sym, tmp
++	adr_l	\reg, \sym
++	mrs	\tmp, tpidr_el2
++	add	\reg, \reg, \tmp
++.endm
++
++.macro hyp_ldr_this_cpu reg, sym, tmp
++	adr_l	\reg, \sym
++	mrs	\tmp, tpidr_el2
++	ldr	\reg,  [\reg, \tmp]
++.endm
++
++.macro get_host_ctxt reg, tmp
++	hyp_adr_this_cpu \reg, kvm_host_cpu_state, \tmp
++.endm
++
++.macro get_vcpu_ptr vcpu, ctxt
++	get_host_ctxt \ctxt, \vcpu
++	ldr	\vcpu, [\ctxt, #HOST_CONTEXT_VCPU]
++	kern_hyp_va	\vcpu
++.endm
++
+ #endif
+ 
+ #endif /* __ARM_KVM_ASM_H__ */
+diff --git a/arch/arm64/include/asm/kvm_host.h b/arch/arm64/include/asm/kvm_host.h
+index 2abb4493f4f6..4cdfbd01b2de 100644
+--- a/arch/arm64/include/asm/kvm_host.h
++++ b/arch/arm64/include/asm/kvm_host.h
+@@ -197,6 +197,8 @@ struct kvm_cpu_context {
+ 		u64 sys_regs[NR_SYS_REGS];
+ 		u32 copro[NR_COPRO_REGS];
+ 	};
++
++	struct kvm_vcpu *__hyp_running_vcpu;
+ };
+ 
+ typedef struct kvm_cpu_context kvm_cpu_context_t;
+@@ -211,6 +213,9 @@ struct kvm_vcpu_arch {
+ 	/* Exception Information */
+ 	struct kvm_vcpu_fault_info fault;
+ 
++	/* State of various workarounds, see kvm_asm.h for bit assignment */
++	u64 workaround_flags;
++
+ 	/* Guest debug state */
+ 	u64 debug_flags;
+ 
+@@ -354,10 +359,15 @@ int kvm_perf_teardown(void);
+ 
+ struct kvm_vcpu *kvm_mpidr_to_vcpu(struct kvm *kvm, unsigned long mpidr);
+ 
++void __kvm_set_tpidr_el2(u64 tpidr_el2);
++DECLARE_PER_CPU(kvm_cpu_context_t, kvm_host_cpu_state);
++
+ static inline void __cpu_init_hyp_mode(phys_addr_t pgd_ptr,
+ 				       unsigned long hyp_stack_ptr,
+ 				       unsigned long vector_ptr)
+ {
++	u64 tpidr_el2;
++
+ 	/*
+ 	 * Call initialization code, and switch to the full blown HYP code.
+ 	 * If the cpucaps haven't been finalized yet, something has gone very
+@@ -366,6 +376,16 @@ static inline void __cpu_init_hyp_mode(phys_addr_t pgd_ptr,
+ 	 */
+ 	BUG_ON(!static_branch_likely(&arm64_const_caps_ready));
+ 	__kvm_call_hyp((void *)pgd_ptr, hyp_stack_ptr, vector_ptr);
++
++	/*
++	 * Calculate the raw per-cpu offset without a translation from the
++	 * kernel's mapping to the linear mapping, and store it in tpidr_el2
++	 * so that we can use adr_l to access per-cpu variables in EL2.
++	 */
++	tpidr_el2 = (u64)this_cpu_ptr(&kvm_host_cpu_state)
++		- (u64)kvm_ksym_ref(kvm_host_cpu_state);
++
++	kvm_call_hyp(__kvm_set_tpidr_el2, tpidr_el2);
+ }
+ 
+ void __kvm_hyp_teardown(void);
+@@ -405,4 +425,27 @@ static inline bool kvm_arm_harden_branch_predictor(void)
+ 	return cpus_have_const_cap(ARM64_HARDEN_BRANCH_PREDICTOR);
+ }
+ 
++#define KVM_SSBD_UNKNOWN		-1
++#define KVM_SSBD_FORCE_DISABLE		0
++#define KVM_SSBD_KERNEL		1
++#define KVM_SSBD_FORCE_ENABLE		2
++#define KVM_SSBD_MITIGATED		3
++
++static inline int kvm_arm_have_ssbd(void)
++{
++	switch (arm64_get_ssbd_state()) {
++	case ARM64_SSBD_FORCE_DISABLE:
++		return KVM_SSBD_FORCE_DISABLE;
++	case ARM64_SSBD_KERNEL:
++		return KVM_SSBD_KERNEL;
++	case ARM64_SSBD_FORCE_ENABLE:
++		return KVM_SSBD_FORCE_ENABLE;
++	case ARM64_SSBD_MITIGATED:
++		return KVM_SSBD_MITIGATED;
++	case ARM64_SSBD_UNKNOWN:
++	default:
++		return KVM_SSBD_UNKNOWN;
++	}
++}
++
+ #endif /* __ARM64_KVM_HOST_H__ */
+diff --git a/arch/arm64/include/asm/kvm_mmu.h b/arch/arm64/include/asm/kvm_mmu.h
+index 824c83db9b47..547519abc751 100644
+--- a/arch/arm64/include/asm/kvm_mmu.h
++++ b/arch/arm64/include/asm/kvm_mmu.h
+@@ -130,6 +130,26 @@ static inline unsigned long __kern_hyp_va(unsigned long v)
+ 
+ #define kern_hyp_va(v) 	((typeof(v))(__kern_hyp_va((unsigned long)(v))))
+ 
++/*
++ * Obtain the PC-relative address of a kernel symbol
++ * s: symbol
++ *
++ * The goal of this macro is to return a symbol's address based on a
++ * PC-relative computation, as opposed to a loading the VA from a
++ * constant pool or something similar. This works well for HYP, as an
++ * absolute VA is guaranteed to be wrong. Only use this if trying to
++ * obtain the address of a symbol (i.e. not something you obtained by
++ * following a pointer).
++ */
++#define hyp_symbol_addr(s)						\
++	({								\
++		typeof(s) *addr;					\
++		asm("adrp	%0, %1\n"				\
++		    "add	%0, %0, :lo12:%1\n"			\
++		    : "=r" (addr) : "S" (&s));				\
++		addr;							\
++	})
++
+ /*
+  * We currently only support a 40bit IPA.
+  */
+@@ -367,5 +387,29 @@ static inline int kvm_map_vectors(void)
+ }
+ #endif
+ 
++#ifdef CONFIG_ARM64_SSBD
++DECLARE_PER_CPU_READ_MOSTLY(u64, arm64_ssbd_callback_required);
++
++static inline int hyp_map_aux_data(void)
++{
++	int cpu, err;
++
++	for_each_possible_cpu(cpu) {
++		u64 *ptr;
++
++		ptr = per_cpu_ptr(&arm64_ssbd_callback_required, cpu);
++		err = create_hyp_mappings(ptr, ptr + 1, PAGE_HYP);
++		if (err)
++			return err;
++	}
++	return 0;
++}
++#else
++static inline int hyp_map_aux_data(void)
++{
++	return 0;
++}
++#endif
++
+ #endif /* __ASSEMBLY__ */
+ #endif /* __ARM64_KVM_MMU_H__ */
+diff --git a/arch/arm64/include/asm/percpu.h b/arch/arm64/include/asm/percpu.h
+index 5394c8405e66..0d551576eb57 100644
+--- a/arch/arm64/include/asm/percpu.h
++++ b/arch/arm64/include/asm/percpu.h
+@@ -16,9 +16,14 @@
+ #ifndef __ASM_PERCPU_H
+ #define __ASM_PERCPU_H
+ 
++#include <asm/alternative.h>
++
+ static inline void set_my_cpu_offset(unsigned long off)
+ {
+-	asm volatile("msr tpidr_el1, %0" :: "r" (off) : "memory");
++	asm volatile(ALTERNATIVE("msr tpidr_el1, %0",
++				 "msr tpidr_el2, %0",
++				 ARM64_HAS_VIRT_HOST_EXTN)
++			:: "r" (off) : "memory");
+ }
+ 
+ static inline unsigned long __my_cpu_offset(void)
+@@ -29,7 +34,10 @@ static inline unsigned long __my_cpu_offset(void)
+ 	 * We want to allow caching the value, so avoid using volatile and
+ 	 * instead use a fake stack read to hazard against barrier().
+ 	 */
+-	asm("mrs %0, tpidr_el1" : "=r" (off) :
++	asm(ALTERNATIVE("mrs %0, tpidr_el1",
++			"mrs %0, tpidr_el2",
++			ARM64_HAS_VIRT_HOST_EXTN)
++		: "=r" (off) :
+ 		"Q" (*(const unsigned long *)current_stack_pointer));
+ 
+ 	return off;
+diff --git a/arch/arm64/include/asm/thread_info.h b/arch/arm64/include/asm/thread_info.h
+index e9ea5a6bd449..0dd1bc13f942 100644
+--- a/arch/arm64/include/asm/thread_info.h
++++ b/arch/arm64/include/asm/thread_info.h
+@@ -122,6 +122,7 @@ static inline struct thread_info *current_thread_info(void)
+ #define TIF_RESTORE_SIGMASK	20
+ #define TIF_SINGLESTEP		21
+ #define TIF_32BIT		22	/* 32bit process */
++#define TIF_SSBD		23	/* Wants SSB mitigation */
+ 
+ #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
+ #define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
+diff --git a/arch/arm64/kernel/Makefile b/arch/arm64/kernel/Makefile
+index 74b8fd860714..6dadaaee796d 100644
+--- a/arch/arm64/kernel/Makefile
++++ b/arch/arm64/kernel/Makefile
+@@ -50,6 +50,7 @@ arm64-obj-$(CONFIG_RANDOMIZE_BASE)	+= kaslr.o
+ arm64-obj-$(CONFIG_HIBERNATION)		+= hibernate.o hibernate-asm.o
+ arm64-obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o	\
+ 					   cpu-reset.o
++arm64-obj-$(CONFIG_ARM64_SSBD)		+= ssbd.o
+ 
+ ifeq ($(CONFIG_KVM),y)
+ arm64-obj-$(CONFIG_HARDEN_BRANCH_PREDICTOR)	+= bpi.o
+diff --git a/arch/arm64/kernel/alternative.c b/arch/arm64/kernel/alternative.c
+index 06d650f61da7..091748095140 100644
+--- a/arch/arm64/kernel/alternative.c
++++ b/arch/arm64/kernel/alternative.c
+@@ -28,10 +28,12 @@
+ #include <asm/sections.h>
+ #include <linux/stop_machine.h>
+ 
+-#define __ALT_PTR(a,f)		(u32 *)((void *)&(a)->f + (a)->f)
++#define __ALT_PTR(a,f)		((void *)&(a)->f + (a)->f)
+ #define ALT_ORIG_PTR(a)		__ALT_PTR(a, orig_offset)
+ #define ALT_REPL_PTR(a)		__ALT_PTR(a, alt_offset)
+ 
++int alternatives_applied;
++
+ struct alt_region {
+ 	struct alt_instr *begin;
+ 	struct alt_instr *end;
+@@ -105,31 +107,52 @@ static u32 get_alt_insn(struct alt_instr *alt, u32 *insnptr, u32 *altinsnptr)
+ 	return insn;
+ }
+ 
++static void patch_alternative(struct alt_instr *alt,
++			      __le32 *origptr, __le32 *updptr, int nr_inst)
++{
++	__le32 *replptr;
++	int i;
++
++	replptr = ALT_REPL_PTR(alt);
++	for (i = 0; i < nr_inst; i++) {
++		u32 insn;
++
++		insn = get_alt_insn(alt, origptr + i, replptr + i);
++		updptr[i] = cpu_to_le32(insn);
++	}
++}
++
+ static void __apply_alternatives(void *alt_region)
+ {
+ 	struct alt_instr *alt;
+ 	struct alt_region *region = alt_region;
+-	u32 *origptr, *replptr;
++	__le32 *origptr;
++	alternative_cb_t alt_cb;
+ 
+ 	for (alt = region->begin; alt < region->end; alt++) {
+-		u32 insn;
+-		int i, nr_inst;
++		int nr_inst;
+ 
+-		if (!cpus_have_cap(alt->cpufeature))
++		/* Use ARM64_CB_PATCH as an unconditional patch */
++		if (alt->cpufeature < ARM64_CB_PATCH &&
++		    !cpus_have_cap(alt->cpufeature))
+ 			continue;
+ 
+-		BUG_ON(alt->alt_len != alt->orig_len);
++		if (alt->cpufeature == ARM64_CB_PATCH)
++			BUG_ON(alt->alt_len != 0);
++		else
++			BUG_ON(alt->alt_len != alt->orig_len);
+ 
+ 		pr_info_once("patching kernel code\n");
+ 
+ 		origptr = ALT_ORIG_PTR(alt);
+-		replptr = ALT_REPL_PTR(alt);
+-		nr_inst = alt->alt_len / sizeof(insn);
++		nr_inst = alt->orig_len / AARCH64_INSN_SIZE;
+ 
+-		for (i = 0; i < nr_inst; i++) {
+-			insn = get_alt_insn(alt, origptr + i, replptr + i);
+-			*(origptr + i) = cpu_to_le32(insn);
+-		}
++		if (alt->cpufeature < ARM64_CB_PATCH)
++			alt_cb = patch_alternative;
++		else
++			alt_cb  = ALT_REPL_PTR(alt);
++
++		alt_cb(alt, origptr, origptr, nr_inst);
+ 
+ 		flush_icache_range((uintptr_t)origptr,
+ 				   (uintptr_t)(origptr + nr_inst));
+@@ -142,7 +165,6 @@ static void __apply_alternatives(void *alt_region)
+  */
+ static int __apply_alternatives_multi_stop(void *unused)
+ {
+-	static int patched = 0;
+ 	struct alt_region region = {
+ 		.begin	= (struct alt_instr *)__alt_instructions,
+ 		.end	= (struct alt_instr *)__alt_instructions_end,
+@@ -150,14 +172,14 @@ static int __apply_alternatives_multi_stop(void *unused)
+ 
+ 	/* We always have a CPU 0 at this point (__init) */
+ 	if (smp_processor_id()) {
+-		while (!READ_ONCE(patched))
++		while (!READ_ONCE(alternatives_applied))
+ 			cpu_relax();
+ 		isb();
+ 	} else {
+-		BUG_ON(patched);
++		BUG_ON(alternatives_applied);
+ 		__apply_alternatives(&region);
+ 		/* Barriers provided by the cache flushing */
+-		WRITE_ONCE(patched, 1);
++		WRITE_ONCE(alternatives_applied, 1);
+ 	}
+ 
+ 	return 0;
+diff --git a/arch/arm64/kernel/asm-offsets.c b/arch/arm64/kernel/asm-offsets.c
+index 5f4bf3c6f016..bd239b1b7a68 100644
+--- a/arch/arm64/kernel/asm-offsets.c
++++ b/arch/arm64/kernel/asm-offsets.c
+@@ -127,11 +127,13 @@ int main(void)
+   BLANK();
+ #ifdef CONFIG_KVM_ARM_HOST
+   DEFINE(VCPU_CONTEXT,		offsetof(struct kvm_vcpu, arch.ctxt));
++  DEFINE(VCPU_WORKAROUND_FLAGS,	offsetof(struct kvm_vcpu, arch.workaround_flags));
+   DEFINE(CPU_GP_REGS,		offsetof(struct kvm_cpu_context, gp_regs));
+   DEFINE(CPU_USER_PT_REGS,	offsetof(struct kvm_regs, regs));
+   DEFINE(CPU_FP_REGS,		offsetof(struct kvm_regs, fp_regs));
+   DEFINE(VCPU_FPEXC32_EL2,	offsetof(struct kvm_vcpu, arch.ctxt.sys_regs[FPEXC32_EL2]));
+   DEFINE(VCPU_HOST_CONTEXT,	offsetof(struct kvm_vcpu, arch.host_cpu_context));
++  DEFINE(HOST_CONTEXT_VCPU,	offsetof(struct kvm_cpu_context, __hyp_running_vcpu));
+ #endif
+ #ifdef CONFIG_CPU_PM
+   DEFINE(CPU_SUSPEND_SZ,	sizeof(struct cpu_suspend_ctx));
+diff --git a/arch/arm64/kernel/cpu_errata.c b/arch/arm64/kernel/cpu_errata.c
+index 2de62aa91303..1db97ad7b58b 100644
+--- a/arch/arm64/kernel/cpu_errata.c
++++ b/arch/arm64/kernel/cpu_errata.c
+@@ -187,6 +187,178 @@ static int enable_smccc_arch_workaround_1(void *data)
+ }
+ #endif	/* CONFIG_HARDEN_BRANCH_PREDICTOR */
+ 
++#ifdef CONFIG_ARM64_SSBD
++DEFINE_PER_CPU_READ_MOSTLY(u64, arm64_ssbd_callback_required);
++
++int ssbd_state __read_mostly = ARM64_SSBD_KERNEL;
++
++static const struct ssbd_options {
++	const char	*str;
++	int		state;
++} ssbd_options[] = {
++	{ "force-on",	ARM64_SSBD_FORCE_ENABLE, },
++	{ "force-off",	ARM64_SSBD_FORCE_DISABLE, },
++	{ "kernel",	ARM64_SSBD_KERNEL, },
++};
++
++static int __init ssbd_cfg(char *buf)
++{
++	int i;
++
++	if (!buf || !buf[0])
++		return -EINVAL;
++
++	for (i = 0; i < ARRAY_SIZE(ssbd_options); i++) {
++		int len = strlen(ssbd_options[i].str);
++
++		if (strncmp(buf, ssbd_options[i].str, len))
++			continue;
++
++		ssbd_state = ssbd_options[i].state;
++		return 0;
++	}
++
++	return -EINVAL;
++}
++early_param("ssbd", ssbd_cfg);
++
++void __init arm64_update_smccc_conduit(struct alt_instr *alt,
++				       __le32 *origptr, __le32 *updptr,
++				       int nr_inst)
++{
++	u32 insn;
++
++	BUG_ON(nr_inst != 1);
++
++	switch (psci_ops.conduit) {
++	case PSCI_CONDUIT_HVC:
++		insn = aarch64_insn_get_hvc_value();
++		break;
++	case PSCI_CONDUIT_SMC:
++		insn = aarch64_insn_get_smc_value();
++		break;
++	default:
++		return;
++	}
++
++	*updptr = cpu_to_le32(insn);
++}
++
++void __init arm64_enable_wa2_handling(struct alt_instr *alt,
++				      __le32 *origptr, __le32 *updptr,
++				      int nr_inst)
++{
++	BUG_ON(nr_inst != 1);
++	/*
++	 * Only allow mitigation on EL1 entry/exit and guest
++	 * ARCH_WORKAROUND_2 handling if the SSBD state allows it to
++	 * be flipped.
++	 */
++	if (arm64_get_ssbd_state() == ARM64_SSBD_KERNEL)
++		*updptr = cpu_to_le32(aarch64_insn_gen_nop());
++}
++
++void arm64_set_ssbd_mitigation(bool state)
++{
++	switch (psci_ops.conduit) {
++	case PSCI_CONDUIT_HVC:
++		arm_smccc_1_1_hvc(ARM_SMCCC_ARCH_WORKAROUND_2, state, NULL);
++		break;
++
++	case PSCI_CONDUIT_SMC:
++		arm_smccc_1_1_smc(ARM_SMCCC_ARCH_WORKAROUND_2, state, NULL);
++		break;
++
++	default:
++		WARN_ON_ONCE(1);
++		break;
++	}
++}
++
++static bool has_ssbd_mitigation(const struct arm64_cpu_capabilities *entry,
++				    int scope)
++{
++	struct arm_smccc_res res;
++	bool required = true;
++	s32 val;
++
++	WARN_ON(scope != SCOPE_LOCAL_CPU || preemptible());
++
++	if (psci_ops.smccc_version == SMCCC_VERSION_1_0) {
++		ssbd_state = ARM64_SSBD_UNKNOWN;
++		return false;
++	}
++
++	switch (psci_ops.conduit) {
++	case PSCI_CONDUIT_HVC:
++		arm_smccc_1_1_hvc(ARM_SMCCC_ARCH_FEATURES_FUNC_ID,
++				  ARM_SMCCC_ARCH_WORKAROUND_2, &res);
++		break;
++
++	case PSCI_CONDUIT_SMC:
++		arm_smccc_1_1_smc(ARM_SMCCC_ARCH_FEATURES_FUNC_ID,
++				  ARM_SMCCC_ARCH_WORKAROUND_2, &res);
++		break;
++
++	default:
++		ssbd_state = ARM64_SSBD_UNKNOWN;
++		return false;
++	}
++
++	val = (s32)res.a0;
++
++	switch (val) {
++	case SMCCC_RET_NOT_SUPPORTED:
++		ssbd_state = ARM64_SSBD_UNKNOWN;
++		return false;
++
++	case SMCCC_RET_NOT_REQUIRED:
++		pr_info_once("%s mitigation not required\n", entry->desc);
++		ssbd_state = ARM64_SSBD_MITIGATED;
++		return false;
++
++	case SMCCC_RET_SUCCESS:
++		required = true;
++		break;
++
++	case 1:	/* Mitigation not required on this CPU */
++		required = false;
++		break;
++
++	default:
++		WARN_ON(1);
++		return false;
++	}
++
++	switch (ssbd_state) {
++	case ARM64_SSBD_FORCE_DISABLE:
++		pr_info_once("%s disabled from command-line\n", entry->desc);
++		arm64_set_ssbd_mitigation(false);
++		required = false;
++		break;
++
++	case ARM64_SSBD_KERNEL:
++		if (required) {
++			__this_cpu_write(arm64_ssbd_callback_required, 1);
++			arm64_set_ssbd_mitigation(true);
++		}
++		break;
++
++	case ARM64_SSBD_FORCE_ENABLE:
++		pr_info_once("%s forced from command-line\n", entry->desc);
++		arm64_set_ssbd_mitigation(true);
++		required = true;
++		break;
++
++	default:
++		WARN_ON(1);
++		break;
++	}
++
++	return required;
++}
++#endif	/* CONFIG_ARM64_SSBD */
++
+ #define MIDR_RANGE(model, min, max) \
+ 	.def_scope = SCOPE_LOCAL_CPU, \
+ 	.matches = is_affected_midr_range, \
+@@ -309,6 +481,14 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
+ 		MIDR_ALL_VERSIONS(MIDR_CAVIUM_THUNDERX2),
+ 		.enable = enable_smccc_arch_workaround_1,
+ 	},
++#endif
++#ifdef CONFIG_ARM64_SSBD
++	{
++		.desc = "Speculative Store Bypass Disable",
++		.def_scope = SCOPE_LOCAL_CPU,
++		.capability = ARM64_SSBD,
++		.matches = has_ssbd_mitigation,
++	},
+ #endif
+ 	{
+ 	}
+diff --git a/arch/arm64/kernel/cpufeature.c b/arch/arm64/kernel/cpufeature.c
+index 625c2b240ffb..ab15747a49d4 100644
+--- a/arch/arm64/kernel/cpufeature.c
++++ b/arch/arm64/kernel/cpufeature.c
+@@ -829,6 +829,22 @@ static int __init parse_kpti(char *str)
+ early_param("kpti", parse_kpti);
+ #endif	/* CONFIG_UNMAP_KERNEL_AT_EL0 */
+ 
++static int cpu_copy_el2regs(void *__unused)
++{
++	/*
++	 * Copy register values that aren't redirected by hardware.
++	 *
++	 * Before code patching, we only set tpidr_el1, all CPUs need to copy
++	 * this value to tpidr_el2 before we patch the code. Once we've done
++	 * that, freshly-onlined CPUs will set tpidr_el2, so we don't need to
++	 * do anything here.
++	 */
++	if (!alternatives_applied)
++		write_sysreg(read_sysreg(tpidr_el1), tpidr_el2);
++
++	return 0;
++}
++
+ static const struct arm64_cpu_capabilities arm64_features[] = {
+ 	{
+ 		.desc = "GIC system register CPU interface",
+@@ -895,6 +911,7 @@ static const struct arm64_cpu_capabilities arm64_features[] = {
+ 		.capability = ARM64_HAS_VIRT_HOST_EXTN,
+ 		.def_scope = SCOPE_SYSTEM,
+ 		.matches = runs_at_el2,
++		.enable = cpu_copy_el2regs,
+ 	},
+ 	{
+ 		.desc = "32-bit EL0 Support",
+diff --git a/arch/arm64/kernel/entry.S b/arch/arm64/kernel/entry.S
+index b79e302d2a3e..ca978d7d98eb 100644
+--- a/arch/arm64/kernel/entry.S
++++ b/arch/arm64/kernel/entry.S
+@@ -18,6 +18,7 @@
+  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  */
+ 
++#include <linux/arm-smccc.h>
+ #include <linux/init.h>
+ #include <linux/linkage.h>
+ 
+@@ -95,6 +96,25 @@ alternative_else_nop_endif
+ 	add	\dst, \dst, #(\sym - .entry.tramp.text)
+ 	.endm
+ 
++	// This macro corrupts x0-x3. It is the caller's duty
++	// to save/restore them if required.
++	.macro	apply_ssbd, state, targ, tmp1, tmp2
++#ifdef CONFIG_ARM64_SSBD
++alternative_cb	arm64_enable_wa2_handling
++	b	\targ
++alternative_cb_end
++	ldr_this_cpu	\tmp2, arm64_ssbd_callback_required, \tmp1
++	cbz	\tmp2, \targ
++	ldr	\tmp2, [tsk, #TI_FLAGS]
++	tbnz	\tmp2, #TIF_SSBD, \targ
++	mov	w0, #ARM_SMCCC_ARCH_WORKAROUND_2
++	mov	w1, #\state
++alternative_cb	arm64_update_smccc_conduit
++	nop					// Patched to SMC/HVC #0
++alternative_cb_end
++#endif
++	.endm
++
+ 	.macro	kernel_entry, el, regsize = 64
+ 	.if	\regsize == 32
+ 	mov	w0, w0				// zero upper 32 bits of x0
+@@ -122,6 +142,14 @@ alternative_else_nop_endif
+ 	ldr	x19, [tsk, #TI_FLAGS]		// since we can unmask debug
+ 	disable_step_tsk x19, x20		// exceptions when scheduling.
+ 
++	apply_ssbd 1, 1f, x22, x23
++
++#ifdef CONFIG_ARM64_SSBD
++	ldp	x0, x1, [sp, #16 * 0]
++	ldp	x2, x3, [sp, #16 * 1]
++#endif
++1:
++
+ 	mov	x29, xzr			// fp pointed to user-space
+ 	.else
+ 	add	x21, sp, #S_FRAME_SIZE
+@@ -190,6 +218,8 @@ alternative_if ARM64_WORKAROUND_845719
+ alternative_else_nop_endif
+ #endif
+ 3:
++	apply_ssbd 0, 5f, x0, x1
++5:
+ 	.endif
+ 	msr	elr_el1, x21			// set up the return data
+ 	msr	spsr_el1, x22
+@@ -243,7 +273,7 @@ alternative_insn eret, nop, ARM64_UNMAP_KERNEL_AT_EL0
+ 	cmp	x25, tsk
+ 	b.ne	9998f
+ 
+-	this_cpu_ptr irq_stack, x25, x26
++	adr_this_cpu x25, irq_stack, x26
+ 	mov	x26, #IRQ_STACK_START_SP
+ 	add	x26, x25, x26
+ 
+diff --git a/arch/arm64/kernel/hibernate.c b/arch/arm64/kernel/hibernate.c
+index d55a7b09959b..f6e71c73cceb 100644
+--- a/arch/arm64/kernel/hibernate.c
++++ b/arch/arm64/kernel/hibernate.c
+@@ -308,6 +308,17 @@ int swsusp_arch_suspend(void)
+ 
+ 		sleep_cpu = -EINVAL;
+ 		__cpu_suspend_exit();
++
++		/*
++		 * Just in case the boot kernel did turn the SSBD
++		 * mitigation off behind our back, let's set the state
++		 * to what we expect it to be.
++		 */
++		switch (arm64_get_ssbd_state()) {
++		case ARM64_SSBD_FORCE_ENABLE:
++		case ARM64_SSBD_KERNEL:
++			arm64_set_ssbd_mitigation(true);
++		}
+ 	}
+ 
+ 	local_dbg_restore(flags);
+diff --git a/arch/arm64/kernel/ssbd.c b/arch/arm64/kernel/ssbd.c
+new file mode 100644
+index 000000000000..0560738c1d5c
+--- /dev/null
++++ b/arch/arm64/kernel/ssbd.c
+@@ -0,0 +1,108 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2018 ARM Ltd, All Rights Reserved.
++ */
++
++#include <linux/errno.h>
++#include <linux/prctl.h>
++#include <linux/sched.h>
++#include <linux/thread_info.h>
++
++#include <asm/cpufeature.h>
++
++/*
++ * prctl interface for SSBD
++ */
++static int ssbd_prctl_set(struct task_struct *task, unsigned long ctrl)
++{
++	int state = arm64_get_ssbd_state();
++
++	/* Unsupported */
++	if (state == ARM64_SSBD_UNKNOWN)
++		return -EINVAL;
++
++	/* Treat the unaffected/mitigated state separately */
++	if (state == ARM64_SSBD_MITIGATED) {
++		switch (ctrl) {
++		case PR_SPEC_ENABLE:
++			return -EPERM;
++		case PR_SPEC_DISABLE:
++		case PR_SPEC_FORCE_DISABLE:
++			return 0;
++		}
++	}
++
++	/*
++	 * Things are a bit backward here: the arm64 internal API
++	 * *enables the mitigation* when the userspace API *disables
++	 * speculation*. So much fun.
++	 */
++	switch (ctrl) {
++	case PR_SPEC_ENABLE:
++		/* If speculation is force disabled, enable is not allowed */
++		if (state == ARM64_SSBD_FORCE_ENABLE ||
++		    task_spec_ssb_force_disable(task))
++			return -EPERM;
++		task_clear_spec_ssb_disable(task);
++		clear_tsk_thread_flag(task, TIF_SSBD);
++		break;
++	case PR_SPEC_DISABLE:
++		if (state == ARM64_SSBD_FORCE_DISABLE)
++			return -EPERM;
++		task_set_spec_ssb_disable(task);
++		set_tsk_thread_flag(task, TIF_SSBD);
++		break;
++	case PR_SPEC_FORCE_DISABLE:
++		if (state == ARM64_SSBD_FORCE_DISABLE)
++			return -EPERM;
++		task_set_spec_ssb_disable(task);
++		task_set_spec_ssb_force_disable(task);
++		set_tsk_thread_flag(task, TIF_SSBD);
++		break;
++	default:
++		return -ERANGE;
++	}
++
++	return 0;
++}
++
++int arch_prctl_spec_ctrl_set(struct task_struct *task, unsigned long which,
++			     unsigned long ctrl)
++{
++	switch (which) {
++	case PR_SPEC_STORE_BYPASS:
++		return ssbd_prctl_set(task, ctrl);
++	default:
++		return -ENODEV;
++	}
++}
++
++static int ssbd_prctl_get(struct task_struct *task)
++{
++	switch (arm64_get_ssbd_state()) {
++	case ARM64_SSBD_UNKNOWN:
++		return -EINVAL;
++	case ARM64_SSBD_FORCE_ENABLE:
++		return PR_SPEC_DISABLE;
++	case ARM64_SSBD_KERNEL:
++		if (task_spec_ssb_force_disable(task))
++			return PR_SPEC_PRCTL | PR_SPEC_FORCE_DISABLE;
++		if (task_spec_ssb_disable(task))
++			return PR_SPEC_PRCTL | PR_SPEC_DISABLE;
++		return PR_SPEC_PRCTL | PR_SPEC_ENABLE;
++	case ARM64_SSBD_FORCE_DISABLE:
++		return PR_SPEC_ENABLE;
++	default:
++		return PR_SPEC_NOT_AFFECTED;
++	}
++}
++
++int arch_prctl_spec_ctrl_get(struct task_struct *task, unsigned long which)
++{
++	switch (which) {
++	case PR_SPEC_STORE_BYPASS:
++		return ssbd_prctl_get(task);
++	default:
++		return -ENODEV;
++	}
++}
+diff --git a/arch/arm64/kernel/suspend.c b/arch/arm64/kernel/suspend.c
+index bb0cd787a9d3..1dbf6099e2a5 100644
+--- a/arch/arm64/kernel/suspend.c
++++ b/arch/arm64/kernel/suspend.c
+@@ -67,6 +67,14 @@ void notrace __cpu_suspend_exit(void)
+ 	 */
+ 	if (hw_breakpoint_restore)
+ 		hw_breakpoint_restore(cpu);
++
++	/*
++	 * On resume, firmware implementing dynamic mitigation will
++	 * have turned the mitigation on. If the user has forcefully
++	 * disabled it, make sure their wishes are obeyed.
++	 */
++	if (arm64_get_ssbd_state() == ARM64_SSBD_FORCE_DISABLE)
++		arm64_set_ssbd_mitigation(false);
+ }
+ 
+ /*
+diff --git a/arch/arm64/kvm/hyp-init.S b/arch/arm64/kvm/hyp-init.S
+index 4bbff904169d..db5efaf2a985 100644
+--- a/arch/arm64/kvm/hyp-init.S
++++ b/arch/arm64/kvm/hyp-init.S
+@@ -118,6 +118,10 @@ CPU_BE(	orr	x4, x4, #SCTLR_ELx_EE)
+ 	kern_hyp_va	x2
+ 	msr	vbar_el2, x2
+ 
++	/* copy tpidr_el1 into tpidr_el2 for use by HYP */
++	mrs	x1, tpidr_el1
++	msr	tpidr_el2, x1
++
+ 	/* Hello, World! */
+ 	eret
+ ENDPROC(__kvm_hyp_init)
+diff --git a/arch/arm64/kvm/hyp/entry.S b/arch/arm64/kvm/hyp/entry.S
+index 12ee62d6d410..a360ac6e89e9 100644
+--- a/arch/arm64/kvm/hyp/entry.S
++++ b/arch/arm64/kvm/hyp/entry.S
+@@ -62,9 +62,6 @@ ENTRY(__guest_enter)
+ 	// Store the host regs
+ 	save_callee_saved_regs x1
+ 
+-	// Store the host_ctxt for use at exit time
+-	str	x1, [sp, #-16]!
+-
+ 	add	x18, x0, #VCPU_CONTEXT
+ 
+ 	// Restore guest regs x0-x17
+@@ -118,8 +115,7 @@ ENTRY(__guest_exit)
+ 	// Store the guest regs x19-x29, lr
+ 	save_callee_saved_regs x1
+ 
+-	// Restore the host_ctxt from the stack
+-	ldr	x2, [sp], #16
++	get_host_ctxt	x2, x3
+ 
+ 	// Now restore the host regs
+ 	restore_callee_saved_regs x2
+@@ -159,6 +155,10 @@ abort_guest_exit_end:
+ ENDPROC(__guest_exit)
+ 
+ ENTRY(__fpsimd_guest_restore)
++	// x0: esr
++	// x1: vcpu
++	// x2-x29,lr: vcpu regs
++	// vcpu x0-x1 on the stack
+ 	stp	x2, x3, [sp, #-16]!
+ 	stp	x4, lr, [sp, #-16]!
+ 
+@@ -173,7 +173,7 @@ alternative_else
+ alternative_endif
+ 	isb
+ 
+-	mrs	x3, tpidr_el2
++	mov	x3, x1
+ 
+ 	ldr	x0, [x3, #VCPU_HOST_CONTEXT]
+ 	kern_hyp_va x0
+diff --git a/arch/arm64/kvm/hyp/hyp-entry.S b/arch/arm64/kvm/hyp/hyp-entry.S
+index 4e9d50c3e658..bf4988f9dae8 100644
+--- a/arch/arm64/kvm/hyp/hyp-entry.S
++++ b/arch/arm64/kvm/hyp/hyp-entry.S
+@@ -72,13 +72,8 @@ ENDPROC(__kvm_hyp_teardown)
+ el1_sync:				// Guest trapped into EL2
+ 	stp	x0, x1, [sp, #-16]!
+ 
+-alternative_if_not ARM64_HAS_VIRT_HOST_EXTN
+-	mrs	x1, esr_el2
+-alternative_else
+-	mrs	x1, esr_el1
+-alternative_endif
+-	lsr	x0, x1, #ESR_ELx_EC_SHIFT
+-
++	mrs	x0, esr_el2
++	lsr	x0, x0, #ESR_ELx_EC_SHIFT
+ 	cmp	x0, #ESR_ELx_EC_HVC64
+ 	ccmp	x0, #ESR_ELx_EC_HVC32, #4, ne
+ 	b.ne	el1_trap
+@@ -112,33 +107,73 @@ el1_hvc_guest:
+ 	 */
+ 	ldr	x1, [sp]				// Guest's x0
+ 	eor	w1, w1, #ARM_SMCCC_ARCH_WORKAROUND_1
++	cbz	w1, wa_epilogue
++
++	/* ARM_SMCCC_ARCH_WORKAROUND_2 handling */
++	eor	w1, w1, #(ARM_SMCCC_ARCH_WORKAROUND_1 ^ \
++			  ARM_SMCCC_ARCH_WORKAROUND_2)
+ 	cbnz	w1, el1_trap
+-	mov	x0, x1
++
++#ifdef CONFIG_ARM64_SSBD
++alternative_cb	arm64_enable_wa2_handling
++	b	wa2_end
++alternative_cb_end
++	get_vcpu_ptr	x2, x0
++	ldr	x0, [x2, #VCPU_WORKAROUND_FLAGS]
++
++	// Sanitize the argument and update the guest flags
++	ldr	x1, [sp, #8]			// Guest's x1
++	clz	w1, w1				// Murphy's device:
++	lsr	w1, w1, #5			// w1 = !!w1 without using
++	eor	w1, w1, #1			// the flags...
++	bfi	x0, x1, #VCPU_WORKAROUND_2_FLAG_SHIFT, #1
++	str	x0, [x2, #VCPU_WORKAROUND_FLAGS]
++
++	/* Check that we actually need to perform the call */
++	hyp_ldr_this_cpu x0, arm64_ssbd_callback_required, x2
++	cbz	x0, wa2_end
++
++	mov	w0, #ARM_SMCCC_ARCH_WORKAROUND_2
++	smc	#0
++
++	/* Don't leak data from the SMC call */
++	mov	x3, xzr
++wa2_end:
++	mov	x2, xzr
++	mov	x1, xzr
++#endif
++
++wa_epilogue:
++	mov	x0, xzr
+ 	add	sp, sp, #16
+ 	eret
+ 
+ el1_trap:
++	get_vcpu_ptr	x1, x0
++
++	mrs		x0, esr_el2
++	lsr		x0, x0, #ESR_ELx_EC_SHIFT
+ 	/*
+ 	 * x0: ESR_EC
++	 * x1: vcpu pointer
+ 	 */
+ 
+ 	/* Guest accessed VFP/SIMD registers, save host, restore Guest */
+ 	cmp	x0, #ESR_ELx_EC_FP_ASIMD
+ 	b.eq	__fpsimd_guest_restore
+ 
+-	mrs	x1, tpidr_el2
+ 	mov	x0, #ARM_EXCEPTION_TRAP
+ 	b	__guest_exit
+ 
+ el1_irq:
+ 	stp     x0, x1, [sp, #-16]!
+-	mrs	x1, tpidr_el2
++	get_vcpu_ptr	x1, x0
+ 	mov	x0, #ARM_EXCEPTION_IRQ
+ 	b	__guest_exit
+ 
+ el1_error:
+ 	stp     x0, x1, [sp, #-16]!
+-	mrs	x1, tpidr_el2
++	get_vcpu_ptr	x1, x0
+ 	mov	x0, #ARM_EXCEPTION_EL1_SERROR
+ 	b	__guest_exit
+ 
+@@ -173,6 +208,11 @@ ENTRY(__hyp_do_panic)
+ 	eret
+ ENDPROC(__hyp_do_panic)
+ 
++ENTRY(__hyp_panic)
++	get_host_ctxt x0, x1
++	b	hyp_panic
++ENDPROC(__hyp_panic)
++
+ .macro invalid_vector	label, target = __hyp_panic
+ 	.align	2
+ \label:
+diff --git a/arch/arm64/kvm/hyp/switch.c b/arch/arm64/kvm/hyp/switch.c
+index c49d09387192..12f9d1ecdf4c 100644
+--- a/arch/arm64/kvm/hyp/switch.c
++++ b/arch/arm64/kvm/hyp/switch.c
+@@ -15,6 +15,7 @@
+  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  */
+ 
++#include <linux/arm-smccc.h>
+ #include <linux/types.h>
+ #include <linux/jump_label.h>
+ #include <uapi/linux/psci.h>
+@@ -267,6 +268,39 @@ static void __hyp_text __skip_instr(struct kvm_vcpu *vcpu)
+ 	write_sysreg_el2(*vcpu_pc(vcpu), elr);
+ }
+ 
++static inline bool __hyp_text __needs_ssbd_off(struct kvm_vcpu *vcpu)
++{
++	if (!cpus_have_cap(ARM64_SSBD))
++		return false;
++
++	return !(vcpu->arch.workaround_flags & VCPU_WORKAROUND_2_FLAG);
++}
++
++static void __hyp_text __set_guest_arch_workaround_state(struct kvm_vcpu *vcpu)
++{
++#ifdef CONFIG_ARM64_SSBD
++	/*
++	 * The host runs with the workaround always present. If the
++	 * guest wants it disabled, so be it...
++	 */
++	if (__needs_ssbd_off(vcpu) &&
++	    __hyp_this_cpu_read(arm64_ssbd_callback_required))
++		arm_smccc_1_1_smc(ARM_SMCCC_ARCH_WORKAROUND_2, 0, NULL);
++#endif
++}
++
++static void __hyp_text __set_host_arch_workaround_state(struct kvm_vcpu *vcpu)
++{
++#ifdef CONFIG_ARM64_SSBD
++	/*
++	 * If the guest has disabled the workaround, bring it back on.
++	 */
++	if (__needs_ssbd_off(vcpu) &&
++	    __hyp_this_cpu_read(arm64_ssbd_callback_required))
++		arm_smccc_1_1_smc(ARM_SMCCC_ARCH_WORKAROUND_2, 1, NULL);
++#endif
++}
++
+ int __hyp_text __kvm_vcpu_run(struct kvm_vcpu *vcpu)
+ {
+ 	struct kvm_cpu_context *host_ctxt;
+@@ -275,9 +309,9 @@ int __hyp_text __kvm_vcpu_run(struct kvm_vcpu *vcpu)
+ 	u64 exit_code;
+ 
+ 	vcpu = kern_hyp_va(vcpu);
+-	write_sysreg(vcpu, tpidr_el2);
+ 
+ 	host_ctxt = kern_hyp_va(vcpu->arch.host_cpu_context);
++	host_ctxt->__hyp_running_vcpu = vcpu;
+ 	guest_ctxt = &vcpu->arch.ctxt;
+ 
+ 	__sysreg_save_host_state(host_ctxt);
+@@ -297,6 +331,8 @@ int __hyp_text __kvm_vcpu_run(struct kvm_vcpu *vcpu)
+ 	__sysreg_restore_guest_state(guest_ctxt);
+ 	__debug_restore_state(vcpu, kern_hyp_va(vcpu->arch.debug_ptr), guest_ctxt);
+ 
++	__set_guest_arch_workaround_state(vcpu);
++
+ 	/* Jump in the fire! */
+ again:
+ 	exit_code = __guest_enter(vcpu, host_ctxt);
+@@ -339,6 +375,8 @@ int __hyp_text __kvm_vcpu_run(struct kvm_vcpu *vcpu)
+ 		}
+ 	}
+ 
++	__set_host_arch_workaround_state(vcpu);
++
+ 	fp_enabled = __fpsimd_enabled();
+ 
+ 	__sysreg_save_guest_state(guest_ctxt);
+@@ -364,7 +402,8 @@ int __hyp_text __kvm_vcpu_run(struct kvm_vcpu *vcpu)
+ 
+ static const char __hyp_panic_string[] = "HYP panic:\nPS:%08llx PC:%016llx ESR:%08llx\nFAR:%016llx HPFAR:%016llx PAR:%016llx\nVCPU:%p\n";
+ 
+-static void __hyp_text __hyp_call_panic_nvhe(u64 spsr, u64 elr, u64 par)
++static void __hyp_text __hyp_call_panic_nvhe(u64 spsr, u64 elr, u64 par,
++					     struct kvm_vcpu *vcpu)
+ {
+ 	unsigned long str_va;
+ 
+@@ -378,35 +417,32 @@ static void __hyp_text __hyp_call_panic_nvhe(u64 spsr, u64 elr, u64 par)
+ 	__hyp_do_panic(str_va,
+ 		       spsr,  elr,
+ 		       read_sysreg(esr_el2),   read_sysreg_el2(far),
+-		       read_sysreg(hpfar_el2), par,
+-		       (void *)read_sysreg(tpidr_el2));
++		       read_sysreg(hpfar_el2), par, vcpu);
+ }
+ 
+-static void __hyp_text __hyp_call_panic_vhe(u64 spsr, u64 elr, u64 par)
++static void __hyp_text __hyp_call_panic_vhe(u64 spsr, u64 elr, u64 par,
++					    struct kvm_vcpu *vcpu)
+ {
+ 	panic(__hyp_panic_string,
+ 	      spsr,  elr,
+ 	      read_sysreg_el2(esr),   read_sysreg_el2(far),
+-	      read_sysreg(hpfar_el2), par,
+-	      (void *)read_sysreg(tpidr_el2));
++	      read_sysreg(hpfar_el2), par, vcpu);
+ }
+ 
+ static hyp_alternate_select(__hyp_call_panic,
+ 			    __hyp_call_panic_nvhe, __hyp_call_panic_vhe,
+ 			    ARM64_HAS_VIRT_HOST_EXTN);
+ 
+-void __hyp_text __noreturn __hyp_panic(void)
++void __hyp_text __noreturn hyp_panic(struct kvm_cpu_context *host_ctxt)
+ {
++	struct kvm_vcpu *vcpu = NULL;
++
+ 	u64 spsr = read_sysreg_el2(spsr);
+ 	u64 elr = read_sysreg_el2(elr);
+ 	u64 par = read_sysreg(par_el1);
+ 
+ 	if (read_sysreg(vttbr_el2)) {
+-		struct kvm_vcpu *vcpu;
+-		struct kvm_cpu_context *host_ctxt;
+-
+-		vcpu = (struct kvm_vcpu *)read_sysreg(tpidr_el2);
+-		host_ctxt = kern_hyp_va(vcpu->arch.host_cpu_context);
++		vcpu = host_ctxt->__hyp_running_vcpu;
+ 		__timer_save_state(vcpu);
+ 		__deactivate_traps(vcpu);
+ 		__deactivate_vm(vcpu);
+@@ -414,7 +450,7 @@ void __hyp_text __noreturn __hyp_panic(void)
+ 	}
+ 
+ 	/* Call panic for real */
+-	__hyp_call_panic()(spsr, elr, par);
++	__hyp_call_panic()(spsr, elr, par, vcpu);
+ 
+ 	unreachable();
+ }
+diff --git a/arch/arm64/kvm/hyp/sysreg-sr.c b/arch/arm64/kvm/hyp/sysreg-sr.c
+index 934137647837..e19d89cabf2a 100644
+--- a/arch/arm64/kvm/hyp/sysreg-sr.c
++++ b/arch/arm64/kvm/hyp/sysreg-sr.c
+@@ -27,8 +27,8 @@ static void __hyp_text __sysreg_do_nothing(struct kvm_cpu_context *ctxt) { }
+ /*
+  * Non-VHE: Both host and guest must save everything.
+  *
+- * VHE: Host must save tpidr*_el[01], actlr_el1, mdscr_el1, sp0, pc,
+- * pstate, and guest must save everything.
++ * VHE: Host must save tpidr*_el0, actlr_el1, mdscr_el1, sp_el0,
++ * and guest must save everything.
+  */
+ 
+ static void __hyp_text __sysreg_save_common_state(struct kvm_cpu_context *ctxt)
+@@ -36,11 +36,8 @@ static void __hyp_text __sysreg_save_common_state(struct kvm_cpu_context *ctxt)
+ 	ctxt->sys_regs[ACTLR_EL1]	= read_sysreg(actlr_el1);
+ 	ctxt->sys_regs[TPIDR_EL0]	= read_sysreg(tpidr_el0);
+ 	ctxt->sys_regs[TPIDRRO_EL0]	= read_sysreg(tpidrro_el0);
+-	ctxt->sys_regs[TPIDR_EL1]	= read_sysreg(tpidr_el1);
+ 	ctxt->sys_regs[MDSCR_EL1]	= read_sysreg(mdscr_el1);
+ 	ctxt->gp_regs.regs.sp		= read_sysreg(sp_el0);
+-	ctxt->gp_regs.regs.pc		= read_sysreg_el2(elr);
+-	ctxt->gp_regs.regs.pstate	= read_sysreg_el2(spsr);
+ }
+ 
+ static void __hyp_text __sysreg_save_state(struct kvm_cpu_context *ctxt)
+@@ -62,10 +59,13 @@ static void __hyp_text __sysreg_save_state(struct kvm_cpu_context *ctxt)
+ 	ctxt->sys_regs[AMAIR_EL1]	= read_sysreg_el1(amair);
+ 	ctxt->sys_regs[CNTKCTL_EL1]	= read_sysreg_el1(cntkctl);
+ 	ctxt->sys_regs[PAR_EL1]		= read_sysreg(par_el1);
++	ctxt->sys_regs[TPIDR_EL1]	= read_sysreg(tpidr_el1);
+ 
+ 	ctxt->gp_regs.sp_el1		= read_sysreg(sp_el1);
+ 	ctxt->gp_regs.elr_el1		= read_sysreg_el1(elr);
+ 	ctxt->gp_regs.spsr[KVM_SPSR_EL1]= read_sysreg_el1(spsr);
++	ctxt->gp_regs.regs.pc		= read_sysreg_el2(elr);
++	ctxt->gp_regs.regs.pstate	= read_sysreg_el2(spsr);
+ }
+ 
+ static hyp_alternate_select(__sysreg_call_save_host_state,
+@@ -89,11 +89,8 @@ static void __hyp_text __sysreg_restore_common_state(struct kvm_cpu_context *ctx
+ 	write_sysreg(ctxt->sys_regs[ACTLR_EL1],	  actlr_el1);
+ 	write_sysreg(ctxt->sys_regs[TPIDR_EL0],	  tpidr_el0);
+ 	write_sysreg(ctxt->sys_regs[TPIDRRO_EL0], tpidrro_el0);
+-	write_sysreg(ctxt->sys_regs[TPIDR_EL1],	  tpidr_el1);
+ 	write_sysreg(ctxt->sys_regs[MDSCR_EL1],	  mdscr_el1);
+ 	write_sysreg(ctxt->gp_regs.regs.sp,	  sp_el0);
+-	write_sysreg_el2(ctxt->gp_regs.regs.pc,	  elr);
+-	write_sysreg_el2(ctxt->gp_regs.regs.pstate, spsr);
+ }
+ 
+ static void __hyp_text __sysreg_restore_state(struct kvm_cpu_context *ctxt)
+@@ -115,10 +112,13 @@ static void __hyp_text __sysreg_restore_state(struct kvm_cpu_context *ctxt)
+ 	write_sysreg_el1(ctxt->sys_regs[AMAIR_EL1],	amair);
+ 	write_sysreg_el1(ctxt->sys_regs[CNTKCTL_EL1], 	cntkctl);
+ 	write_sysreg(ctxt->sys_regs[PAR_EL1],		par_el1);
++	write_sysreg(ctxt->sys_regs[TPIDR_EL1],		tpidr_el1);
+ 
+ 	write_sysreg(ctxt->gp_regs.sp_el1,		sp_el1);
+ 	write_sysreg_el1(ctxt->gp_regs.elr_el1,		elr);
+ 	write_sysreg_el1(ctxt->gp_regs.spsr[KVM_SPSR_EL1],spsr);
++	write_sysreg_el2(ctxt->gp_regs.regs.pc,		elr);
++	write_sysreg_el2(ctxt->gp_regs.regs.pstate,	spsr);
+ }
+ 
+ static hyp_alternate_select(__sysreg_call_restore_host_state,
+@@ -183,3 +183,8 @@ void __hyp_text __sysreg32_restore_state(struct kvm_vcpu *vcpu)
+ 	if (vcpu->arch.debug_flags & KVM_ARM64_DEBUG_DIRTY)
+ 		write_sysreg(sysreg[DBGVCR32_EL2], dbgvcr32_el2);
+ }
++
++void __hyp_text __kvm_set_tpidr_el2(u64 tpidr_el2)
++{
++	asm("msr tpidr_el2, %0": : "r" (tpidr_el2));
++}
+diff --git a/arch/arm64/kvm/reset.c b/arch/arm64/kvm/reset.c
+index 5bc460884639..29a27a09f21f 100644
+--- a/arch/arm64/kvm/reset.c
++++ b/arch/arm64/kvm/reset.c
+@@ -135,6 +135,10 @@ int kvm_reset_vcpu(struct kvm_vcpu *vcpu)
+ 	/* Reset PMU */
+ 	kvm_pmu_vcpu_reset(vcpu);
+ 
++	/* Default workaround setup is enabled (if supported) */
++	if (kvm_arm_have_ssbd() == KVM_SSBD_KERNEL)
++		vcpu->arch.workaround_flags |= VCPU_WORKAROUND_2_FLAG;
++
+ 	/* Reset timer */
+ 	return kvm_timer_vcpu_reset(vcpu, cpu_vtimer_irq);
+ }

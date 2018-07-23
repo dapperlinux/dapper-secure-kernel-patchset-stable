@@ -2,7 +2,7 @@ diff --git a/arch/mips/kernel/process.c b/arch/mips/kernel/process.c
 index fbbf5fc..eec61dd 100644
 --- a/arch/mips/kernel/process.c
 +++ b/arch/mips/kernel/process.c
-@@ -603,18 +603,6 @@ unsigned long get_wchan(struct task_struct *task)
+@@ -622,18 +622,6 @@ unsigned long get_wchan(struct task_struct *task)
  	return pc;
  }
  
@@ -18,6 +18,6 @@ index fbbf5fc..eec61dd 100644
 -	return sp & ALMASK;
 -}
 -
- static void arch_dump_stack(void *info)
- {
- 	struct pt_regs *regs;
+ static DEFINE_PER_CPU(struct call_single_data, backtrace_csd);
+ static struct cpumask backtrace_csd_busy;
+ 

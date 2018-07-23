@@ -6,8 +6,8 @@ index ac7692d..90e119c 100644
   * Interrupt control:
   */
  
--static inline unsigned long native_save_fl(void)
-+static inline asmlinkage unsigned long native_save_fl(void)
+-extern inline unsigned long native_save_fl(void)
++extern inline asmlinkage unsigned long native_save_fl(void)
  {
  	unsigned long flags;
  

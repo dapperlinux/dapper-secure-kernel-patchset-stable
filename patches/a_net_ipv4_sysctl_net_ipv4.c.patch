@@ -54,8 +54,8 @@ index 80bc36b..d70d622 100644
 -	struct ctl_table tbl = { .maxlen = (TCP_FASTOPEN_KEY_LENGTH * 2 + 10) };
 +	ctl_table_no_const tbl = { .maxlen = (TCP_FASTOPEN_KEY_LENGTH * 2 + 10) };
  	struct tcp_fastopen_context *ctxt;
- 	int ret;
  	u32  user_key[4]; /* 16 bytes, matching TCP_FASTOPEN_KEY_LENGTH */
+ 	__le32 key[4];
 @@ -976,13 +976,12 @@ static struct ctl_table ipv4_net_table[] = {
  
  static __net_init int ipv4_sysctl_init_net(struct net *net)
