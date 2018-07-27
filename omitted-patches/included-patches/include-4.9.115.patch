@@ -392,28 +392,6 @@ index 836398ade58d..b9181281aa9e 100644
  /* Cold Attach Status - xHC can set this bit to report device attached during
   * Sx state. Warm port reset should be perfomed to clear this bit and move port
   * to connected state.
-diff --git a/drivers/vfio/pci/vfio_pci.c b/drivers/vfio/pci/vfio_pci.c
-index 43559bed7822..7338e43faa17 100644
---- a/drivers/vfio/pci/vfio_pci.c
-+++ b/drivers/vfio/pci/vfio_pci.c
-@@ -28,6 +28,7 @@
- #include <linux/uaccess.h>
- #include <linux/vfio.h>
- #include <linux/vgaarb.h>
-+#include <linux/nospec.h>
- 
- #include "vfio_pci_private.h"
- 
-@@ -755,6 +756,9 @@ static long vfio_pci_ioctl(void *device_data,
- 			if (info.index >=
- 			    VFIO_PCI_NUM_REGIONS + vdev->num_regions)
- 				return -EINVAL;
-+			info.index = array_index_nospec(info.index,
-+							VFIO_PCI_NUM_REGIONS +
-+							vdev->num_regions);
- 
- 			i = info.index - VFIO_PCI_NUM_REGIONS;
- 
 diff --git a/fs/fat/inode.c b/fs/fat/inode.c
 index a2c05f2ada6d..88720011a6eb 100644
 --- a/fs/fat/inode.c
