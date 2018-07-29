@@ -1,6 +1,6 @@
 DATE=`date +%Y-%m-%d`
 KERNEL_MAJOR_VERSION=4.9
-KERNEL_VERSION=4.9.115
+KERNEL_VERSION=4.9.116
 
 echo "Setting up release directory..."
 mkdir release
