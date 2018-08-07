@@ -29,22 +29,22 @@ index 84c5d29..697b4f2 100644
  
  	/* Set PCS to KX/1G speed */
  	reg = XMDIO_READ(pdata, MDIO_MMD_PCS, MDIO_CTRL2);
-@@ -877,13 +877,13 @@ static void xgbe_phy_adjust_link(struct xgbe_prv_data *pdata)
- 
+@@ -878,13 +878,13 @@ static void xgbe_phy_adjust_link(struct xgbe_prv_data *pdata)
  		if (pdata->tx_pause != pdata->phy.tx_pause) {
  			new_state = 1;
+ 			pdata->tx_pause = pdata->phy.tx_pause;
 -			pdata->hw_if.config_tx_flow_control(pdata);
 +			pdata->hw_if->config_tx_flow_control(pdata);
- 			pdata->tx_pause = pdata->phy.tx_pause;
  		}
  
  		if (pdata->rx_pause != pdata->phy.rx_pause) {
  			new_state = 1;
+ 			pdata->rx_pause = pdata->phy.rx_pause;
 -			pdata->hw_if.config_rx_flow_control(pdata);
 +			pdata->hw_if->config_rx_flow_control(pdata);
- 			pdata->rx_pause = pdata->phy.rx_pause;
  		}
  
+ 		/* Speed support */
 @@ -1348,14 +1348,13 @@ static void xgbe_phy_init(struct xgbe_prv_data *pdata)
  		xgbe_dump_phy_registers(pdata);
  }

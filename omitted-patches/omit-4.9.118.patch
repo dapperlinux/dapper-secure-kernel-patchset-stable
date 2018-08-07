@@ -1,0 +1,40 @@
+diff --git a/net/netlink/af_netlink.c b/net/netlink/af_netlink.c
+index 15e6e7b9fd2b..8d0aafbdbbc3 100644
+--- a/net/netlink/af_netlink.c
++++ b/net/netlink/af_netlink.c
+@@ -62,6 +62,7 @@
+ #include <asm/cacheflush.h>
+ #include <linux/hash.h>
+ #include <linux/genetlink.h>
++#include <linux/nospec.h>
+ 
+ #include <net/net_namespace.h>
+ #include <net/sock.h>
+@@ -654,6 +655,7 @@ static int netlink_create(struct net *net, struct socket *sock, int protocol,
+ 
+ 	if (protocol < 0 || protocol >= MAX_LINKS)
+ 		return -EPROTONOSUPPORT;
++	protocol = array_index_nospec(protocol, MAX_LINKS);
+ 
+ 	netlink_lock_table();
+ #ifdef CONFIG_MODULES
+diff --git a/net/socket.c b/net/socket.c
+index bd3b33988ee0..35fa349ba274 100644
+--- a/net/socket.c
++++ b/net/socket.c
+@@ -89,6 +89,7 @@
+ #include <linux/magic.h>
+ #include <linux/slab.h>
+ #include <linux/xattr.h>
++#include <linux/nospec.h>
+ 
+ #include <asm/uaccess.h>
+ #include <asm/unistd.h>
+@@ -2338,6 +2339,7 @@ SYSCALL_DEFINE2(socketcall, int, call, unsigned long __user *, args)
+ 
+ 	if (call < 1 || call > SYS_SENDMMSG)
+ 		return -EINVAL;
++	call = array_index_nospec(call, SYS_SENDMMSG + 1);
+ 
+ 	len = nargs[call];
+ 	if (len > sizeof(a))
