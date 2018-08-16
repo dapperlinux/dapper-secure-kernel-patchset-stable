@@ -2,7 +2,7 @@ diff --git a/fs/dcache.c b/fs/dcache.c
 index 4485a48..2cdeaf6 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
-@@ -321,8 +321,9 @@ static void dentry_free(struct dentry *dentry)
+@@ -348,8 +348,9 @@ static void dentry_free(struct dentry *dentry)
   * d_iput() operation if defined.
   */
  static void dentry_unlink_inode(struct dentry * dentry)
@@ -13,7 +13,7 @@ index 4485a48..2cdeaf6 100644
 +static void dentry_unlink_inode(struct dentry * dentry)
  {
  	struct inode *inode = dentry->d_inode;
- 	bool hashed = !d_unhashed(dentry);
+ 
 @@ -559,7 +560,8 @@ static void __dentry_kill(struct dentry *dentry)
   * Returns dentry requiring refcount drop, or NULL if we're done.
   */

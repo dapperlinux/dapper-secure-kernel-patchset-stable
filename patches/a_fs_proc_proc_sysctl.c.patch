@@ -105,18 +105,19 @@ index d4e37ac..5a409fc 100644
  		struct completion wait;
  		init_completion(&wait);
  		p->unregistering = &wait;
-@@ -287,14 +299,14 @@ static void start_unregistering(struct ctl_table_header *p)
- static void sysctl_head_get(struct ctl_table_header *head)
- {
- 	spin_lock(&sysctl_lock);
+@@ -482,7 +482,7 @@ static struct inode *proc_sys_make_inode(struct super_block *sb,
+ 	ei->sysctl = head;
+ 	ei->sysctl_entry = table;
+ 	hlist_add_head_rcu(&ei->sysctl_inodes, &head->inodes);
 -	head->count++;
 +	atomic_inc(&head->count);
  	spin_unlock(&sysctl_lock);
- }
  
- void sysctl_head_put(struct ctl_table_header *head)
+ 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
+@@ -510,7 +510,7 @@ void proc_sys_evict_inode(struct inode *inode, struct ctl_table_header *head)
  {
  	spin_lock(&sysctl_lock);
+ 	hlist_del_init_rcu(&PROC_I(inode)->sysctl_inodes);
 -	if (!--head->count)
 +	if (atomic_dec_and_test(&head->count))
  		kfree_rcu(head, rcu);

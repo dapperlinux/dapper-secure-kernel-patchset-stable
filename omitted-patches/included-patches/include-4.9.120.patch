@@ -1,0 +1,857 @@
+diff --git a/Makefile b/Makefile
+index 0723bbe1d4a7..fea2fe577185 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,6 +1,6 @@
+ VERSION = 4
+ PATCHLEVEL = 9
+-SUBLEVEL = 119
++SUBLEVEL = 120
+ EXTRAVERSION =
+ NAME = Roaring Lionus
+ 
+diff --git a/arch/x86/include/asm/irqflags.h b/arch/x86/include/asm/irqflags.h
+index 8a8a6c66be9a..5b1177f5a963 100644
+--- a/arch/x86/include/asm/irqflags.h
++++ b/arch/x86/include/asm/irqflags.h
+@@ -12,6 +12,8 @@
+  * Interrupt control:
+  */
+ 
++/* Declaration required for gcc < 4.9 to prevent -Werror=missing-prototypes */
++extern inline unsigned long native_save_fl(void);
+ extern inline unsigned long native_save_fl(void)
+ {
+ 	unsigned long flags;
+diff --git a/drivers/infiniband/hw/ocrdma/ocrdma_stats.c b/drivers/infiniband/hw/ocrdma/ocrdma_stats.c
+index 265943069b35..84349d976162 100644
+--- a/drivers/infiniband/hw/ocrdma/ocrdma_stats.c
++++ b/drivers/infiniband/hw/ocrdma/ocrdma_stats.c
+@@ -645,7 +645,7 @@ static ssize_t ocrdma_dbgfs_ops_write(struct file *filp,
+ 	struct ocrdma_stats *pstats = filp->private_data;
+ 	struct ocrdma_dev *dev = pstats->dev;
+ 
+-	if (count > 32)
++	if (*ppos != 0 || count == 0 || count > sizeof(tmp_str))
+ 		goto err;
+ 
+ 	if (copy_from_user(tmp_str, buffer, count))
+diff --git a/drivers/mtd/nand/qcom_nandc.c b/drivers/mtd/nand/qcom_nandc.c
+index 6f0fd1512ad2..dc4943134649 100644
+--- a/drivers/mtd/nand/qcom_nandc.c
++++ b/drivers/mtd/nand/qcom_nandc.c
+@@ -2008,6 +2008,9 @@ static int qcom_nand_host_init(struct qcom_nand_controller *nandc,
+ 
+ 	nand_set_flash_node(chip, dn);
+ 	mtd->name = devm_kasprintf(dev, GFP_KERNEL, "qcom_nand.%d", host->cs);
++	if (!mtd->name)
++		return -ENOMEM;
++
+ 	mtd->owner = THIS_MODULE;
+ 	mtd->dev.parent = dev;
+ 
+diff --git a/drivers/net/xen-netfront.c b/drivers/net/xen-netfront.c
+index 681256f97cb3..cd2c6ffdbdde 100644
+--- a/drivers/net/xen-netfront.c
++++ b/drivers/net/xen-netfront.c
+@@ -893,7 +893,6 @@ static RING_IDX xennet_fill_frags(struct netfront_queue *queue,
+ 				  struct sk_buff *skb,
+ 				  struct sk_buff_head *list)
+ {
+-	struct skb_shared_info *shinfo = skb_shinfo(skb);
+ 	RING_IDX cons = queue->rx.rsp_cons;
+ 	struct sk_buff *nskb;
+ 
+@@ -902,15 +901,16 @@ static RING_IDX xennet_fill_frags(struct netfront_queue *queue,
+ 			RING_GET_RESPONSE(&queue->rx, ++cons);
+ 		skb_frag_t *nfrag = &skb_shinfo(nskb)->frags[0];
+ 
+-		if (shinfo->nr_frags == MAX_SKB_FRAGS) {
++		if (skb_shinfo(skb)->nr_frags == MAX_SKB_FRAGS) {
+ 			unsigned int pull_to = NETFRONT_SKB_CB(skb)->pull_to;
+ 
+ 			BUG_ON(pull_to <= skb_headlen(skb));
+ 			__pskb_pull_tail(skb, pull_to - skb_headlen(skb));
+ 		}
+-		BUG_ON(shinfo->nr_frags >= MAX_SKB_FRAGS);
++		BUG_ON(skb_shinfo(skb)->nr_frags >= MAX_SKB_FRAGS);
+ 
+-		skb_add_rx_frag(skb, shinfo->nr_frags, skb_frag_page(nfrag),
++		skb_add_rx_frag(skb, skb_shinfo(skb)->nr_frags,
++				skb_frag_page(nfrag),
+ 				rx->offset, rx->status, PAGE_SIZE);
+ 
+ 		skb_shinfo(nskb)->nr_frags = 0;
+diff --git a/drivers/scsi/sr.c b/drivers/scsi/sr.c
+index 01699845c42c..cc484cb287d2 100644
+--- a/drivers/scsi/sr.c
++++ b/drivers/scsi/sr.c
+@@ -520,18 +520,26 @@ static int sr_init_command(struct scsi_cmnd *SCpnt)
+ static int sr_block_open(struct block_device *bdev, fmode_t mode)
+ {
+ 	struct scsi_cd *cd;
++	struct scsi_device *sdev;
+ 	int ret = -ENXIO;
+ 
++	cd = scsi_cd_get(bdev->bd_disk);
++	if (!cd)
++		goto out;
++
++	sdev = cd->device;
++	scsi_autopm_get_device(sdev);
+ 	check_disk_change(bdev);
+ 
+ 	mutex_lock(&sr_mutex);
+-	cd = scsi_cd_get(bdev->bd_disk);
+-	if (cd) {
+-		ret = cdrom_open(&cd->cdi, bdev, mode);
+-		if (ret)
+-			scsi_cd_put(cd);
+-	}
++	ret = cdrom_open(&cd->cdi, bdev, mode);
+ 	mutex_unlock(&sr_mutex);
++
++	scsi_autopm_put_device(sdev);
++	if (ret)
++		scsi_cd_put(cd);
++
++out:
+ 	return ret;
+ }
+ 
+@@ -559,6 +567,8 @@ static int sr_block_ioctl(struct block_device *bdev, fmode_t mode, unsigned cmd,
+ 	if (ret)
+ 		goto out;
+ 
++	scsi_autopm_get_device(sdev);
++
+ 	/*
+ 	 * Send SCSI addressing ioctls directly to mid level, send other
+ 	 * ioctls to cdrom/block level.
+@@ -567,15 +577,18 @@ static int sr_block_ioctl(struct block_device *bdev, fmode_t mode, unsigned cmd,
+ 	case SCSI_IOCTL_GET_IDLUN:
+ 	case SCSI_IOCTL_GET_BUS_NUMBER:
+ 		ret = scsi_ioctl(sdev, cmd, argp);
+-		goto out;
++		goto put;
+ 	}
+ 
+ 	ret = cdrom_ioctl(&cd->cdi, bdev, mode, cmd, arg);
+ 	if (ret != -ENOSYS)
+-		goto out;
++		goto put;
+ 
+ 	ret = scsi_ioctl(sdev, cmd, argp);
+ 
++put:
++	scsi_autopm_put_device(sdev);
++
+ out:
+ 	mutex_unlock(&sr_mutex);
+ 	return ret;
+diff --git a/fs/dcache.c b/fs/dcache.c
+index 7a5e6f9717f5..461ff8f234e3 100644
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -352,14 +352,11 @@ static void dentry_unlink_inode(struct dentry * dentry)
+ 	__releases(dentry->d_inode->i_lock)
+ {
+ 	struct inode *inode = dentry->d_inode;
+-	bool hashed = !d_unhashed(dentry);
+ 
+-	if (hashed)
+-		raw_write_seqcount_begin(&dentry->d_seq);
++	raw_write_seqcount_begin(&dentry->d_seq);
+ 	__d_clear_type_and_inode(dentry);
+ 	hlist_del_init(&dentry->d_u.d_alias);
+-	if (hashed)
+-		raw_write_seqcount_end(&dentry->d_seq);
++	raw_write_seqcount_end(&dentry->d_seq);
+ 	spin_unlock(&dentry->d_lock);
+ 	spin_unlock(&inode->i_lock);
+ 	if (!inode->i_nlink)
+@@ -1914,10 +1911,12 @@ struct dentry *d_make_root(struct inode *root_inode)
+ 
+ 	if (root_inode) {
+ 		res = __d_alloc(root_inode->i_sb, NULL);
+-		if (res)
++		if (res) {
++			res->d_flags |= DCACHE_RCUACCESS;
+ 			d_instantiate(res, root_inode);
+-		else
++		} else {
+ 			iput(root_inode);
++		}
+ 	}
+ 	return res;
+ }
+diff --git a/fs/ext4/ialloc.c b/fs/ext4/ialloc.c
+index ffaf66a51de3..4f78e099de1d 100644
+--- a/fs/ext4/ialloc.c
++++ b/fs/ext4/ialloc.c
+@@ -1316,7 +1316,10 @@ int ext4_init_inode_table(struct super_block *sb, ext4_group_t group,
+ 			    ext4_itable_unused_count(sb, gdp)),
+ 			    sbi->s_inodes_per_block);
+ 
+-	if ((used_blks < 0) || (used_blks > sbi->s_itb_per_group)) {
++	if ((used_blks < 0) || (used_blks > sbi->s_itb_per_group) ||
++	    ((group == 0) && ((EXT4_INODES_PER_GROUP(sb) -
++			       ext4_itable_unused_count(sb, gdp)) <
++			      EXT4_FIRST_INO(sb)))) {
+ 		ext4_error(sb, "Something is wrong with group %u: "
+ 			   "used itable blocks: %d; "
+ 			   "itable unused count: %u",
+diff --git a/fs/ext4/super.c b/fs/ext4/super.c
+index 6cbb0f7ead2f..9d44b3683b46 100644
+--- a/fs/ext4/super.c
++++ b/fs/ext4/super.c
+@@ -3031,14 +3031,8 @@ static ext4_group_t ext4_has_uninit_itable(struct super_block *sb)
+ 		if (!gdp)
+ 			continue;
+ 
+-		if (gdp->bg_flags & cpu_to_le16(EXT4_BG_INODE_ZEROED))
+-			continue;
+-		if (group != 0)
++		if (!(gdp->bg_flags & cpu_to_le16(EXT4_BG_INODE_ZEROED)))
+ 			break;
+-		ext4_error(sb, "Inode table for bg 0 marked as "
+-			   "needing zeroing");
+-		if (sb->s_flags & MS_RDONLY)
+-			return ngroups;
+ 	}
+ 
+ 	return group;
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 6c873b330a93..0a9e766b4087 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -603,12 +603,21 @@ int __legitimize_mnt(struct vfsmount *bastard, unsigned seq)
+ 		return 0;
+ 	mnt = real_mount(bastard);
+ 	mnt_add_count(mnt, 1);
++	smp_mb();			// see mntput_no_expire()
+ 	if (likely(!read_seqretry(&mount_lock, seq)))
+ 		return 0;
+ 	if (bastard->mnt_flags & MNT_SYNC_UMOUNT) {
+ 		mnt_add_count(mnt, -1);
+ 		return 1;
+ 	}
++	lock_mount_hash();
++	if (unlikely(bastard->mnt_flags & MNT_DOOMED)) {
++		mnt_add_count(mnt, -1);
++		unlock_mount_hash();
++		return 1;
++	}
++	unlock_mount_hash();
++	/* caller will mntput() */
+ 	return -1;
+ }
+ 
+@@ -1139,12 +1148,27 @@ static DECLARE_DELAYED_WORK(delayed_mntput_work, delayed_mntput);
+ static void mntput_no_expire(struct mount *mnt)
+ {
+ 	rcu_read_lock();
+-	mnt_add_count(mnt, -1);
+-	if (likely(mnt->mnt_ns)) { /* shouldn't be the last one */
++	if (likely(READ_ONCE(mnt->mnt_ns))) {
++		/*
++		 * Since we don't do lock_mount_hash() here,
++		 * ->mnt_ns can change under us.  However, if it's
++		 * non-NULL, then there's a reference that won't
++		 * be dropped until after an RCU delay done after
++		 * turning ->mnt_ns NULL.  So if we observe it
++		 * non-NULL under rcu_read_lock(), the reference
++		 * we are dropping is not the final one.
++		 */
++		mnt_add_count(mnt, -1);
+ 		rcu_read_unlock();
+ 		return;
+ 	}
+ 	lock_mount_hash();
++	/*
++	 * make sure that if __legitimize_mnt() has not seen us grab
++	 * mount_lock, we'll see their refcount increment here.
++	 */
++	smp_mb();
++	mnt_add_count(mnt, -1);
+ 	if (mnt_get_count(mnt)) {
+ 		rcu_read_unlock();
+ 		unlock_mount_hash();
+diff --git a/fs/proc/inode.c b/fs/proc/inode.c
+index e69ebe648a34..c2afe39f0b9e 100644
+--- a/fs/proc/inode.c
++++ b/fs/proc/inode.c
+@@ -43,10 +43,11 @@ static void proc_evict_inode(struct inode *inode)
+ 	de = PDE(inode);
+ 	if (de)
+ 		pde_put(de);
++
+ 	head = PROC_I(inode)->sysctl;
+ 	if (head) {
+ 		RCU_INIT_POINTER(PROC_I(inode)->sysctl, NULL);
+-		sysctl_head_put(head);
++		proc_sys_evict_inode(inode, head);
+ 	}
+ }
+ 
+diff --git a/fs/proc/internal.h b/fs/proc/internal.h
+index 5378441ec1b7..c0bdeceaaeb6 100644
+--- a/fs/proc/internal.h
++++ b/fs/proc/internal.h
+@@ -65,6 +65,7 @@ struct proc_inode {
+ 	struct proc_dir_entry *pde;
+ 	struct ctl_table_header *sysctl;
+ 	struct ctl_table *sysctl_entry;
++	struct hlist_node sysctl_inodes;
+ 	const struct proc_ns_operations *ns_ops;
+ 	struct inode vfs_inode;
+ };
+@@ -249,10 +250,12 @@ extern void proc_thread_self_init(void);
+  */
+ #ifdef CONFIG_PROC_SYSCTL
+ extern int proc_sys_init(void);
+-extern void sysctl_head_put(struct ctl_table_header *);
++extern void proc_sys_evict_inode(struct inode *inode,
++				 struct ctl_table_header *head);
+ #else
+ static inline void proc_sys_init(void) { }
+-static inline void sysctl_head_put(struct ctl_table_header *head) { }
++static inline void proc_sys_evict_inode(struct  inode *inode,
++					struct ctl_table_header *head) { }
+ #endif
+ 
+ /*
+diff --git a/fs/proc/proc_sysctl.c b/fs/proc/proc_sysctl.c
+index 847f23420b40..46cd2e1b055b 100644
+--- a/fs/proc/proc_sysctl.c
++++ b/fs/proc/proc_sysctl.c
+@@ -190,6 +190,7 @@ static void init_header(struct ctl_table_header *head,
+ 	head->set = set;
+ 	head->parent = NULL;
+ 	head->node = node;
++	INIT_HLIST_HEAD(&head->inodes);
+ 	if (node) {
+ 		struct ctl_table *entry;
+ 		for (entry = table; entry->procname; entry++, node++)
+@@ -259,6 +260,44 @@ static void unuse_table(struct ctl_table_header *p)
+ 			complete(p->unregistering);
+ }
+ 
++static void proc_sys_prune_dcache(struct ctl_table_header *head)
++{
++	struct inode *inode;
++	struct proc_inode *ei;
++	struct hlist_node *node;
++	struct super_block *sb;
++
++	rcu_read_lock();
++	for (;;) {
++		node = hlist_first_rcu(&head->inodes);
++		if (!node)
++			break;
++		ei = hlist_entry(node, struct proc_inode, sysctl_inodes);
++		spin_lock(&sysctl_lock);
++		hlist_del_init_rcu(&ei->sysctl_inodes);
++		spin_unlock(&sysctl_lock);
++
++		inode = &ei->vfs_inode;
++		sb = inode->i_sb;
++		if (!atomic_inc_not_zero(&sb->s_active))
++			continue;
++		inode = igrab(inode);
++		rcu_read_unlock();
++		if (unlikely(!inode)) {
++			deactivate_super(sb);
++			rcu_read_lock();
++			continue;
++		}
++
++		d_prune_aliases(inode);
++		iput(inode);
++		deactivate_super(sb);
++
++		rcu_read_lock();
++	}
++	rcu_read_unlock();
++}
++
+ /* called under sysctl_lock, will reacquire if has to wait */
+ static void start_unregistering(struct ctl_table_header *p)
+ {
+@@ -272,31 +311,22 @@ static void start_unregistering(struct ctl_table_header *p)
+ 		p->unregistering = &wait;
+ 		spin_unlock(&sysctl_lock);
+ 		wait_for_completion(&wait);
+-		spin_lock(&sysctl_lock);
+ 	} else {
+ 		/* anything non-NULL; we'll never dereference it */
+ 		p->unregistering = ERR_PTR(-EINVAL);
++		spin_unlock(&sysctl_lock);
+ 	}
++	/*
++	 * Prune dentries for unregistered sysctls: namespaced sysctls
++	 * can have duplicate names and contaminate dcache very badly.
++	 */
++	proc_sys_prune_dcache(p);
+ 	/*
+ 	 * do not remove from the list until nobody holds it; walking the
+ 	 * list in do_sysctl() relies on that.
+ 	 */
+-	erase_header(p);
+-}
+-
+-static void sysctl_head_get(struct ctl_table_header *head)
+-{
+ 	spin_lock(&sysctl_lock);
+-	head->count++;
+-	spin_unlock(&sysctl_lock);
+-}
+-
+-void sysctl_head_put(struct ctl_table_header *head)
+-{
+-	spin_lock(&sysctl_lock);
+-	if (!--head->count)
+-		kfree_rcu(head, rcu);
+-	spin_unlock(&sysctl_lock);
++	erase_header(p);
+ }
+ 
+ static struct ctl_table_header *sysctl_head_grab(struct ctl_table_header *head)
+@@ -440,10 +470,20 @@ static struct inode *proc_sys_make_inode(struct super_block *sb,
+ 
+ 	inode->i_ino = get_next_ino();
+ 
+-	sysctl_head_get(head);
+ 	ei = PROC_I(inode);
++
++	spin_lock(&sysctl_lock);
++	if (unlikely(head->unregistering)) {
++		spin_unlock(&sysctl_lock);
++		iput(inode);
++		inode = NULL;
++		goto out;
++	}
+ 	ei->sysctl = head;
+ 	ei->sysctl_entry = table;
++	hlist_add_head_rcu(&ei->sysctl_inodes, &head->inodes);
++	head->count++;
++	spin_unlock(&sysctl_lock);
+ 
+ 	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
+ 	inode->i_mode = table->mode;
+@@ -466,6 +506,15 @@ out:
+ 	return inode;
+ }
+ 
++void proc_sys_evict_inode(struct inode *inode, struct ctl_table_header *head)
++{
++	spin_lock(&sysctl_lock);
++	hlist_del_init_rcu(&PROC_I(inode)->sysctl_inodes);
++	if (!--head->count)
++		kfree_rcu(head, rcu);
++	spin_unlock(&sysctl_lock);
++}
++
+ static struct ctl_table_header *grab_header(struct inode *inode)
+ {
+ 	struct ctl_table_header *head = PROC_I(inode)->sysctl;
+diff --git a/include/linux/swapfile.h b/include/linux/swapfile.h
+index 388293a91e8c..e4594de79bc4 100644
+--- a/include/linux/swapfile.h
++++ b/include/linux/swapfile.h
+@@ -9,5 +9,7 @@ extern spinlock_t swap_lock;
+ extern struct plist_head swap_active_head;
+ extern struct swap_info_struct *swap_info[];
+ extern int try_to_unuse(unsigned int, bool, unsigned long);
++extern unsigned long generic_max_swapfile_size(void);
++extern unsigned long max_swapfile_size(void);
+ 
+ #endif /* _LINUX_SWAPFILE_H */
+diff --git a/include/linux/sysctl.h b/include/linux/sysctl.h
+index adf4e51cf597..0e5cc33b9b25 100644
+--- a/include/linux/sysctl.h
++++ b/include/linux/sysctl.h
+@@ -143,6 +143,7 @@ struct ctl_table_header
+ 	struct ctl_table_set *set;
+ 	struct ctl_dir *parent;
+ 	struct ctl_node *node;
++	struct hlist_head inodes; /* head for proc_inode->sysctl_inodes */
+ };
+ 
+ struct ctl_dir {
+diff --git a/include/rdma/ib_verbs.h b/include/rdma/ib_verbs.h
+index 5ad43a487745..a42535f252b5 100644
+--- a/include/rdma/ib_verbs.h
++++ b/include/rdma/ib_verbs.h
+@@ -3308,6 +3308,20 @@ static inline int ib_check_mr_access(int flags)
+ 	return 0;
+ }
+ 
++static inline bool ib_access_writable(int access_flags)
++{
++	/*
++	 * We have writable memory backing the MR if any of the following
++	 * access flags are set.  "Local write" and "remote write" obviously
++	 * require write access.  "Remote atomic" can do things like fetch and
++	 * add, which will modify memory, and "MW bind" can change permissions
++	 * by binding a window.
++	 */
++	return access_flags &
++		(IB_ACCESS_LOCAL_WRITE   | IB_ACCESS_REMOTE_WRITE |
++		 IB_ACCESS_REMOTE_ATOMIC | IB_ACCESS_MW_BIND);
++}
++
+ /**
+  * ib_check_mr_status: lightweight check of MR status.
+  *     This routine may provide status checks on a selected
+diff --git a/mm/swapfile.c b/mm/swapfile.c
+index 79c03ecd31c8..855f62ab8c1b 100644
+--- a/mm/swapfile.c
++++ b/mm/swapfile.c
+@@ -2219,6 +2219,35 @@ static int claim_swapfile(struct swap_info_struct *p, struct inode *inode)
+ 	return 0;
+ }
+ 
++
++/*
++ * Find out how many pages are allowed for a single swap device. There
++ * are two limiting factors:
++ * 1) the number of bits for the swap offset in the swp_entry_t type, and
++ * 2) the number of bits in the swap pte, as defined by the different
++ * architectures.
++ *
++ * In order to find the largest possible bit mask, a swap entry with
++ * swap type 0 and swap offset ~0UL is created, encoded to a swap pte,
++ * decoded to a swp_entry_t again, and finally the swap offset is
++ * extracted.
++ *
++ * This will mask all the bits from the initial ~0UL mask that can't
++ * be encoded in either the swp_entry_t or the architecture definition
++ * of a swap pte.
++ */
++unsigned long generic_max_swapfile_size(void)
++{
++	return swp_offset(pte_to_swp_entry(
++			swp_entry_to_pte(swp_entry(0, ~0UL)))) + 1;
++}
++
++/* Can be overridden by an architecture for additional checks. */
++__weak unsigned long max_swapfile_size(void)
++{
++	return generic_max_swapfile_size();
++}
++
+ static unsigned long read_swap_header(struct swap_info_struct *p,
+ 					union swap_header *swap_header,
+ 					struct inode *inode)
+@@ -2254,22 +2283,7 @@ static unsigned long read_swap_header(struct swap_info_struct *p,
+ 	p->cluster_next = 1;
+ 	p->cluster_nr = 0;
+ 
+-	/*
+-	 * Find out how many pages are allowed for a single swap
+-	 * device. There are two limiting factors: 1) the number
+-	 * of bits for the swap offset in the swp_entry_t type, and
+-	 * 2) the number of bits in the swap pte as defined by the
+-	 * different architectures. In order to find the
+-	 * largest possible bit mask, a swap entry with swap type 0
+-	 * and swap offset ~0UL is created, encoded to a swap pte,
+-	 * decoded to a swp_entry_t again, and finally the swap
+-	 * offset is extracted. This will mask all the bits from
+-	 * the initial ~0UL mask that can't be encoded in either
+-	 * the swp_entry_t or the architecture definition of a
+-	 * swap pte.
+-	 */
+-	maxpages = swp_offset(pte_to_swp_entry(
+-			swp_entry_to_pte(swp_entry(0, ~0UL)))) + 1;
++	maxpages = max_swapfile_size();
+ 	last_page = swap_header->info.last_page;
+ 	if (!last_page) {
+ 		pr_warn("Empty swap-file\n");
+diff --git a/kernel/softirq.c b/kernel/softirq.c
+index 744fa611cae0..d257e624be25 100644
+--- a/kernel/softirq.c
++++ b/kernel/softirq.c
+@@ -79,12 +79,16 @@ static void wakeup_softirqd(void)
+ 
+ /*
+  * If ksoftirqd is scheduled, we do not want to process pending softirqs
+- * right now. Let ksoftirqd handle this at its own rate, to get fairness.
++ * right now. Let ksoftirqd handle this at its own rate, to get fairness,
++ * unless we're doing some of the synchronous softirqs.
+  */
+-static bool ksoftirqd_running(void)
++#define SOFTIRQ_NOW_MASK ((1 << HI_SOFTIRQ) | (1 << TASKLET_SOFTIRQ))
++static bool ksoftirqd_running(unsigned long pending)
+ {
+ 	struct task_struct *tsk = __this_cpu_read(ksoftirqd);
+ 
++	if (pending & SOFTIRQ_NOW_MASK)
++		return false;
+ 	return tsk && (tsk->state == TASK_RUNNING);
+ }
+ 
+@@ -324,7 +328,7 @@ asmlinkage __visible void do_softirq(void)
+ 
+ 	pending = local_softirq_pending();
+ 
+-	if (pending && !ksoftirqd_running())
++	if (pending && !ksoftirqd_running(pending))
+ 		do_softirq_own_stack();
+ 
+ 	local_irq_restore(flags);
+@@ -351,7 +355,7 @@ void irq_enter(void)
+ 
+ static inline void invoke_softirq(void)
+ {
+-	if (ksoftirqd_running())
++	if (ksoftirqd_running(local_softirq_pending()))
+ 		return;
+ 
+ 	if (!force_irqthreads) {
+diff --git a/arch/arm/boot/dts/imx6sx.dtsi b/arch/arm/boot/dts/imx6sx.dtsi
+index 1a473e83efbf..a885052157f0 100644
+--- a/arch/arm/boot/dts/imx6sx.dtsi
++++ b/arch/arm/boot/dts/imx6sx.dtsi
+@@ -1280,7 +1280,7 @@
+ 				  /* non-prefetchable memory */
+ 				  0x82000000 0 0x08000000 0x08000000 0 0x00f00000>;
+ 			num-lanes = <1>;
+-			interrupts = <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>;
++			interrupts = <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&clks IMX6SX_CLK_PCIE_REF_125M>,
+ 				 <&clks IMX6SX_CLK_PCIE_AXI>,
+ 				 <&clks IMX6SX_CLK_LVDS1_OUT>,
+diff --git a/drivers/acpi/acpi_lpss.c b/drivers/acpi/acpi_lpss.c
+index 373657f7e35a..3cdd2c3a5bfc 100644
+--- a/drivers/acpi/acpi_lpss.c
++++ b/drivers/acpi/acpi_lpss.c
+@@ -187,10 +187,12 @@ static const struct lpss_device_desc lpt_sdio_dev_desc = {
+ 
+ static const struct lpss_device_desc byt_pwm_dev_desc = {
+ 	.flags = LPSS_SAVE_CTX,
++	.prv_offset = 0x800,
+ };
+ 
+ static const struct lpss_device_desc bsw_pwm_dev_desc = {
+ 	.flags = LPSS_SAVE_CTX | LPSS_NO_D3_DELAY,
++	.prv_offset = 0x800,
+ };
+ 
+ static const struct lpss_device_desc byt_uart_dev_desc = {
+diff --git a/drivers/char/tpm/tpm-dev.c b/drivers/char/tpm/tpm-dev.c
+index 65b824954bdc..1662e4688ee2 100644
+--- a/drivers/char/tpm/tpm-dev.c
++++ b/drivers/char/tpm/tpm-dev.c
+@@ -25,7 +25,7 @@ struct file_priv {
+ 	struct tpm_chip *chip;
+ 
+ 	/* Data passed to and from the tpm via the read/write calls */
+-	atomic_t data_pending;
++	size_t data_pending;
+ 	struct mutex buffer_mutex;
+ 
+ 	struct timer_list user_read_timer;      /* user needs to claim result */
+@@ -46,7 +46,7 @@ static void timeout_work(struct work_struct *work)
+ 	struct file_priv *priv = container_of(work, struct file_priv, work);
+ 
+ 	mutex_lock(&priv->buffer_mutex);
+-	atomic_set(&priv->data_pending, 0);
++	priv->data_pending = 0;
+ 	memset(priv->data_buffer, 0, sizeof(priv->data_buffer));
+ 	mutex_unlock(&priv->buffer_mutex);
+ }
+@@ -72,7 +72,6 @@ static int tpm_open(struct inode *inode, struct file *file)
+ 	}
+ 
+ 	priv->chip = chip;
+-	atomic_set(&priv->data_pending, 0);
+ 	mutex_init(&priv->buffer_mutex);
+ 	setup_timer(&priv->user_read_timer, user_reader_timeout,
+ 			(unsigned long)priv);
+@@ -86,28 +85,24 @@ static ssize_t tpm_read(struct file *file, char __user *buf,
+ 			size_t size, loff_t *off)
+ {
+ 	struct file_priv *priv = file->private_data;
+-	ssize_t ret_size;
++	ssize_t ret_size = 0;
+ 	int rc;
+ 
+ 	del_singleshot_timer_sync(&priv->user_read_timer);
+ 	flush_work(&priv->work);
+-	ret_size = atomic_read(&priv->data_pending);
+-	if (ret_size > 0) {	/* relay data */
+-		ssize_t orig_ret_size = ret_size;
+-		if (size < ret_size)
+-			ret_size = size;
++	mutex_lock(&priv->buffer_mutex);
+ 
+-		mutex_lock(&priv->buffer_mutex);
++	if (priv->data_pending) {
++		ret_size = min_t(ssize_t, size, priv->data_pending);
+ 		rc = copy_to_user(buf, priv->data_buffer, ret_size);
+-		memset(priv->data_buffer, 0, orig_ret_size);
++		memset(priv->data_buffer, 0, priv->data_pending);
+ 		if (rc)
+ 			ret_size = -EFAULT;
+ 
+-		mutex_unlock(&priv->buffer_mutex);
++		priv->data_pending = 0;
+ 	}
+ 
+-	atomic_set(&priv->data_pending, 0);
+-
++	mutex_unlock(&priv->buffer_mutex);
+ 	return ret_size;
+ }
+ 
+@@ -118,18 +113,20 @@ static ssize_t tpm_write(struct file *file, const char __user *buf,
+ 	size_t in_size = size;
+ 	ssize_t out_size;
+ 
+-	/* cannot perform a write until the read has cleared
+-	   either via tpm_read or a user_read_timer timeout.
+-	   This also prevents splitted buffered writes from blocking here.
+-	*/
+-	if (atomic_read(&priv->data_pending) != 0)
+-		return -EBUSY;
+-
+ 	if (in_size > TPM_BUFSIZE)
+ 		return -E2BIG;
+ 
+ 	mutex_lock(&priv->buffer_mutex);
+ 
++	/* Cannot perform a write until the read has cleared either via
++	 * tpm_read or a user_read_timer timeout. This also prevents split
++	 * buffered writes from blocking here.
++	 */
++	if (priv->data_pending != 0) {
++		mutex_unlock(&priv->buffer_mutex);
++		return -EBUSY;
++	}
++
+ 	if (copy_from_user
+ 	    (priv->data_buffer, (void __user *) buf, in_size)) {
+ 		mutex_unlock(&priv->buffer_mutex);
+@@ -159,7 +156,7 @@ static ssize_t tpm_write(struct file *file, const char __user *buf,
+ 		return out_size;
+ 	}
+ 
+-	atomic_set(&priv->data_pending, out_size);
++	priv->data_pending = out_size;
+ 	mutex_unlock(&priv->buffer_mutex);
+ 
+ 	/* Set a timeout by which the reader must come claim the result */
+@@ -178,7 +175,7 @@ static int tpm_release(struct inode *inode, struct file *file)
+ 	del_singleshot_timer_sync(&priv->user_read_timer);
+ 	flush_work(&priv->work);
+ 	file->private_data = NULL;
+-	atomic_set(&priv->data_pending, 0);
++	priv->data_pending = 0;
+ 	clear_bit(0, &priv->chip->is_open);
+ 	kfree(priv);
+ 	return 0;
+diff --git a/drivers/infiniband/core/umem.c b/drivers/infiniband/core/umem.c
+index e74aa1d60fdb..99cebf3a9163 100644
+--- a/drivers/infiniband/core/umem.c
++++ b/drivers/infiniband/core/umem.c
+@@ -122,16 +122,7 @@ struct ib_umem *ib_umem_get(struct ib_ucontext *context, unsigned long addr,
+ 	umem->address   = addr;
+ 	umem->page_size = PAGE_SIZE;
+ 	umem->pid       = get_task_pid(current, PIDTYPE_PID);
+-	/*
+-	 * We ask for writable memory if any of the following
+-	 * access flags are set.  "Local write" and "remote write"
+-	 * obviously require write access.  "Remote atomic" can do
+-	 * things like fetch and add, which will modify memory, and
+-	 * "MW bind" can change permissions by binding a window.
+-	 */
+-	umem->writable  = !!(access &
+-		(IB_ACCESS_LOCAL_WRITE   | IB_ACCESS_REMOTE_WRITE |
+-		 IB_ACCESS_REMOTE_ATOMIC | IB_ACCESS_MW_BIND));
++	umem->writable   = ib_access_writable(access);
+ 
+ 	if (access & IB_ACCESS_ON_DEMAND) {
+ 		put_pid(umem->pid);
+diff --git a/drivers/infiniband/hw/mlx4/mr.c b/drivers/infiniband/hw/mlx4/mr.c
+index ae41623e0f13..0d4878efd643 100644
+--- a/drivers/infiniband/hw/mlx4/mr.c
++++ b/drivers/infiniband/hw/mlx4/mr.c
+@@ -131,6 +131,40 @@ out:
+ 	return err;
+ }
+ 
++static struct ib_umem *mlx4_get_umem_mr(struct ib_ucontext *context, u64 start,
++					u64 length, u64 virt_addr,
++					int access_flags)
++{
++	/*
++	 * Force registering the memory as writable if the underlying pages
++	 * are writable.  This is so rereg can change the access permissions
++	 * from readable to writable without having to run through ib_umem_get
++	 * again
++	 */
++	if (!ib_access_writable(access_flags)) {
++		struct vm_area_struct *vma;
++
++		down_read(&current->mm->mmap_sem);
++		/*
++		 * FIXME: Ideally this would iterate over all the vmas that
++		 * cover the memory, but for now it requires a single vma to
++		 * entirely cover the MR to support RO mappings.
++		 */
++		vma = find_vma(current->mm, start);
++		if (vma && vma->vm_end >= start + length &&
++		    vma->vm_start <= start) {
++			if (vma->vm_flags & VM_WRITE)
++				access_flags |= IB_ACCESS_LOCAL_WRITE;
++		} else {
++			access_flags |= IB_ACCESS_LOCAL_WRITE;
++		}
++
++		up_read(&current->mm->mmap_sem);
++	}
++
++	return ib_umem_get(context, start, length, access_flags, 0);
++}
++
+ struct ib_mr *mlx4_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
+ 				  u64 virt_addr, int access_flags,
+ 				  struct ib_udata *udata)
+@@ -145,10 +179,8 @@ struct ib_mr *mlx4_ib_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
+ 	if (!mr)
+ 		return ERR_PTR(-ENOMEM);
+ 
+-	/* Force registering the memory as writable. */
+-	/* Used for memory re-registeration. HCA protects the access */
+-	mr->umem = ib_umem_get(pd->uobject->context, start, length,
+-			       access_flags | IB_ACCESS_LOCAL_WRITE, 0);
++	mr->umem = mlx4_get_umem_mr(pd->uobject->context, start, length,
++				    virt_addr, access_flags);
+ 	if (IS_ERR(mr->umem)) {
+ 		err = PTR_ERR(mr->umem);
+ 		goto err_free;
+@@ -215,6 +247,9 @@ int mlx4_ib_rereg_user_mr(struct ib_mr *mr, int flags,
+ 	}
+ 
+ 	if (flags & IB_MR_REREG_ACCESS) {
++		if (ib_access_writable(mr_access_flags) && !mmr->umem->writable)
++			return -EPERM;
++
+ 		err = mlx4_mr_hw_change_access(dev->dev, *pmpt_entry,
+ 					       convert_access(mr_access_flags));
+ 
+@@ -228,10 +263,9 @@ int mlx4_ib_rereg_user_mr(struct ib_mr *mr, int flags,
+ 
+ 		mlx4_mr_rereg_mem_cleanup(dev->dev, &mmr->mmr);
+ 		ib_umem_release(mmr->umem);
+-		mmr->umem = ib_umem_get(mr->uobject->context, start, length,
+-					mr_access_flags |
+-					IB_ACCESS_LOCAL_WRITE,
+-					0);
++		mmr->umem =
++			mlx4_get_umem_mr(mr->uobject->context, start, length,
++					 virt_addr, mr_access_flags);
+ 		if (IS_ERR(mmr->umem)) {
+ 			err = PTR_ERR(mmr->umem);
+ 			/* Prevent mlx4_ib_dereg_mr from free'ing invalid pointer */

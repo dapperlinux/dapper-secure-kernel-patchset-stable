@@ -1,5 +1,5 @@
 KERNEL_MAJOR_VERSION=4.9
-KERNEL_VERSION=4.9.119
+KERNEL_VERSION=4.9.120
 
 echo "Setting up rebase directory..."
 rm -rf rebase

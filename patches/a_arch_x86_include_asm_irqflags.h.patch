@@ -2,11 +2,13 @@ diff --git a/arch/x86/include/asm/irqflags.h b/arch/x86/include/asm/irqflags.h
 index ac7692d..90e119c 100644
 --- a/arch/x86/include/asm/irqflags.h
 +++ b/arch/x86/include/asm/irqflags.h
-@@ -12,7 +12,7 @@
-  * Interrupt control:
+@@ -13,8 +13,8 @@
   */
  
+ /* Declaration required for gcc < 4.9 to prevent -Werror=missing-prototypes */
+-extern inline unsigned long native_save_fl(void);
 -extern inline unsigned long native_save_fl(void)
++extern inline asmlinkage unsigned long native_save_fl(void);
 +extern inline asmlinkage unsigned long native_save_fl(void)
  {
  	unsigned long flags;
