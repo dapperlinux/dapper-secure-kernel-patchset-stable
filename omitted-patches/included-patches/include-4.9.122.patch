@@ -1,0 +1,12 @@
+diff --git a/Makefile b/Makefile
+index e54a126841a9..1f44343a1e04 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,6 +1,6 @@
+ VERSION = 4
+ PATCHLEVEL = 9
+-SUBLEVEL = 121
++SUBLEVEL = 122
+ EXTRAVERSION =
+ NAME = Roaring Lionus
+ 
