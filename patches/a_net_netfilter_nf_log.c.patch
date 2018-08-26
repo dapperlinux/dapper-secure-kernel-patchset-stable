@@ -11,15 +11,15 @@ index 3dca90d..29b498f 100644
  
  static int nf_log_proc_dostring(struct ctl_table *table, int write,
  			 void __user *buffer, size_t *lenp, loff_t *ppos)
-@@ -425,7 +425,7 @@ static int nf_log_proc_dostring(struct ctl_table *table, int write,
+@@ -424,7 +424,7 @@ static int nf_log_proc_dostring(struct ctl_table *table, int write,
  	struct net *net = table->extra2;
  
  	if (write) {
 -		struct ctl_table tmp = *table;
 +		ctl_table_no_const tmp = *table;
  
- 		tmp.data = buf;
- 		r = proc_dostring(&tmp, write, buffer, lenp, ppos);
+ 		/* proc_dostring() can append to existing strings, so we need to
+ 		 * initialize it as an empty string.
 @@ -444,7 +444,7 @@ static int nf_log_proc_dostring(struct ctl_table *table, int write,
  		rcu_assign_pointer(net->nf.nf_loggers[tindex], logger);
  		mutex_unlock(&nf_log_mutex);
