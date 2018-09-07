@@ -1,0 +1,307 @@
+diff --git a/arch/arm/kvm/mmu.c b/arch/arm/kvm/mmu.c
+index 7f868d9bb5ed..b3d268a79f05 100644
+--- a/arch/arm/kvm/mmu.c
++++ b/arch/arm/kvm/mmu.c
+@@ -894,19 +894,35 @@ static int stage2_set_pmd_huge(struct kvm *kvm, struct kvm_mmu_memory_cache
+ 	pmd = stage2_get_pmd(kvm, cache, addr);
+ 	VM_BUG_ON(!pmd);
+ 
+-	/*
+-	 * Mapping in huge pages should only happen through a fault.  If a
+-	 * page is merged into a transparent huge page, the individual
+-	 * subpages of that huge page should be unmapped through MMU
+-	 * notifiers before we get here.
+-	 *
+-	 * Merging of CompoundPages is not supported; they should become
+-	 * splitting first, unmapped, merged, and mapped back in on-demand.
+-	 */
+-	VM_BUG_ON(pmd_present(*pmd) && pmd_pfn(*pmd) != pmd_pfn(*new_pmd));
+-
+ 	old_pmd = *pmd;
+ 	if (pmd_present(old_pmd)) {
++		/*
++		 * Multiple vcpus faulting on the same PMD entry, can
++		 * lead to them sequentially updating the PMD with the
++		 * same value. Following the break-before-make
++		 * (pmd_clear() followed by tlb_flush()) process can
++		 * hinder forward progress due to refaults generated
++		 * on missing translations.
++		 *
++		 * Skip updating the page table if the entry is
++		 * unchanged.
++		 */
++		if (pmd_val(old_pmd) == pmd_val(*new_pmd))
++			return 0;
++
++		/*
++		 * Mapping in huge pages should only happen through a
++		 * fault.  If a page is merged into a transparent huge
++		 * page, the individual subpages of that huge page
++		 * should be unmapped through MMU notifiers before we
++		 * get here.
++		 *
++		 * Merging of CompoundPages is not supported; they
++		 * should become splitting first, unmapped, merged,
++		 * and mapped back in on-demand.
++		 */
++		VM_BUG_ON(pmd_pfn(old_pmd) != pmd_pfn(*new_pmd));
++
+ 		pmd_clear(pmd);
+ 		kvm_tlb_flush_vmid_ipa(kvm, addr);
+ 	} else {
+@@ -962,6 +978,10 @@ static int stage2_set_pte(struct kvm *kvm, struct kvm_mmu_memory_cache *cache,
+ 	/* Create 2nd stage page table mapping - Level 3 */
+ 	old_pte = *pte;
+ 	if (pte_present(old_pte)) {
++		/* Skip page table update if there is no change */
++		if (pte_val(old_pte) == pte_val(*new_pte))
++			return 0;
++
+ 		kvm_set_pte(pte, __pte(0));
+ 		kvm_tlb_flush_vmid_ipa(kvm, addr);
+ 	} else {
+diff --git a/arch/arm64/mm/init.c b/arch/arm64/mm/init.c
+index 9d07b421f090..fa6b2fad7a3d 100644
+--- a/arch/arm64/mm/init.c
++++ b/arch/arm64/mm/init.c
+@@ -147,7 +147,11 @@ static void __init zone_sizes_init(unsigned long min, unsigned long max)
+ #ifdef CONFIG_HAVE_ARCH_PFN_VALID
+ int pfn_valid(unsigned long pfn)
+ {
+-	return memblock_is_map_memory(pfn << PAGE_SHIFT);
++	phys_addr_t addr = pfn << PAGE_SHIFT;
++
++	if ((addr >> PAGE_SHIFT) != pfn)
++		return 0;
++	return memblock_is_map_memory(addr);
+ }
+ EXPORT_SYMBOL(pfn_valid);
+ #endif
+diff --git a/arch/x86/kernel/cpu/bugs.c b/arch/x86/kernel/cpu/bugs.c
+index ac67a76550bd..8103adacbc83 100644
+--- a/arch/x86/kernel/cpu/bugs.c
++++ b/arch/x86/kernel/cpu/bugs.c
+@@ -651,6 +651,45 @@ EXPORT_SYMBOL_GPL(l1tf_mitigation);
+ enum vmx_l1d_flush_state l1tf_vmx_mitigation = VMENTER_L1D_FLUSH_AUTO;
+ EXPORT_SYMBOL_GPL(l1tf_vmx_mitigation);
+ 
++/*
++ * These CPUs all support 44bits physical address space internally in the
++ * cache but CPUID can report a smaller number of physical address bits.
++ *
++ * The L1TF mitigation uses the top most address bit for the inversion of
++ * non present PTEs. When the installed memory reaches into the top most
++ * address bit due to memory holes, which has been observed on machines
++ * which report 36bits physical address bits and have 32G RAM installed,
++ * then the mitigation range check in l1tf_select_mitigation() triggers.
++ * This is a false positive because the mitigation is still possible due to
++ * the fact that the cache uses 44bit internally. Use the cache bits
++ * instead of the reported physical bits and adjust them on the affected
++ * machines to 44bit if the reported bits are less than 44.
++ */
++static void override_cache_bits(struct cpuinfo_x86 *c)
++{
++	if (c->x86 != 6)
++		return;
++
++	switch (c->x86_model) {
++	case INTEL_FAM6_NEHALEM:
++	case INTEL_FAM6_WESTMERE:
++	case INTEL_FAM6_SANDYBRIDGE:
++	case INTEL_FAM6_IVYBRIDGE:
++	case INTEL_FAM6_HASWELL_CORE:
++	case INTEL_FAM6_HASWELL_ULT:
++	case INTEL_FAM6_HASWELL_GT3E:
++	case INTEL_FAM6_BROADWELL_CORE:
++	case INTEL_FAM6_BROADWELL_GT3E:
++	case INTEL_FAM6_SKYLAKE_MOBILE:
++	case INTEL_FAM6_SKYLAKE_DESKTOP:
++	case INTEL_FAM6_KABYLAKE_MOBILE:
++	case INTEL_FAM6_KABYLAKE_DESKTOP:
++		if (c->x86_cache_bits < 44)
++			c->x86_cache_bits = 44;
++		break;
++	}
++}
++
+ static void __init l1tf_select_mitigation(void)
+ {
+ 	u64 half_pa;
+@@ -658,6 +697,8 @@ static void __init l1tf_select_mitigation(void)
+ 	if (!boot_cpu_has_bug(X86_BUG_L1TF))
+ 		return;
+ 
++	override_cache_bits(&boot_cpu_data);
++
+ 	switch (l1tf_mitigation) {
+ 	case L1TF_MITIGATION_OFF:
+ 	case L1TF_MITIGATION_FLUSH_NOWARN:
+@@ -677,14 +718,13 @@ static void __init l1tf_select_mitigation(void)
+ 	return;
+ #endif
+ 
+-	/*
+-	 * This is extremely unlikely to happen because almost all
+-	 * systems have far more MAX_PA/2 than RAM can be fit into
+-	 * DIMM slots.
+-	 */
+ 	half_pa = (u64)l1tf_pfn_limit() << PAGE_SHIFT;
+ 	if (e820_any_mapped(half_pa, ULLONG_MAX - half_pa, E820_RAM)) {
+ 		pr_warn("System has more than MAX_PA/2 memory. L1TF mitigation not effective.\n");
++		pr_info("You may make it effective by booting the kernel with mem=%llu parameter.\n",
++				half_pa);
++		pr_info("However, doing so will make a part of your RAM unusable.\n");
++		pr_info("Reading https://www.kernel.org/doc/html/latest/admin-guide/l1tf.html might help you decide.\n");
+ 		return;
+ 	}
+ 
+diff --git a/arch/x86/kernel/cpu/common.c b/arch/x86/kernel/cpu/common.c
+index 13471b71bec7..dc0850bb74be 100644
+--- a/arch/x86/kernel/cpu/common.c
++++ b/arch/x86/kernel/cpu/common.c
+@@ -882,6 +882,7 @@ static void identify_cpu_without_cpuid(struct cpuinfo_x86 *c)
+ 			}
+ 		}
+ #endif
++	c->x86_cache_bits = c->x86_phys_bits;
+ }
+ 
+ static const __initconst struct x86_cpu_id cpu_no_speculation[] = {
+diff --git a/arch/x86/kernel/cpu/intel.c b/arch/x86/kernel/cpu/intel.c
+index 9ad86c4bf360..cee0fec0d232 100644
+--- a/arch/x86/kernel/cpu/intel.c
++++ b/arch/x86/kernel/cpu/intel.c
+@@ -109,6 +109,9 @@ static bool bad_spectre_microcode(struct cpuinfo_x86 *c)
+ 	if (cpu_has(c, X86_FEATURE_HYPERVISOR))
+ 		return false;
+ 
++	if (c->x86 != 6)
++		return false;
++
+ 	for (i = 0; i < ARRAY_SIZE(spectre_bad_microcodes); i++) {
+ 		if (c->x86_model == spectre_bad_microcodes[i].model &&
+ 		    c->x86_stepping == spectre_bad_microcodes[i].stepping)
+diff --git a/arch/x86/kvm/svm.c b/arch/x86/kvm/svm.c
+index c855080c7a71..5f44d63a9d69 100644
+--- a/arch/x86/kvm/svm.c
++++ b/arch/x86/kvm/svm.c
+@@ -4973,8 +4973,6 @@ static void svm_vcpu_run(struct kvm_vcpu *vcpu)
+ 
+ 	clgi();
+ 
+-	local_irq_enable();
+-
+ 	/*
+ 	 * If this vCPU has touched SPEC_CTRL, restore the guest's value if
+ 	 * it's non-zero. Since vmentry is serialising on affected CPUs, there
+@@ -4983,6 +4981,8 @@ static void svm_vcpu_run(struct kvm_vcpu *vcpu)
+ 	 */
+ 	x86_spec_ctrl_set_guest(svm->spec_ctrl, svm->virt_spec_ctrl);
+ 
++	local_irq_enable();
++
+ 	asm volatile (
+ 		"push %%" _ASM_BP "; \n\t"
+ 		"mov %c[rbx](%[svm]), %%" _ASM_BX " \n\t"
+@@ -5105,12 +5105,12 @@ static void svm_vcpu_run(struct kvm_vcpu *vcpu)
+ 	if (unlikely(!msr_write_intercepted(vcpu, MSR_IA32_SPEC_CTRL)))
+ 		svm->spec_ctrl = native_read_msr(MSR_IA32_SPEC_CTRL);
+ 
+-	x86_spec_ctrl_restore_host(svm->spec_ctrl, svm->virt_spec_ctrl);
+-
+ 	reload_tss(vcpu);
+ 
+ 	local_irq_disable();
+ 
++	x86_spec_ctrl_restore_host(svm->spec_ctrl, svm->virt_spec_ctrl);
++
+ 	vcpu->arch.cr2 = svm->vmcb->save.cr2;
+ 	vcpu->arch.regs[VCPU_REGS_RAX] = svm->vmcb->save.rax;
+ 	vcpu->arch.regs[VCPU_REGS_RSP] = svm->vmcb->save.rsp;
+diff --git a/arch/x86/kvm/vmx.c b/arch/x86/kvm/vmx.c
+index 12826607a995..8e4ac0a91309 100644
+--- a/arch/x86/kvm/vmx.c
++++ b/arch/x86/kvm/vmx.c
+@@ -8670,9 +8670,6 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
+  * information but as all relevant affected CPUs have 32KiB L1D cache size
+  * there is no point in doing so.
+  */
+-#define L1D_CACHE_ORDER 4
+-static void *vmx_l1d_flush_pages;
+-
+ static void vmx_l1d_flush(struct kvm_vcpu *vcpu)
+ {
+ 	int size = PAGE_SIZE << L1D_CACHE_ORDER;
+diff --git a/arch/x86/mm/init.c b/arch/x86/mm/init.c
+index 5d35b555115a..90801a8f19c9 100644
+--- a/arch/x86/mm/init.c
++++ b/arch/x86/mm/init.c
+@@ -792,7 +792,7 @@ unsigned long max_swapfile_size(void)
+ 
+ 	if (boot_cpu_has_bug(X86_BUG_L1TF)) {
+ 		/* Limit the swap file size to MAX_PA/2 for L1TF workaround */
+-		unsigned long l1tf_limit = l1tf_pfn_limit() + 1;
++		unsigned long long l1tf_limit = l1tf_pfn_limit();
+ 		/*
+ 		 * We encode swap offsets also with 3 bits below those for pfn
+ 		 * which makes the usable limit higher.
+@@ -800,7 +800,7 @@ unsigned long max_swapfile_size(void)
+ #if CONFIG_PGTABLE_LEVELS > 2
+ 		l1tf_limit <<= PAGE_SHIFT - SWP_OFFSET_FIRST_BIT;
+ #endif
+-		pages = min_t(unsigned long, l1tf_limit, pages);
++		pages = min_t(unsigned long long, l1tf_limit, pages);
+ 	}
+ 	return pages;
+ }
+diff --git a/arch/x86/mm/mmap.c b/arch/x86/mm/mmap.c
+index 5aad869fa205..74609a957c49 100644
+--- a/arch/x86/mm/mmap.c
++++ b/arch/x86/mm/mmap.c
+@@ -138,7 +138,7 @@ bool pfn_modify_allowed(unsigned long pfn, pgprot_t prot)
+ 	/* If it's real memory always allow */
+ 	if (pfn_valid(pfn))
+ 		return true;
+-	if (pfn > l1tf_pfn_limit() && !capable(CAP_SYS_ADMIN))
++	if (pfn >= l1tf_pfn_limit() && !capable(CAP_SYS_ADMIN))
+ 		return false;
+ 	return true;
+ }
+diff --git a/arch/s390/net/bpf_jit_comp.c b/arch/s390/net/bpf_jit_comp.c
+index 949a871e9506..8bd25aebf488 100644
+--- a/arch/s390/net/bpf_jit_comp.c
++++ b/arch/s390/net/bpf_jit_comp.c
+@@ -517,8 +517,6 @@ static void bpf_jit_epilogue(struct bpf_jit *jit)
+ 			/* br %r1 */
+ 			_EMIT2(0x07f1);
+ 		} else {
+-			/* larl %r1,.+14 */
+-			EMIT6_PCREL_RILB(0xc0000000, REG_1, jit->prg + 14);
+ 			/* ex 0,S390_lowcore.br_r1_tampoline */
+ 			EMIT4_DISP(0x44000000, REG_0, REG_0,
+ 				   offsetof(struct lowcore, br_r1_trampoline));
+diff --git a/arch/x86/include/asm/processor.h b/arch/x86/include/asm/processor.h
+index d5525a7e119e..ee8c6290c421 100644
+--- a/arch/x86/include/asm/processor.h
++++ b/arch/x86/include/asm/processor.h
+@@ -136,6 +136,8 @@ struct cpuinfo_x86 {
+ 	/* Index into per_cpu list: */
+ 	u16			cpu_index;
+ 	u32			microcode;
++	/* Address space bits used by the cache internally */
++	u8			x86_cache_bits;
+ };
+ 
+ #define X86_VENDOR_INTEL	0
+@@ -173,9 +175,9 @@ extern const struct seq_operations cpuinfo_op;
+ 
+ extern void cpu_detect(struct cpuinfo_x86 *c);
+ 
+-static inline unsigned long l1tf_pfn_limit(void)
++static inline unsigned long long l1tf_pfn_limit(void)
+ {
+-	return BIT(boot_cpu_data.x86_phys_bits - 1 - PAGE_SHIFT) - 1;
++	return BIT_ULL(boot_cpu_data.x86_cache_bits - 1 - PAGE_SHIFT);
+ }
+ 
+ extern void early_cpu_init(void);

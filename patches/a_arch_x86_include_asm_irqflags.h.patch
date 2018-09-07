@@ -13,7 +13,7 @@ index ac7692d..90e119c 100644
  {
  	unsigned long flags;
  
-@@ -27,23 +27,29 @@ static inline unsigned long native_save_fl(void)
+@@ -29,24 +29,30 @@ extern inline unsigned long native_save_fl(void)
  		     : /* no input */
  		     : "memory");
  
@@ -23,7 +23,8 @@ index ac7692d..90e119c 100644
  	return flags;
  }
  
- static inline void native_restore_fl(unsigned long flags)
+ extern inline void native_restore_fl(unsigned long flags);
+ extern inline void native_restore_fl(unsigned long flags)
  {
 +#if !defined(CONFIG_GRKERNSEC_CONFIG_VIRT_HOST) || !defined(CONFIG_GRKERNSEC_CONFIG_VIRT_VIRTUALBOX)
 +	BUG_ON(flags & X86_EFLAGS_AC);
