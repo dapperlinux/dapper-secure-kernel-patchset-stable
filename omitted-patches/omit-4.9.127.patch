@@ -1,0 +1,80 @@
+diff --git a/arch/x86/include/asm/pgtable.h b/arch/x86/include/asm/pgtable.h
+index c535012bdb56..5736306bdaab 100644
+--- a/arch/x86/include/asm/pgtable.h
++++ b/arch/x86/include/asm/pgtable.h
+@@ -420,7 +420,7 @@ static inline pmd_t pfn_pmd(unsigned long page_nr, pgprot_t pgprot)
+ 
+ static inline pud_t pfn_pud(unsigned long page_nr, pgprot_t pgprot)
+ {
+-	phys_addr_t pfn = page_nr << PAGE_SHIFT;
++	phys_addr_t pfn = (phys_addr_t)page_nr << PAGE_SHIFT;
+ 	pfn ^= protnone_mask(pgprot_val(pgprot));
+ 	pfn &= PHYSICAL_PUD_PAGE_MASK;
+ 	return __pud(pfn | massage_pgprot(pgprot));
+diff --git a/arch/arm64/include/asm/cpucaps.h b/arch/arm64/include/asm/cpucaps.h
+index 7010779a1429..8c7c4b23a8b1 100644
+--- a/arch/arm64/include/asm/cpucaps.h
++++ b/arch/arm64/include/asm/cpucaps.h
+@@ -37,7 +37,8 @@
+ #define ARM64_UNMAP_KERNEL_AT_EL0		16
+ #define ARM64_HARDEN_BRANCH_PREDICTOR		17
+ #define ARM64_SSBD				18
++#define ARM64_MISMATCHED_CACHE_TYPE		19
+ 
+-#define ARM64_NCAPS				19
++#define ARM64_NCAPS				20
+ 
+ #endif /* __ASM_CPUCAPS_H */
+diff --git a/arch/s390/lib/mem.S b/arch/s390/lib/mem.S
+index e7672edc284a..5ff0520784f2 100644
+--- a/arch/s390/lib/mem.S
++++ b/arch/s390/lib/mem.S
+@@ -27,7 +27,7 @@
+  */
+ ENTRY(memset)
+ 	ltgr	%r4,%r4
+-	bzr	%r14
++	jz	.Lmemset_exit
+ 	ltgr	%r3,%r3
+ 	jnz	.Lmemset_fill
+ 	aghi	%r4,-1
+@@ -42,12 +42,13 @@ ENTRY(memset)
+ .Lmemset_clear_rest:
+ 	larl	%r3,.Lmemset_xc
+ 	ex	%r4,0(%r3)
++.Lmemset_exit:
+ 	BR_EX	%r14
+ .Lmemset_fill:
+ 	stc	%r3,0(%r2)
+ 	cghi	%r4,1
+ 	lgr	%r1,%r2
+-	ber	%r14
++	je	.Lmemset_fill_exit
+ 	aghi	%r4,-2
+ 	srlg	%r3,%r4,8
+ 	ltgr	%r3,%r3
+@@ -59,6 +60,7 @@ ENTRY(memset)
+ .Lmemset_fill_rest:
+ 	larl	%r3,.Lmemset_mvc
+ 	ex	%r4,0(%r3)
++.Lmemset_fill_exit:
+ 	BR_EX	%r14
+ .Lmemset_xc:
+ 	xc	0(1,%r1),0(%r1)
+@@ -73,7 +75,7 @@ EXPORT_SYMBOL(memset)
+  */
+ ENTRY(memcpy)
+ 	ltgr	%r4,%r4
+-	bzr	%r14
++	jz	.Lmemcpy_exit
+ 	aghi	%r4,-1
+ 	srlg	%r5,%r4,8
+ 	ltgr	%r5,%r5
+@@ -82,6 +84,7 @@ ENTRY(memcpy)
+ .Lmemcpy_rest:
+ 	larl	%r5,.Lmemcpy_mvc
+ 	ex	%r4,0(%r5)
++.Lmemcpy_exit:
+ 	BR_EX	%r14
+ .Lmemcpy_loop:
+ 	mvc	0(256,%r1),0(%r3)
