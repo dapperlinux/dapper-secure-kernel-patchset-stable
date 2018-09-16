@@ -48,6 +48,15 @@ index 05169ef..184173a 100644
  	btrfs_dev_replace_unlock(dev_replace, 1);
  
  	ret = btrfs_sysfs_add_device_link(tgt_device->fs_devices, tgt_device);
+@@ -589,7 +589,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 	 * Increment dev_stats_ccnt so that btrfs_run_dev_stats() will
+ 	 * update on-disk dev stats value during commit transaction
+ 	 */
+-	atomic_inc(&tgt_device->dev_stats_ccnt);
++	atomic_inc_unchecked(&tgt_device->dev_stats_ccnt);
+ 
+ 	/*
+ 	 * this is again a consistent state where no dev_replace procedure
 @@ -650,9 +650,9 @@ void btrfs_dev_replace_status(struct btrfs_fs_info *fs_info,
  	args->status.time_started = dev_replace->time_started;
  	args->status.time_stopped = dev_replace->time_stopped;
