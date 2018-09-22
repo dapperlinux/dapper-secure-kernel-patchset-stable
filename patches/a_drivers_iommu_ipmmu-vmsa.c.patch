@@ -10,7 +10,7 @@ index ace331d..c326530 100644
 +	struct io_pgtable *iop;
  
  	unsigned int context_id;
- 	spinlock_t lock;			/* Protects mappings */
+ 	struct mutex mutex;			/* Protects mappings */
 @@ -319,8 +319,7 @@ static int ipmmu_domain_init_context(struct ipmmu_vmsa_domain *domain)
  	 */
  	domain->cfg.iommu_dev = domain->mmu->dev;
