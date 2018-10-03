@@ -35,8 +35,8 @@ git checkout -b dappersec
 
 echo "Omitting patches..."
 sh ../../omitted-patches/omit-patches.sh >> ../../release.log
-git add *
-git commit -m "Omitted patches from Dapper Secure Kernel Patchset" >> ../../release.log
+#git add *
+#git commit -m "Omitted patches from Dapper Secure Kernel Patchset" >> ../../release.log
 
 echo "Patching Dapper Secure Kernel Patches..."
 patch -F 0 -p1 < ../../dapper-secure-kernel-patchset-test.patch >> ../../release.log
