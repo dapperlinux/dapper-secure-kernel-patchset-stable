@@ -405,7 +405,7 @@ index ef766a3..d3f0e59 100644
  .macro TRACE_IRQS_IRETQ
  #ifdef CONFIG_TRACE_IRQFLAGS
  	bt	$9, EFLAGS(%rsp)		/* interrupts off? */
-@@ -77,19 +466,19 @@ ENDPROC(native_usergs_sysret64)
+@@ -77,19 +77,19 @@ ENDPROC(native_usergs_sysret64)
  #if defined(CONFIG_DYNAMIC_FTRACE) && defined(CONFIG_TRACE_IRQFLAGS)
  
  .macro TRACE_IRQS_OFF_DEBUG
@@ -425,8 +425,8 @@ index ef766a3..d3f0e59 100644
  .endm
  
  .macro TRACE_IRQS_IRETQ_DEBUG
--	bt	$9, EFLAGS(%rsp)		/* interrupts off? */
-+	bt	$X86_EFLAGS_IF_BIT, EFLAGS(%rsp)	/* interrupts off? */
+-	btl	$9, EFLAGS(%rsp)		/* interrupts off? */
++	btl	$X86_EFLAGS_IF_BIT, EFLAGS(%rsp)	/* interrupts off? */
  	jnc	1f
  	TRACE_IRQS_ON_DEBUG
  1:
