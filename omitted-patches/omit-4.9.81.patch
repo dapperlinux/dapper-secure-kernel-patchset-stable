@@ -875,36 +875,6 @@ index 97aa3f332f24..1845fc611912 100644
  	/* By default, only probe PCI (can be overridden by rtas_pci) */
  	pci_add_flags(PCI_PROBE_ONLY);
  
-diff --git a/arch/x86/entry/common.c b/arch/x86/entry/common.c
-index bdd9cc59d20f..b0cd306dc527 100644
---- a/arch/x86/entry/common.c
-+++ b/arch/x86/entry/common.c
-@@ -20,6 +20,7 @@
- #include <linux/export.h>
- #include <linux/context_tracking.h>
- #include <linux/user-return-notifier.h>
-+#include <linux/nospec.h>
- #include <linux/uprobes.h>
- 
- #include <asm/desc.h>
-@@ -277,7 +278,8 @@ __visible void do_syscall_64(struct pt_regs *regs)
- 	 * regs->orig_ax, which changes the behavior of some syscalls.
- 	 */
- 	if (likely((nr & __SYSCALL_MASK) < NR_syscalls)) {
--		regs->ax = sys_call_table[nr & __SYSCALL_MASK](
-+		nr = array_index_nospec(nr & __SYSCALL_MASK, NR_syscalls);
-+		regs->ax = sys_call_table[nr](
- 			regs->di, regs->si, regs->dx,
- 			regs->r10, regs->r8, regs->r9);
- 	}
-@@ -313,6 +315,7 @@ static __always_inline void do_syscall_32_irqs_on(struct pt_regs *regs)
- 	}
- 
- 	if (likely(nr < IA32_NR_syscalls)) {
-+		nr = array_index_nospec(nr, IA32_NR_syscalls);
- 		/*
- 		 * It's possible that a 32-bit syscall implementation
- 		 * takes a 64-bit parameter but nonetheless assumes that
 diff --git a/arch/x86/entry/entry_32.S b/arch/x86/entry/entry_32.S
 index a76dc738ec61..f5434b4670c1 100644
 --- a/arch/x86/entry/entry_32.S
@@ -1205,45 +1175,6 @@ index b15aa4083dfd..166654218329 100644
 +asmlinkage void __clear_rsb(void);
 +
  #endif /* CONFIG_RETPOLINE */
-diff --git a/arch/x86/include/asm/barrier.h b/arch/x86/include/asm/barrier.h
-index bfb28caf97b1..857590390397 100644
---- a/arch/x86/include/asm/barrier.h
-+++ b/arch/x86/include/asm/barrier.h
-@@ -23,6 +23,34 @@
- #define wmb()	asm volatile("sfence" ::: "memory")
- #endif
- 
-+/**
-+ * array_index_mask_nospec() - generate a mask that is ~0UL when the
-+ * 	bounds check succeeds and 0 otherwise
-+ * @index: array element index
-+ * @size: number of elements in array
-+ *
-+ * Returns:
-+ *     0 - (index < size)
-+ */
-+static inline unsigned long array_index_mask_nospec(unsigned long index,
-+		unsigned long size)
-+{
-+	unsigned long mask;
-+
-+	asm ("cmp %1,%2; sbb %0,%0;"
-+			:"=r" (mask)
-+			:"r"(size),"r" (index)
-+			:"cc");
-+	return mask;
-+}
-+
-+/* Override the default implementation from linux/nospec.h. */
-+#define array_index_mask_nospec array_index_mask_nospec
-+
-+/* Prevent speculative execution past this barrier. */
-+#define barrier_nospec() alternative_2("", "mfence", X86_FEATURE_MFENCE_RDTSC, \
-+					   "lfence", X86_FEATURE_LFENCE_RDTSC)
-+
- #ifdef CONFIG_X86_PPRO_FENCE
- #define dma_rmb()	rmb()
- #else
 diff --git a/arch/x86/include/asm/cpufeature.h b/arch/x86/include/asm/cpufeature.h
 index 9ea67a04ff4f..8c101579f535 100644
 --- a/arch/x86/include/asm/cpufeature.h
@@ -4091,30 +4022,6 @@ index 3bc7baf2a711..5c06dbffc52f 100644
  	return n;
  }
  EXPORT_SYMBOL(__copy_from_user_ll_nocache_nozero);
-diff --git a/include/linux/fdtable.h b/include/linux/fdtable.h
-index 6e84b2cae6ad..442b54a14cbc 100644
---- a/include/linux/fdtable.h
-+++ b/include/linux/fdtable.h
-@@ -9,6 +9,7 @@
- #include <linux/compiler.h>
- #include <linux/spinlock.h>
- #include <linux/rcupdate.h>
-+#include <linux/nospec.h>
- #include <linux/types.h>
- #include <linux/init.h>
- #include <linux/fs.h>
-@@ -81,8 +82,10 @@ static inline struct file *__fcheck_files(struct files_struct *files, unsigned i
- {
- 	struct fdtable *fdt = rcu_dereference_raw(files->fdt);
- 
--	if (fd < fdt->max_fds)
-+	if (fd < fdt->max_fds) {
-+		fd = array_index_nospec(fd, fdt->max_fds);
- 		return rcu_dereference_raw(fdt->fd[fd]);
-+	}
- 	return NULL;
- }
- 
 diff --git a/include/linux/init.h b/include/linux/init.h
 index e30104ceb86d..8e346d1bd837 100644
 --- a/include/linux/init.h
@@ -4162,84 +4069,6 @@ index 0c3207d26ac0..d2224a09b4b5 100644
  #ifdef CONFIG_MODULE_SIG
  static inline bool module_sig_ok(struct module *module)
  {
-diff --git a/include/linux/nospec.h b/include/linux/nospec.h
-new file mode 100644
-index 000000000000..b99bced39ac2
---- /dev/null
-+++ b/include/linux/nospec.h
-@@ -0,0 +1,72 @@
-+// SPDX-License-Identifier: GPL-2.0
-+// Copyright(c) 2018 Linus Torvalds. All rights reserved.
-+// Copyright(c) 2018 Alexei Starovoitov. All rights reserved.
-+// Copyright(c) 2018 Intel Corporation. All rights reserved.
-+
-+#ifndef _LINUX_NOSPEC_H
-+#define _LINUX_NOSPEC_H
-+
-+/**
-+ * array_index_mask_nospec() - generate a ~0 mask when index < size, 0 otherwise
-+ * @index: array element index
-+ * @size: number of elements in array
-+ *
-+ * When @index is out of bounds (@index >= @size), the sign bit will be
-+ * set.  Extend the sign bit to all bits and invert, giving a result of
-+ * zero for an out of bounds index, or ~0 if within bounds [0, @size).
-+ */
-+#ifndef array_index_mask_nospec
-+static inline unsigned long array_index_mask_nospec(unsigned long index,
-+						    unsigned long size)
-+{
-+	/*
-+	 * Warn developers about inappropriate array_index_nospec() usage.
-+	 *
-+	 * Even if the CPU speculates past the WARN_ONCE branch, the
-+	 * sign bit of @index is taken into account when generating the
-+	 * mask.
-+	 *
-+	 * This warning is compiled out when the compiler can infer that
-+	 * @index and @size are less than LONG_MAX.
-+	 */
-+	if (WARN_ONCE(index > LONG_MAX || size > LONG_MAX,
-+			"array_index_nospec() limited to range of [0, LONG_MAX]\n"))
-+		return 0;
-+
-+	/*
-+	 * Always calculate and emit the mask even if the compiler
-+	 * thinks the mask is not needed. The compiler does not take
-+	 * into account the value of @index under speculation.
-+	 */
-+	OPTIMIZER_HIDE_VAR(index);
-+	return ~(long)(index | (size - 1UL - index)) >> (BITS_PER_LONG - 1);
-+}
-+#endif
-+
-+/*
-+ * array_index_nospec - sanitize an array index after a bounds check
-+ *
-+ * For a code sequence like:
-+ *
-+ *     if (index < size) {
-+ *         index = array_index_nospec(index, size);
-+ *         val = array[index];
-+ *     }
-+ *
-+ * ...if the CPU speculates past the bounds check then
-+ * array_index_nospec() will clamp the index within the range of [0,
-+ * size).
-+ */
-+#define array_index_nospec(index, size)					\
-+({									\
-+	typeof(index) _i = (index);					\
-+	typeof(size) _s = (size);					\
-+	unsigned long _mask = array_index_mask_nospec(_i, _s);		\
-+									\
-+	BUILD_BUG_ON(sizeof(_i) > sizeof(long));			\
-+	BUILD_BUG_ON(sizeof(_s) > sizeof(long));			\
-+									\
-+	_i &= _mask;							\
-+	_i;								\
-+})
-+#endif /* _LINUX_NOSPEC_H */
 diff --git a/kernel/module.c b/kernel/module.c
 index 0e54d5bf0097..07bfb9971f2f 100644
 --- a/kernel/module.c
@@ -4269,44 +4098,6 @@ index 0e54d5bf0097..07bfb9971f2f 100644
  	if (get_modinfo(info, "staging")) {
  		add_taint_module(mod, TAINT_CRAP, LOCKDEP_STILL_OK);
  		pr_warn("%s: module is from the staging directory, the quality "
-diff --git a/net/wireless/nl80211.c b/net/wireless/nl80211.c
-index c626f679e1c8..91722e97cdd5 100644
---- a/net/wireless/nl80211.c
-+++ b/net/wireless/nl80211.c
-@@ -16,6 +16,7 @@
- #include <linux/nl80211.h>
- #include <linux/rtnetlink.h>
- #include <linux/netlink.h>
-+#include <linux/nospec.h>
- #include <linux/etherdevice.h>
- #include <net/net_namespace.h>
- #include <net/genetlink.h>
-@@ -2014,20 +2015,22 @@ static const struct nla_policy txq_params_policy[NL80211_TXQ_ATTR_MAX + 1] = {
- static int parse_txq_params(struct nlattr *tb[],
- 			    struct ieee80211_txq_params *txq_params)
- {
-+	u8 ac;
-+
- 	if (!tb[NL80211_TXQ_ATTR_AC] || !tb[NL80211_TXQ_ATTR_TXOP] ||
- 	    !tb[NL80211_TXQ_ATTR_CWMIN] || !tb[NL80211_TXQ_ATTR_CWMAX] ||
- 	    !tb[NL80211_TXQ_ATTR_AIFS])
- 		return -EINVAL;
- 
--	txq_params->ac = nla_get_u8(tb[NL80211_TXQ_ATTR_AC]);
-+	ac = nla_get_u8(tb[NL80211_TXQ_ATTR_AC]);
- 	txq_params->txop = nla_get_u16(tb[NL80211_TXQ_ATTR_TXOP]);
- 	txq_params->cwmin = nla_get_u16(tb[NL80211_TXQ_ATTR_CWMIN]);
- 	txq_params->cwmax = nla_get_u16(tb[NL80211_TXQ_ATTR_CWMAX]);
- 	txq_params->aifs = nla_get_u8(tb[NL80211_TXQ_ATTR_AIFS]);
- 
--	if (txq_params->ac >= NL80211_NUM_ACS)
-+	if (ac >= NL80211_NUM_ACS)
- 		return -EINVAL;
--
-+	txq_params->ac = array_index_nospec(ac, NL80211_NUM_ACS);
- 	return 0;
- }
- 
 diff --git a/scripts/mod/modpost.c b/scripts/mod/modpost.c
 index 845eb9b800f3..238db4ffd30c 100644
 --- a/scripts/mod/modpost.c

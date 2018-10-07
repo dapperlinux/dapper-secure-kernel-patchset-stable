@@ -774,3 +774,25 @@ index 4d28a9ddbee0..3f24eb1e8554 100644
  	return 0;
  
  fail:
+diff --git a/drivers/vfio/pci/vfio_pci.c b/drivers/vfio/pci/vfio_pci.c
+index 43559bed7822..7338e43faa17 100644
+--- a/drivers/vfio/pci/vfio_pci.c
++++ b/drivers/vfio/pci/vfio_pci.c
+@@ -28,6 +28,7 @@
+ #include <linux/uaccess.h>
+ #include <linux/vfio.h>
+ #include <linux/vgaarb.h>
++#include <linux/nospec.h>
+ 
+ #include "vfio_pci_private.h"
+ 
+@@ -755,6 +756,9 @@ static long vfio_pci_ioctl(void *device_data,
+ 			if (info.index >=
+ 			    VFIO_PCI_NUM_REGIONS + vdev->num_regions)
+ 				return -EINVAL;
++			info.index = array_index_nospec(info.index,
++							VFIO_PCI_NUM_REGIONS +
++							vdev->num_regions);
+ 
+ 			i = info.index - VFIO_PCI_NUM_REGIONS;
+ 

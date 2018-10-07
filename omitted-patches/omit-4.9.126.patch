@@ -61,23 +61,3 @@ index 8e4ac0a91309..8888d894bf39 100644
  	return sprintf(s, "%s\n", vmentry_l1d_param[l1tf_vmx_mitigation].option);
  }
  
-diff --git a/fs/quota/quota.c b/fs/quota/quota.c
-index 2d445425aad7..a2329f7ec638 100644
---- a/fs/quota/quota.c
-+++ b/fs/quota/quota.c
-@@ -17,6 +17,7 @@
- #include <linux/quotaops.h>
- #include <linux/types.h>
- #include <linux/writeback.h>
-+#include <linux/nospec.h>
- 
- static int check_quotactl_permission(struct super_block *sb, int type, int cmd,
- 				     qid_t id)
-@@ -706,6 +707,7 @@ static int do_quotactl(struct super_block *sb, int type, int cmd, qid_t id,
- 
- 	if (type >= (XQM_COMMAND(cmd) ? XQM_MAXQUOTAS : MAXQUOTAS))
- 		return -EINVAL;
-+	type = array_index_nospec(type, MAXQUOTAS);
- 	/*
- 	 * Quota not supported on this fs? Check this before s_quota_types
- 	 * since they needn't be set if quota is not supported at all.

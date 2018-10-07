@@ -80,19 +80,6 @@ index d76a97653980..92c55738d543 100644
  	cld
  
  	/*
-diff --git a/arch/x86/include/asm/barrier.h b/arch/x86/include/asm/barrier.h
-index 857590390397..78d1c6a3d221 100644
---- a/arch/x86/include/asm/barrier.h
-+++ b/arch/x86/include/asm/barrier.h
-@@ -39,7 +39,7 @@ static inline unsigned long array_index_mask_nospec(unsigned long index,
- 
- 	asm ("cmp %1,%2; sbb %0,%0;"
- 			:"=r" (mask)
--			:"r"(size),"r" (index)
-+			:"g"(size),"r" (index)
- 			:"cc");
- 	return mask;
- }
 diff --git a/arch/x86/include/asm/nospec-branch.h b/arch/x86/include/asm/nospec-branch.h
 index 300cc159b4a0..76b058533e47 100644
 --- a/arch/x86/include/asm/nospec-branch.h
@@ -279,65 +266,3 @@ index 58c55b1589d0..b56c19010480 100644
  {
  	return 0;
  }
-diff --git a/include/linux/nospec.h b/include/linux/nospec.h
-index b99bced39ac2..fbc98e2c8228 100644
---- a/include/linux/nospec.h
-+++ b/include/linux/nospec.h
-@@ -19,20 +19,6 @@
- static inline unsigned long array_index_mask_nospec(unsigned long index,
- 						    unsigned long size)
- {
--	/*
--	 * Warn developers about inappropriate array_index_nospec() usage.
--	 *
--	 * Even if the CPU speculates past the WARN_ONCE branch, the
--	 * sign bit of @index is taken into account when generating the
--	 * mask.
--	 *
--	 * This warning is compiled out when the compiler can infer that
--	 * @index and @size are less than LONG_MAX.
--	 */
--	if (WARN_ONCE(index > LONG_MAX || size > LONG_MAX,
--			"array_index_nospec() limited to range of [0, LONG_MAX]\n"))
--		return 0;
--
- 	/*
- 	 * Always calculate and emit the mask even if the compiler
- 	 * thinks the mask is not needed. The compiler does not take
-@@ -43,6 +29,26 @@ static inline unsigned long array_index_mask_nospec(unsigned long index,
- }
- #endif
- 
-+/*
-+ * Warn developers about inappropriate array_index_nospec() usage.
-+ *
-+ * Even if the CPU speculates past the WARN_ONCE branch, the
-+ * sign bit of @index is taken into account when generating the
-+ * mask.
-+ *
-+ * This warning is compiled out when the compiler can infer that
-+ * @index and @size are less than LONG_MAX.
-+ */
-+#define array_index_mask_nospec_check(index, size)				\
-+({										\
-+	if (WARN_ONCE(index > LONG_MAX || size > LONG_MAX,			\
-+	    "array_index_nospec() limited to range of [0, LONG_MAX]\n"))	\
-+		_mask = 0;							\
-+	else									\
-+		_mask = array_index_mask_nospec(index, size);			\
-+	_mask;									\
-+})
-+
- /*
-  * array_index_nospec - sanitize an array index after a bounds check
-  *
-@@ -61,7 +67,7 @@ static inline unsigned long array_index_mask_nospec(unsigned long index,
- ({									\
- 	typeof(index) _i = (index);					\
- 	typeof(size) _s = (size);					\
--	unsigned long _mask = array_index_mask_nospec(_i, _s);		\
-+	unsigned long _mask = array_index_mask_nospec_check(_i, _s);	\
- 									\
- 	BUILD_BUG_ON(sizeof(_i) > sizeof(long));			\
- 	BUILD_BUG_ON(sizeof(_s) > sizeof(long));			\
-

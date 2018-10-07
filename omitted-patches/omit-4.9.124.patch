@@ -57,55 +57,6 @@ index b4de3da6dffa..f7f36da80f40 100644
  	}
  
  	/*
-diff --git a/drivers/ata/libahci.c b/drivers/ata/libahci.c
-index 0d028ead99e8..d81b984b72e4 100644
---- a/drivers/ata/libahci.c
-+++ b/drivers/ata/libahci.c
-@@ -35,6 +35,7 @@
- #include <linux/kernel.h>
- #include <linux/gfp.h>
- #include <linux/module.h>
-+#include <linux/nospec.h>
- #include <linux/blkdev.h>
- #include <linux/delay.h>
- #include <linux/interrupt.h>
-@@ -1124,10 +1125,12 @@ static ssize_t ahci_led_store(struct ata_port *ap, const char *buf,
- 
- 	/* get the slot number from the message */
- 	pmp = (state & EM_MSG_LED_PMP_SLOT) >> 8;
--	if (pmp < EM_MAX_SLOTS)
-+	if (pmp < EM_MAX_SLOTS) {
-+		pmp = array_index_nospec(pmp, EM_MAX_SLOTS);
- 		emp = &pp->em_priv[pmp];
--	else
-+	} else {
- 		return -EINVAL;
-+	}
- 
- 	/* mask off the activity bits if we are in sw_activity
- 	 * mode, user should turn off sw_activity before setting
-diff --git a/fs/ext4/mballoc.c b/fs/ext4/mballoc.c
-index 53e1890660a2..a49d0e5d7baf 100644
---- a/fs/ext4/mballoc.c
-+++ b/fs/ext4/mballoc.c
-@@ -26,6 +26,7 @@
- #include <linux/log2.h>
- #include <linux/module.h>
- #include <linux/slab.h>
-+#include <linux/nospec.h>
- #include <linux/backing-dev.h>
- #include <trace/events/ext4.h>
- 
-@@ -2144,7 +2145,8 @@ ext4_mb_regular_allocator(struct ext4_allocation_context *ac)
- 		 * This should tell if fe_len is exactly power of 2
- 		 */
- 		if ((ac->ac_g_ex.fe_len & (~(1 << (i - 1)))) == 0)
--			ac->ac_2order = i - 1;
-+			ac->ac_2order = array_index_nospec(i - 1,
-+							   sb->s_blocksize_bits + 2);
- 	}
- 
- 	/* if stream allocation is enabled, use global goal */
 diff --git a/tools/objtool/elf.c b/tools/objtool/elf.c
 index 4e60e105583e..0d1acb704f64 100644
 --- a/tools/objtool/elf.c

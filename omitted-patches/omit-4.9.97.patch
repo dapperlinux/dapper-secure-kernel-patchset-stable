@@ -260,41 +260,6 @@ index 000000000000..a72002056b54
 +#endif /* __ASSEMBLY__ */
 +
 +#endif /* _ASM_S390_ALTERNATIVE_H */
-diff --git a/arch/s390/include/asm/barrier.h b/arch/s390/include/asm/barrier.h
-index 5c8db3ce61c8..03b2e5bf1206 100644
---- a/arch/s390/include/asm/barrier.h
-+++ b/arch/s390/include/asm/barrier.h
-@@ -48,6 +48,30 @@ do {									\
- #define __smp_mb__before_atomic()	barrier()
- #define __smp_mb__after_atomic()	barrier()
- 
-+/**
-+ * array_index_mask_nospec - generate a mask for array_idx() that is
-+ * ~0UL when the bounds check succeeds and 0 otherwise
-+ * @index: array element index
-+ * @size: number of elements in array
-+ */
-+#define array_index_mask_nospec array_index_mask_nospec
-+static inline unsigned long array_index_mask_nospec(unsigned long index,
-+						    unsigned long size)
-+{
-+	unsigned long mask;
-+
-+	if (__builtin_constant_p(size) && size > 0) {
-+		asm("	clgr	%2,%1\n"
-+		    "	slbgr	%0,%0\n"
-+		    :"=d" (mask) : "d" (size-1), "d" (index) :"cc");
-+		return mask;
-+	}
-+	asm("	clgr	%1,%2\n"
-+	    "	slbgr	%0,%0\n"
-+	    :"=d" (mask) : "d" (size), "d" (index) :"cc");
-+	return ~mask;
-+}
-+
- #include <asm-generic/barrier.h>
- 
- #endif /* __ASM_BARRIER_H */
 diff --git a/arch/s390/include/asm/facility.h b/arch/s390/include/asm/facility.h
 index 09b406db7529..7a8a1457dbb8 100644
 --- a/arch/s390/include/asm/facility.h

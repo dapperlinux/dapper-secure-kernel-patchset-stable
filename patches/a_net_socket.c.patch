@@ -2,10 +2,10 @@ diff --git a/net/socket.c b/net/socket.c
 index 6bbccf0..1991a22 100644
 --- a/net/socket.c
 +++ b/net/socket.c
-@@ -89,6 +89,7 @@
- #include <linux/magic.h>
+@@ -90,6 +90,7 @@
  #include <linux/slab.h>
  #include <linux/xattr.h>
+ #include <linux/nospec.h>
 +#include <linux/in.h>
  
  #include <asm/uaccess.h>

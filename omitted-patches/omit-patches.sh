@@ -4,8 +4,8 @@
 
 # ADD NEWEST FIRST
 
-patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.130.patch
-patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.129.patch
+# 4.9.130 does not need any omissions
+# 4.9.129 does not need any omissions
 # 4.9.128 does not need any omissions
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.127.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.126.patch
@@ -16,7 +16,7 @@ patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.122.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.121.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.120.patch
 # 4.9.119 does not need any omissions
-patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.118.patch
+# 4.9.118 does not need any omissions
 # 4.9.117 does not need any omissions
 # 4.9.116 does not need any omissions
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.115.patch
@@ -25,7 +25,7 @@ patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.114.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.112.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.111.patch
 # 4.9.110 does not need any omissions
-patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.109.patch
+# 4.9.109 does not need any omissions
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.108.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.107.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.106.patch
@@ -36,7 +36,7 @@ patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.102.patch
 # 4.9.101 does not need any omissions
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.100.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.99.patch
-patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.98.patch
+# 4.9.98 does not need any omissions
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.97.patch
 # 4.9.96 does not need any omissions
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.95.patch

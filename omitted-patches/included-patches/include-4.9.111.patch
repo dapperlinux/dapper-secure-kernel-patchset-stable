@@ -2998,3 +2998,16 @@ index b1161d725ce9..d40ab4cf8932 100644
  		case INTEL_PT_SS_UNKNOWN:
  		case INTEL_PT_SS_EXPECTING_SWITCH_IP:
  			err = intel_pt_next_tid(pt, ptq);
+diff --git a/arch/x86/include/asm/barrier.h b/arch/x86/include/asm/barrier.h
+index 78d1c6a3d221..eb53c2c78a1f 100644
+--- a/arch/x86/include/asm/barrier.h
++++ b/arch/x86/include/asm/barrier.h
+@@ -37,7 +37,7 @@ static inline unsigned long array_index_mask_nospec(unsigned long index,
+ {
+ 	unsigned long mask;
+ 
+-	asm ("cmp %1,%2; sbb %0,%0;"
++	asm volatile ("cmp %1,%2; sbb %0,%0;"
+ 			:"=r" (mask)
+ 			:"g"(size),"r" (index)
+ 			:"cc");
