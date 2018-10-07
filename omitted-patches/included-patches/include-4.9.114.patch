@@ -1596,3 +1596,31 @@ index 43da891fab97..dc0efbd91c32 100644
  
  		q = &adapter->params.sge.qset[q1 + t.qset_idx];
  		t.rspq_size = q->rspq_size;
+diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
+index 52240a63132e..a16f87e4dd10 100644
+--- a/Documentation/kernel-parameters.txt
++++ b/Documentation/kernel-parameters.txt
+@@ -4023,6 +4023,23 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+ 	spia_pedr=
+ 	spia_peddr=
+ 
++	ssbd=		[ARM64,HW]
++			Speculative Store Bypass Disable control
++
++			On CPUs that are vulnerable to the Speculative
++			Store Bypass vulnerability and offer a
++			firmware based mitigation, this parameter
++			indicates how the mitigation should be used:
++
++			force-on:  Unconditionally enable mitigation for
++				   for both kernel and userspace
++			force-off: Unconditionally disable mitigation for
++				   for both kernel and userspace
++			kernel:    Always enable mitigation in the
++				   kernel, and offer a prctl interface
++				   to allow userspace to register its
++				   interest in being mitigated too.
++
+ 	stack_guard_gap=	[MM]
+ 			override the default stack gap protection. The value
+ 			is in page units and it defines how many pages prior

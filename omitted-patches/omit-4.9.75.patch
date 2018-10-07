@@ -1,29 +1,3 @@
-diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-index 152ec4e87b57..5d2676d043de 100644
---- a/Documentation/kernel-parameters.txt
-+++ b/Documentation/kernel-parameters.txt
-@@ -2763,6 +2763,8 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
- 
- 	nojitter	[IA-64] Disables jitter checking for ITC timers.
- 
-+	nopti		[X86-64] Disable KAISER isolation of kernel from user.
-+
- 	no-kvmclock	[X86,KVM] Disable paravirtualized KVM clock driver
- 
- 	no-kvmapf	[X86,KVM] Disable paravirtualized asynchronous page
-@@ -3325,6 +3327,12 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
- 	pt.		[PARIDE]
- 			See Documentation/blockdev/paride.txt.
- 
-+	pti=		[X86_64]
-+			Control KAISER user/kernel address space isolation:
-+			on - enable
-+			off - disable
-+			auto - default setting
-+
- 	pty.legacy_count=
- 			[KNL] Number of legacy pty's. Overwrites compiled-in
- 			default number.
 diff --git a/arch/x86/boot/compressed/misc.h b/arch/x86/boot/compressed/misc.h
 index 766a5211f827..2728e1b7e4a6 100644
 --- a/arch/x86/boot/compressed/misc.h

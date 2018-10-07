@@ -1,16 +1,3 @@
-diff --git a/Documentation/x86/pti.txt b/Documentation/x86/pti.txt
-index d11eff61fc9a..5cd58439ad2d 100644
---- a/Documentation/x86/pti.txt
-+++ b/Documentation/x86/pti.txt
-@@ -78,7 +78,7 @@ this protection comes at a cost:
-      non-PTI SYSCALL entry code, so requires mapping fewer
-      things into the userspace page tables.  The downside is
-      that stacks must be switched at entry time.
--  d. Global pages are disabled for all kernel structures not
-+  c. Global pages are disabled for all kernel structures not
-      mapped into both kernel and userspace page tables.  This
-      feature of the MMU allows different processes to share TLB
-      entries mapping the kernel.  Losing the feature means more
 diff --git a/arch/x86/entry/entry_32.S b/arch/x86/entry/entry_32.S
 index bdc9aeaf2e45..a76dc738ec61 100644
 --- a/arch/x86/entry/entry_32.S
