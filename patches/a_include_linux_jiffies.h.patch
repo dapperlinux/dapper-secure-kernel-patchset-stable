@@ -2,7 +2,7 @@ diff --git a/include/linux/jiffies.h b/include/linux/jiffies.h
 index 589d14e..4a7c48c 100644
 --- a/include/linux/jiffies.h
 +++ b/include/linux/jiffies.h
-@@ -288,19 +288,19 @@ extern unsigned long preset_lpj;
+@@ -287,21 +287,21 @@ extern unsigned long preset_lpj;
  extern unsigned int jiffies_to_msecs(const unsigned long j);
  extern unsigned int jiffies_to_usecs(const unsigned long j);
  
@@ -11,6 +11,8 @@ index 589d14e..4a7c48c 100644
  {
  	return (u64)jiffies_to_usecs(j) * NSEC_PER_USEC;
  }
+ 
+ extern u64 jiffies64_to_nsecs(u64 j);
  
 -extern unsigned long __msecs_to_jiffies(const unsigned int m);
 +extern unsigned long __msecs_to_jiffies(const unsigned int m) __intentional_overflow(-1);
