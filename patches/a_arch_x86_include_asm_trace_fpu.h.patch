@@ -2,9 +2,9 @@ diff --git a/arch/x86/include/asm/trace/fpu.h b/arch/x86/include/asm/trace/fpu.h
 index 9217ab1..90c91bf 100644
 --- a/arch/x86/include/asm/trace/fpu.h
 +++ b/arch/x86/include/asm/trace/fpu.h
-@@ -25,8 +25,8 @@ DECLARE_EVENT_CLASS(x86_fpu,
+@@ -23,8 +23,8 @@ DECLARE_EVENT_CLASS(x86_fpu,
+ 		__entry->fpregs_active	= fpu->fpregs_active;
  		__entry->fpstate_active	= fpu->fpstate_active;
- 		__entry->counter	= fpu->counter;
  		if (boot_cpu_has(X86_FEATURE_OSXSAVE)) {
 -			__entry->xfeatures = fpu->state.xsave.header.xfeatures;
 -			__entry->xcomp_bv  = fpu->state.xsave.header.xcomp_bv;
@@ -12,4 +12,4 @@ index 9217ab1..90c91bf 100644
 +			__entry->xcomp_bv  = fpu->state->xsave.header.xcomp_bv;
  		}
  	),
- 	TP_printk("x86/fpu: %p fpregs_active: %d fpstate_active: %d counter: %d xfeatures: %llx xcomp_bv: %llx",
+ 	TP_printk("x86/fpu: %p fpregs_active: %d fpstate_active: %d xfeatures: %llx xcomp_bv: %llx",
