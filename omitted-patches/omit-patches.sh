@@ -4,6 +4,7 @@
 
 # ADD NEWEST FIRST
 
+# 4.9.134 does not need any omissions
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.133.patch
 # 4.9.132 does not need any omissions
 # 4.9.131 does not need any omissions
@@ -64,6 +65,9 @@ patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.77.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.76.patch
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.75.patch
 
+# 4.9.54 to 4.9.74 do not need any omissions
 
 # Contains a size_overflow bug that needs to be looked into
 patch -F 0 -R -p1 < ../../omitted-patches/omit-4.9.53.patch
+
+# 4.9.25 to 4.9.52 do not need any omissions

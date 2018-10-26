@@ -50,7 +50,7 @@ index 7727ffe..9488999 100644
  	/* "fifth, if neither of the SYN or RST bits is set then
  	 * drop the segment and return."
  	 */
-@@ -5914,7 +5918,7 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
+@@ -5966,7 +5966,7 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb)
  			goto discard;
  
  		if (th->syn) {
@@ -58,7 +58,7 @@ index 7727ffe..9488999 100644
 +			if (th->fin || th->urg || th->psh)
  				goto discard;
  			/* It is possible that we process SYN packets from backlog,
- 			 * so we need to make sure to disable BH right there.
+ 			 * so we need to make sure to disable BH and RCU right there.
 @@ -6241,7 +6245,7 @@ struct request_sock *inet_reqsk_alloc(const struct request_sock_ops *ops,
  #if IS_ENABLED(CONFIG_IPV6)
  		ireq->pktopts = NULL;

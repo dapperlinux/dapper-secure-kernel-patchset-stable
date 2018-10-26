@@ -17,10 +17,10 @@ index 3815e85..f6cb55b 100644
  		if (!table)
  			goto err_alloc;
  
-@@ -648,9 +647,10 @@ static int __net_init ip6_frags_ns_sysctl_register(struct net *net)
- 		/* Don't export sysctls to unprivileged users */
- 		if (net->user_ns != &init_user_ns)
- 			table[0].procname = NULL;
+@@ -611,9 +611,10 @@ static int __net_init ip6_frags_ns_sysctl_register(struct net *net)
+ 		table[1].data = &net->ipv6.frags.low_thresh;
+ 		table[1].extra2 = &net->ipv6.frags.high_thresh;
+ 		table[2].data = &net->ipv6.frags.timeout;
 -	}
 +		hdr = register_net_sysctl(net, "net/ipv6", table);
 +	} else
