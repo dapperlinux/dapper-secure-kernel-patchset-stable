@@ -1,0 +1,13 @@
+diff --git a/arch/x86/include/asm/pgtable_types.h b/arch/x86/include/asm/pgtable_types.h
+index dfdb7e21ba56..93d089c9509a 100644
+--- a/arch/x86/include/asm/pgtable_types.h
++++ b/arch/x86/include/asm/pgtable_types.h
+@@ -134,7 +134,7 @@
+  */
+ #define _PAGE_CHG_MASK	(PTE_PFN_MASK | _PAGE_PCD | _PAGE_PWT |		\
+ 			 _PAGE_SPECIAL | _PAGE_ACCESSED | _PAGE_DIRTY |	\
+-			 _PAGE_SOFT_DIRTY)
++			 _PAGE_SOFT_DIRTY | _PAGE_DEVMAP)
+ #define _HPAGE_CHG_MASK (_PAGE_CHG_MASK | _PAGE_PSE)
+ 
+ /* The ASID is the lower 12 bits of CR3 */

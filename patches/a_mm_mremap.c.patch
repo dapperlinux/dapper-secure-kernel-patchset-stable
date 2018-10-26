@@ -2,8 +2,8 @@ diff --git a/mm/mremap.c b/mm/mremap.c
 index 30d7d24..65b49cb 100644
 --- a/mm/mremap.c
 +++ b/mm/mremap.c
-@@ -162,6 +162,12 @@ static void move_ptes(struct vm_area_struct *vma, pmd_t *old_pmd,
- 		if (pte_present(pte) && pte_dirty(pte))
+@@ -165,6 +165,12 @@ static void move_ptes(struct vm_area_struct *vma, pmd_t *old_pmd,
+ 		if (pte_present(pte))
  			force_flush = true;
  		pte = move_pte(pte, new_vma->vm_page_prot, old_addr, new_addr);
 +

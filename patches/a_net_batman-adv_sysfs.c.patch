@@ -90,22 +90,24 @@ index 02d96f2..08470936 100644
  				     attr_store, &changed);
  	if (post_func && changed)
  		post_func(net_dev);
-@@ -394,13 +394,13 @@ static int batadv_store_uint_attr(const char *buff, size_t count,
+@@ -402,7 +402,7 @@ static int batadv_store_uint_attr(const char *buff, size_t count,
  static ssize_t __batadv_store_uint_attr(const char *buff, size_t count,
  					int min, int max,
  					void (*post_func)(struct net_device *),
 -					const struct attribute *attr,
 +					const struct kobj_attribute *attr,
  					atomic_t *attr_store,
- 					struct net_device *net_dev)
- {
+ 					struct net_device *net_dev,
+ 					struct net_device *slave_dev)
+@@ -410,7 +410,7 @@ static ssize_t __batadv_store_uint_attr(const char *buff, size_t count,
  	int ret;
  
--	ret = batadv_store_uint_attr(buff, count, net_dev, attr->name, min, max,
-+	ret = batadv_store_uint_attr(buff, count, net_dev, attr->attr.name, min, max,
- 				     attr_store);
+ 	ret = batadv_store_uint_attr(buff, count, net_dev, slave_dev,
+-				     attr->name, min, max, attr_store);
++				     attr->attr.name, min, max, attr_store);
  	if (post_func && ret)
  		post_func(net_dev);
+ 
 @@ -409,7 +409,7 @@ static ssize_t __batadv_store_uint_attr(const char *buff, size_t count,
  }
  
